@@ -1,0 +1,20 @@
+name: Task ky thuat
+description: Refactor, setup, nghien cuu, cong vic khong phai feature/bug
+title: '[Task]: '
+labels: ['chore']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Noi dung cong viec
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Khi nao coi la xong
+      value: |
+        - [ ] ...
+    validations:
+      required: true

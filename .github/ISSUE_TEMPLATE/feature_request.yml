@@ -1,0 +1,40 @@
+name: Tinh nang moi (Feature)
+description: De xuat mot tinh nang hoac task can lam
+title: '[Feat]: '
+labels: ['enhancement']
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Bai toan / Nhu cau
+      placeholder: Nguoi dung can... de co the...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Giai phap de xuat
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Tieu chi hoan thanh (Acceptance Criteria)
+      value: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+
+  - type: input
+    id: screen
+    attributes:
+      label: Man hinh / Route lien quan
+      placeholder: src/app/(tabs)/orders.tsx
+
+  - type: input
+    id: figma
+    attributes:
+      label: Link thiet ke (Figma)

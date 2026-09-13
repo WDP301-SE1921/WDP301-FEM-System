@@ -1,0 +1,51 @@
+name: Bao loi (Bug)
+description: Bao cao mot loi trong app mobile
+title: '[Bug]: '
+labels: ['bug']
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Mo ta loi
+      placeholder: Man hinh dang nhap bi crash khi bam nut...
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Cac buoc tai hien
+      value: |
+        1. Mo man hinh ...
+        2. Bam vao ...
+        3. Thay loi ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Ket qua mong doi
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Nen tang
+      multiple: true
+      options: [Android, iOS, Web]
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Thiet bi / OS
+      placeholder: 'Pixel 7 - Android 14 / iPhone 13 - iOS 17'
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log hoac anh chup man hinh
+      render: shell
