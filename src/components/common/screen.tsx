@@ -5,7 +5,7 @@ import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { ThemedView } from '@/components/ui/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 
-type ScreenProps = PropsWithChildren<{
+export type ScreenProps = PropsWithChildren<{
   /** Boc noi dung trong ScrollView (mac dinh: co) */
   scrollable?: boolean;
   edges?: readonly Edge[];

@@ -3,6 +3,8 @@ const { defineConfig } = require('eslint/config');
 const expoConfig = require('eslint-config-expo/flat');
 const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
 
+const structureConfigs = require('./eslint.structure');
+
 module.exports = defineConfig([
   expoConfig,
   eslintPluginPrettierRecommended,
@@ -39,4 +41,6 @@ module.exports = defineConfig([
       ],
     },
   },
+  // Cau truc thu muc va luat phu thuoc giua cac tang (xem eslint.structure.js)
+  ...structureConfigs,
 ]);

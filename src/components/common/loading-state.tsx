@@ -5,7 +5,11 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-export function LoadingState({ message }: { message?: string }) {
+export type LoadingStateProps = {
+  message?: string;
+};
+
+export function LoadingState({ message }: LoadingStateProps) {
   const theme = useTheme();
 
   return (

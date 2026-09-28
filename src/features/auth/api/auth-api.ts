@@ -1,9 +1,10 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import type { ApiResponse } from '@/types/api';
+import type { User } from '@/types/auth';
 
 import type { LoginInput, RegisterInput } from '../schemas';
-import type { LoginResponse, User } from '../types';
+import type { LoginResponse } from '../types';
 
 export const authApi = {
   async login(payload: LoginInput): Promise<LoginResponse> {

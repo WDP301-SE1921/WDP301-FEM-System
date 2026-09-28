@@ -1,19 +1,33 @@
+import { z } from 'zod';
+
 /**
- * Doc bien moi truong tu .env (prefix EXPO_PUBLIC_).
- * Fail-fast ngay khi app khoi dong neu thieu bien bat buoc.
+ * Kiem tra bien moi truong (.env, prefix EXPO_PUBLIC_) ngay khi app khoi dong.
+ * Phai doc tung bien bang ten day du `process.env.EXPO_PUBLIC_X` thi Expo moi inline duoc vao bundle.
  */
-function required(name: string, value: string | undefined): string {
-  if (!value) {
+const envSchema = z.object({
+  EXPO_PUBLIC_API_URL: z.url('Phai la URL day du, vi du http://192.168.1.10:8080/api/v1'),
+  EXPO_PUBLIC_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+});
+
+function readEnv() {
+  const result = envSchema.safeParse({
+    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
+    EXPO_PUBLIC_ENV: process.env.EXPO_PUBLIC_ENV,
+  });
+
+  if (!result.success) {
     throw new Error(
-      `[config] Thieu bien moi truong "${name}". Copy .env.example thanh .env va dien gia tri.`,
+      `[config] Bien moi truong khong hop le. Copy .env.example thanh .env va dien gia tri.\n${z.prettifyError(result.error)}`,
     );
   }
-  return value;
+  return result.data;
 }
 
+const env = readEnv();
+
 export const Config = {
-  apiUrl: required('EXPO_PUBLIC_API_URL', process.env.EXPO_PUBLIC_API_URL),
-  env: (process.env.EXPO_PUBLIC_ENV ?? 'development') as 'development' | 'staging' | 'production',
+  apiUrl: env.EXPO_PUBLIC_API_URL,
+  env: env.EXPO_PUBLIC_ENV,
   /** Timeout mac dinh cho moi request (ms) */
   requestTimeout: 15_000,
 } as const;

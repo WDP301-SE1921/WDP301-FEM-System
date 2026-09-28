@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
 import { Spacing } from '@/constants/theme';
 
-type EmptyStateProps = {
+export type EmptyStateProps = {
   title: string;
   description?: string;
   actionLabel?: string;

@@ -62,6 +62,10 @@ export const storage = {
   },
 
   async remove(key: StorageKey): Promise<void> {
-    await AsyncStorage.removeItem(key);
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (error) {
+      logger.error('storage.remove', key, error);
+    }
   },
 };

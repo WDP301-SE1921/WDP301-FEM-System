@@ -1,4 +1,4 @@
-import { forwardRef } from 'react';
+import type { Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
 import { Radius, Spacing } from '@/constants/theme';
@@ -9,12 +9,10 @@ import { ThemedText } from './themed-text';
 export type InputProps = TextInputProps & {
   label?: string;
   error?: string;
+  ref?: Ref<TextInput>;
 };
 
-export const Input = forwardRef<TextInput, InputProps>(function Input(
-  { label, error, style, ...rest },
-  ref,
-) {
+export function Input({ label, error, style, ref, ...rest }: InputProps) {
   const theme = useTheme();
 
   return (
@@ -27,6 +25,7 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
 
       <TextInput
         ref={ref}
+        accessibilityLabel={label}
         placeholderTextColor={theme.textSecondary}
         style={[
           styles.input,
@@ -41,13 +40,13 @@ export const Input = forwardRef<TextInput, InputProps>(function Input(
       />
 
       {error ? (
-        <ThemedText type="small" style={{ color: theme.danger }}>
+        <ThemedText type="small" themeColor="danger">
           {error}
         </ThemedText>
       ) : null}
     </View>
   );
-});
+}
 
 const styles = StyleSheet.create({
   wrapper: { gap: Spacing.one, width: '100%' },

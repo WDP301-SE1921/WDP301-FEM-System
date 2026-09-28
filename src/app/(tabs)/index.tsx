@@ -7,9 +7,9 @@ export default function HomeScreen() {
 
   return (
     <Screen>
-      <ThemedText type="title">Xin chao{user ? `, ${user.fullName}` : ''}</ThemedText>
+      <ThemedText type="title">Xin chào{user ? `, ${user.fullName}` : ''}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        Bat dau xay dung tinh nang tai src/features/ va them man hinh tai src/app/.
+        Bắt đầu xây dựng tính năng tại src/features/ và thêm màn hình tại src/app/.
       </ThemedText>
     </Screen>
   );

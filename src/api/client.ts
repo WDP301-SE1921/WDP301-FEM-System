@@ -1,10 +1,11 @@
 import axios, { AxiosError, type AxiosRequestConfig, type InternalAxiosRequestConfig } from 'axios';
 
 import { Config } from '@/constants/config';
+import { ErrorMessages } from '@/constants/messages';
 import { StorageKeys } from '@/constants/storage-keys';
 import { logger } from '@/lib/logger';
 import { secureStorage } from '@/lib/storage';
-import { AppError, type ApiErrorBody } from '@/types/api';
+import { AppError, type ApiErrorBody, type ApiResponse } from '@/types/api';
 
 import { Endpoints } from './endpoints';
 
@@ -34,6 +35,9 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 // --- Response: tu dong refresh token khi gap 401 ---
 type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
 
+/** Backend co the xoay vong refresh token: co gia tri moi thi phai luu de thay ban cu. */
+type RefreshTokenResponse = { accessToken: string; refreshToken?: string };
+
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
@@ -42,14 +46,16 @@ async function refreshAccessToken(): Promise<string | null> {
 
   try {
     // Dung axios goc de khong bi interceptor bat lai -> vong lap vo han
-    const { data } = await axios.post(`${Config.apiUrl}${Endpoints.auth.refresh}`, {
-      refreshToken,
-    });
-    const accessToken: string | undefined = data?.data?.accessToken ?? data?.accessToken;
-    if (!accessToken) return null;
+    const { data } = await axios.post<ApiResponse<RefreshTokenResponse>>(
+      `${Config.apiUrl}${Endpoints.auth.refresh}`,
+      { refreshToken },
+    );
+    const tokens = data.data;
+    if (!tokens?.accessToken) return null;
 
-    await secureStorage.set(StorageKeys.accessToken, accessToken);
-    return accessToken;
+    await secureStorage.set(StorageKeys.accessToken, tokens.accessToken);
+    if (tokens.refreshToken) await secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken);
+    return tokens.accessToken;
   } catch (error) {
     logger.warn('Refresh token that bai', error);
     return null;
@@ -88,13 +94,13 @@ function normalizeError(error: AxiosError<ApiErrorBody>): AppError {
   if (error.response) {
     const body = error.response.data;
     return new AppError(
-      body?.message ?? 'Da co loi xay ra, vui long thu lai.',
+      body?.message ?? ErrorMessages.unknown,
       error.response.status,
       body?.errors,
     );
   }
   if (error.code === 'ECONNABORTED') {
-    return new AppError('Yeu cau qua thoi gian cho. Kiem tra ket noi mang.');
+    return new AppError(ErrorMessages.timeout);
   }
-  return new AppError('Khong ket noi duoc toi may chu.');
+  return new AppError(ErrorMessages.network);
 }

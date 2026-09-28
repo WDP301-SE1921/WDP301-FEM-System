@@ -70,7 +70,21 @@ color: '#208AEF',
 ```tsx
 if (isLoading) return <LoadingState />;
 if (error) return <ErrorState error={error} onRetry={refetch} />;
-if (!data?.length) return <EmptyState title="Chua co du lieu" />;
+if (!data?.length) return <EmptyState title="Chưa có dữ liệu" />;
+```
+
+- Hien loi cho nguoi dung bang `getErrorMessage(error)` (`@/utils/error`), khong doc thang `error.message`: chi `AppError` moi co thong bao than thien, loi khac se hien thong bao chung.
+
+## Form
+
+- Form nam trong `features/<ten>/components/<ten>-form.tsx`. Route chi render form, khong goi `useForm`.
+- Schema Zod dat trong `features/<ten>/schemas.ts`, kieu form suy ra bang `z.infer`.
+- O nhap dung `FormInput`, loi server dung `FormError`, nut submit dung `Button` voi `loading={mutation.isPending}`. Khong viet `Controller` bang tay.
+
+```tsx
+<FormInput control={control} name="email" label="Email" keyboardType="email-address" />
+<FormError error={login.error} />
+<Button title="Đăng nhập" loading={login.isPending} onPress={onSubmit} />
 ```
 
 ## TypeScript

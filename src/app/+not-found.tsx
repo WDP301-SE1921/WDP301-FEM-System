@@ -8,9 +8,9 @@ import { Spacing } from '@/constants/theme';
 export default function NotFoundScreen() {
   return (
     <Screen scrollable={false} contentStyle={styles.container}>
-      <ThemedText type="subtitle">Khong tim thay trang nay.</ThemedText>
+      <ThemedText type="subtitle">Không tìm thấy trang này.</ThemedText>
       <Link href="/" style={styles.link}>
-        <ThemedText type="linkPrimary">Ve trang chu</ThemedText>
+        <ThemedText type="linkPrimary">Về trang chủ</ThemedText>
       </Link>
     </Screen>
   );

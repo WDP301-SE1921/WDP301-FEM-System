@@ -3,9 +3,9 @@ import { create } from 'zustand';
 import { setUnauthorizedHandler } from '@/api/client';
 import { queryClient } from '@/api/query-client';
 import { StorageKeys } from '@/constants/storage-keys';
-import type { AuthTokens, User } from '@/features/auth/types';
 import { logger } from '@/lib/logger';
 import { secureStorage, storage } from '@/lib/storage';
+import type { AuthTokens, User } from '@/types/auth';
 
 type AuthState = {
   user: User | null;

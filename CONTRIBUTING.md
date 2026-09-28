@@ -30,15 +30,19 @@ Chi tiet quy uoc nhanh/commit: [docs/GIT_WORKFLOW.md](docs/GIT_WORKFLOW.md).
 
 ## Dat code o dau
 
-| Ban dang viet gi                           | Dat o dau                  |
-| ------------------------------------------ | -------------------------- |
-| Man hinh moi                               | `src/app/(tabs)/<ten>.tsx` |
-| Logic nghiep vu, goi API, hook cua feature | `src/features/<ten>/`      |
-| Nut/o nhap dung lai duoc o nhieu noi       | `src/components/ui/`       |
-| Khoi giao dien dung chung (empty, error)   | `src/components/common/`   |
-| Ham thuan tuy (format, tinh toan)          | `src/utils/`               |
-| Mau sac, khoang cach, bo goc               | `src/constants/theme.ts`   |
-| Duong dan API                              | `src/api/endpoints.ts`     |
+| Ban dang viet gi                           | Dat o dau                        |
+| ------------------------------------------ | -------------------------------- |
+| Route man hinh moi (chi lap ghep)          | `src/app/(tabs)/<ten>.tsx`       |
+| Form, UI co logic cua man hinh             | `src/features/<ten>/components/` |
+| Logic nghiep vu, goi API, hook cua feature | `src/features/<ten>/`            |
+| Kieu dung chung nhieu feature              | `src/types/`                     |
+| Nut/o nhap dung lai duoc o nhieu noi       | `src/components/ui/`             |
+| Khoi giao dien dung chung (empty, error)   | `src/components/common/`         |
+| Ham thuan tuy (format, tinh toan)          | `src/utils/`                     |
+| Mau sac, khoang cach, bo goc               | `src/constants/theme.ts`         |
+| Duong dan API                              | `src/api/endpoints.ts`           |
+
+Dat sai cho hay import sai chieu thi `npm run lint` bao loi (luat trong `eslint.structure.js`, giai thich o [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#luat-phu-thuoc-eslint-ep-buoc)).
 
 Quy uoc chi tiet: [docs/CODING_CONVENTIONS.md](docs/CODING_CONVENTIONS.md).
 

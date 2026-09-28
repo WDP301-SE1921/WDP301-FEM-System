@@ -1,6 +1,16 @@
-import { getInitials, truncate } from '@/utils/format';
+import { formatDate, getInitials, truncate } from '@/utils/format';
 
 describe('utils/format', () => {
+  describe('formatDate', () => {
+    it('format theo dd/mm/yyyy', () => {
+      expect(formatDate(new Date(2026, 8, 27))).toBe('27/09/2026');
+    });
+
+    it('tra -- khi ngay khong hop le', () => {
+      expect(formatDate('khong-phai-ngay')).toBe('--');
+    });
+  });
+
   describe('getInitials', () => {
     it('lay 2 chu cai cuoi cua ho ten', () => {
       expect(getInitials('Le Phuc Thanh Nhan')).toBe('TN');
