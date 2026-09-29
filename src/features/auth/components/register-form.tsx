@@ -16,7 +16,7 @@ export function RegisterForm() {
 
   const { control, handleSubmit } = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: '', email: '', password: '', confirmPassword: '' },
+    defaultValues: { displayName: '', email: '', password: '', confirmPassword: '' },
   });
 
   const onSubmit = handleSubmit((values) => register.mutate(values));
@@ -25,7 +25,7 @@ export function RegisterForm() {
     <View style={styles.form}>
       <FormInput
         control={control}
-        name="fullName"
+        name="displayName"
         label="Họ và tên"
         placeholder="Nguyễn Văn A"
         autoComplete="name"

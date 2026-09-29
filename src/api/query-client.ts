@@ -26,6 +26,14 @@ export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
   },
+  parent: {
+    students: ['parent', 'students'] as const,
+    studentDashboard: (studentId: string) =>
+      ['parent', 'students', studentId, 'dashboard'] as const,
+    studentSchedule: (studentId: string, range: { from: string; to: string }) =>
+      ['parent', 'students', studentId, 'schedule', range] as const,
+    unreadNotificationCount: ['parent', 'notifications', 'unread-count'] as const,
+  },
   users: {
     all: ['users'] as const,
     list: (params?: Record<string, unknown>) => ['users', 'list', params ?? {}] as const,

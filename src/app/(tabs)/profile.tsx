@@ -7,11 +7,12 @@ import { getInitials } from '@/utils/format';
 export default function ProfileScreen() {
   const { user } = useAuth();
   const logout = useLogout();
+  const name = user?.displayName ?? user?.email;
 
   return (
     <Screen>
-      <ThemedText type="title">{user ? getInitials(user.fullName) : '--'}</ThemedText>
-      <ThemedText type="default">{user?.fullName ?? 'Chưa có thông tin'}</ThemedText>
+      <ThemedText type="title">{name ? getInitials(name) : '--'}</ThemedText>
+      <ThemedText type="default">{name ?? 'Chưa có thông tin'}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
         {user?.email}
       </ThemedText>

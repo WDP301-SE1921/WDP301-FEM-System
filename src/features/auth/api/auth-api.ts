@@ -1,22 +1,19 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import type { ApiResponse } from '@/types/api';
-import type { User } from '@/types/auth';
+import type { AuthSession, User } from '@/types/auth';
 
-import type { LoginInput, RegisterInput } from '../schemas';
-import type { LoginResponse } from '../types';
+import type { LoginInput } from '../schemas';
+import type { RegisterPayload } from '../types';
 
 export const authApi = {
-  async login(payload: LoginInput): Promise<LoginResponse> {
-    const { data } = await apiClient.post<ApiResponse<LoginResponse>>(
-      Endpoints.auth.login,
-      payload,
-    );
+  async login(payload: LoginInput): Promise<AuthSession> {
+    const { data } = await apiClient.post<ApiResponse<AuthSession>>(Endpoints.auth.login, payload);
     return data.data;
   },
 
-  async register(payload: Omit<RegisterInput, 'confirmPassword'>): Promise<LoginResponse> {
-    const { data } = await apiClient.post<ApiResponse<LoginResponse>>(
+  async register(payload: RegisterPayload): Promise<AuthSession> {
+    const { data } = await apiClient.post<ApiResponse<AuthSession>>(
       Endpoints.auth.register,
       payload,
     );

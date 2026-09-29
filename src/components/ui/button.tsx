@@ -10,16 +10,23 @@ import {
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+import { Icon, type IconName } from './icon';
 import { ThemedText } from './themed-text';
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
+
+const ICON_SIZE = 20;
 
 export type ButtonProps = Omit<PressableProps, 'style'> & {
   title: string;
   variant?: Variant;
   size?: Size;
   loading?: boolean;
+  /** Icon dat truoc chu. */
+  icon?: IconName;
+  /** Icon dat sau chu, thuong la mui ten dieu huong. */
+  trailingIcon?: IconName;
   style?: StyleProp<ViewStyle>;
 };
 
@@ -28,6 +35,8 @@ export function Button({
   variant = 'primary',
   size = 'md',
   loading = false,
+  icon,
+  trailingIcon,
   disabled,
   style,
   ...rest
@@ -68,9 +77,13 @@ export function Button({
       {loading ? (
         <ActivityIndicator color={textColor} size="small" />
       ) : (
-        <ThemedText type="default" style={{ color: textColor }}>
-          {title}
-        </ThemedText>
+        <>
+          {icon ? <Icon name={icon} size={ICON_SIZE} color={textColor} /> : null}
+          <ThemedText type="default" style={{ color: textColor }}>
+            {title}
+          </ThemedText>
+          {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} color={textColor} /> : null}
+        </>
       )}
     </Pressable>
   );
@@ -78,8 +91,10 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: Spacing.two,
     borderRadius: Radius.md,
   },
   pressed: { opacity: 0.75 },

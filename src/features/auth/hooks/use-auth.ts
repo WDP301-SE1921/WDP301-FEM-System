@@ -3,10 +3,10 @@ import { router } from 'expo-router';
 
 import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/store/auth-store';
+import type { AuthSession } from '@/types/auth';
 
 import { authApi } from '../api/auth-api';
 import type { LoginInput, RegisterInput } from '../schemas';
-import type { LoginResponse } from '../types';
 
 /** Doc trang thai dang nhap hien tai. */
 export function useAuth() {
@@ -20,7 +20,7 @@ export function useAuth() {
 function useStartSession() {
   const signIn = useAuthStore((s) => s.signIn);
 
-  return async (session: LoginResponse) => {
+  return async (session: AuthSession) => {
     await signIn(session);
     router.replace('/(tabs)');
   };

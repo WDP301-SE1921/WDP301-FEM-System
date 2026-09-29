@@ -1,8 +1,7 @@
-/** Kieu du lieu dung chung cho response tu backend. */
+/** Kieu du lieu dung chung cho response tu backend (xem docs/api-conventions.md cua BE). */
 
 export type ApiResponse<T> = {
-  success: boolean;
-  message: string;
+  success: true;
   data: T;
 };
 
@@ -15,16 +14,23 @@ export type Paginated<T> = {
 };
 
 export type ApiErrorBody = {
-  message?: string;
-  errors?: Record<string, string[]>;
+  success: false;
+  error: {
+    /** Ma loi on dinh cua BE, vd `VALIDATION_ERROR`, `INVITATION_EXPIRED`. */
+    code: string;
+    /** Thong bao tieng Anh cua BE, chi de debug, khong hien len UI. */
+    message: string;
+    requestId: string;
+    details?: unknown;
+  };
 };
 
-/** Loi da duoc chuan hoa truoc khi den tang UI. */
+/** Loi da duoc chuan hoa truoc khi den tang UI. `message` luon la tieng Viet hien duoc. */
 export class AppError extends Error {
   constructor(
     message: string,
     readonly status?: number,
-    readonly fieldErrors?: Record<string, string[]>,
+    readonly code?: string,
   ) {
     super(message);
     this.name = 'AppError';

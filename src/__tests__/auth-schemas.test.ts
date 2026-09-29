@@ -10,39 +10,51 @@ function firstError(result: ParseResult, field: string) {
 describe('features/auth/schemas', () => {
   describe('loginSchema', () => {
     it('chap nhan du lieu hop le', () => {
-      expect(loginSchema.safeParse({ email: 'a@b.vn', password: '123456' }).success).toBe(true);
+      expect(loginSchema.safeParse({ email: 'a@b.vn', password: '12345678' }).success).toBe(true);
     });
 
     it('bao loi khi bo trong email', () => {
-      const result = loginSchema.safeParse({ email: '', password: '123456' });
+      const result = loginSchema.safeParse({ email: '', password: '12345678' });
       expect(firstError(result, 'email')).toBe('Vui lòng nhập email');
     });
 
     it('bao loi khi email sai dinh dang', () => {
-      const result = loginSchema.safeParse({ email: 'abc', password: '123456' });
+      const result = loginSchema.safeParse({ email: 'abc', password: '12345678' });
       expect(firstError(result, 'email')).toBe('Email không hợp lệ');
     });
 
-    it('bao loi khi mat khau qua ngan', () => {
-      const result = loginSchema.safeParse({ email: 'a@b.vn', password: '123' });
-      expect(firstError(result, 'password')).toBe('Mật khẩu tối thiểu 6 ký tự');
+    it('bao loi khi mat khau ngan hon 8 ky tu nhu LoginDto', () => {
+      const result = loginSchema.safeParse({ email: 'a@b.vn', password: '1234567' });
+      expect(firstError(result, 'password')).toBe('Mật khẩu tối thiểu 8 ký tự');
     });
   });
 
   describe('registerSchema', () => {
     const valid = {
-      fullName: 'Nguyễn Văn A',
+      displayName: 'Nguyễn Văn A',
       email: 'a@b.vn',
-      password: '123456',
-      confirmPassword: '123456',
+      password: '12345678',
+      confirmPassword: '12345678',
     };
 
-    it('chap nhan du lieu hop le', () => {
-      expect(registerSchema.safeParse(valid).success).toBe(true);
+    it('chap nhan du lieu hop le va trim ho ten', () => {
+      const result = registerSchema.safeParse({ ...valid, displayName: '  Nguyễn Văn A  ' });
+      expect(result.data?.displayName).toBe('Nguyễn Văn A');
+    });
+
+    it('bao loi khi ho ten chi co khoang trang', () => {
+      const result = registerSchema.safeParse({ ...valid, displayName: '   ' });
+      expect(firstError(result, 'displayName')).toBe('Vui lòng nhập họ tên');
+    });
+
+    it('bao loi khi mat khau dai hon 72 ky tu', () => {
+      const password = 'a'.repeat(73);
+      const result = registerSchema.safeParse({ ...valid, password, confirmPassword: password });
+      expect(firstError(result, 'password')).toBe('Mật khẩu tối đa 72 ký tự');
     });
 
     it('bao loi o confirmPassword khi mat khau xac nhan khong khop', () => {
-      const result = registerSchema.safeParse({ ...valid, confirmPassword: '654321' });
+      const result = registerSchema.safeParse({ ...valid, confirmPassword: '87654321' });
       expect(firstError(result, 'confirmPassword')).toBe('Mật khẩu xác nhận không khớp');
     });
   });

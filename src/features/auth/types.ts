@@ -1,5 +1,4 @@
-import type { AuthTokens, User } from '@/types/auth';
+import type { RegisterInput } from './schemas';
 
-export type LoginResponse = AuthTokens & {
-  user: User;
-};
+/** Body POST /auth/register (RegisterParentDto). `confirmPassword` chi de validate o client. */
+export type RegisterPayload = Omit<RegisterInput, 'confirmPassword'>;

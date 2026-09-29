@@ -1,4 +1,7 @@
+export * from './components/login-footer';
 export * from './components/login-form';
+export * from './components/login-header';
+export * from './components/login-intro';
 export * from './components/register-form';
 export * from './hooks/use-auth';
 export * from './schemas';

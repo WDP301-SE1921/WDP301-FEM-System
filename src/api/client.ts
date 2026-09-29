@@ -6,14 +6,27 @@ import { StorageKeys } from '@/constants/storage-keys';
 import { logger } from '@/lib/logger';
 import { secureStorage } from '@/lib/storage';
 import { AppError, type ApiErrorBody, type ApiResponse } from '@/types/api';
+import type { AuthSession } from '@/types/auth';
+import { getApiErrorMessage } from '@/utils/error';
 
 import { Endpoints } from './endpoints';
+import { installMockApi } from './mocks';
 
-export const apiClient = axios.create({
+const clientConfig = {
   baseURL: Config.apiUrl,
   timeout: Config.requestTimeout,
   headers: { 'Content-Type': 'application/json' },
-});
+};
+
+export const apiClient = axios.create(clientConfig);
+
+/**
+ * Chi dung cho refresh token. Khong gan interceptor de 401 cua chinh no khong kich hoat
+ * refresh lan nua (vong lap vo han), nhung van di qua mock nhu apiClient.
+ */
+const refreshClient = axios.create(clientConfig);
+
+if (Config.useMockApi) installMockApi(apiClient, refreshClient);
 
 /**
  * Auth store dang ky callback nay de tranh vong lap import
@@ -35,9 +48,6 @@ apiClient.interceptors.request.use(async (config: InternalAxiosRequestConfig) =>
 // --- Response: tu dong refresh token khi gap 401 ---
 type RetriableConfig = AxiosRequestConfig & { _retry?: boolean };
 
-/** Backend co the xoay vong refresh token: co gia tri moi thi phai luu de thay ban cu. */
-type RefreshTokenResponse = { accessToken: string; refreshToken?: string };
-
 let refreshPromise: Promise<string | null> | null = null;
 
 async function refreshAccessToken(): Promise<string | null> {
@@ -45,16 +55,15 @@ async function refreshAccessToken(): Promise<string | null> {
   if (!refreshToken) return null;
 
   try {
-    // Dung axios goc de khong bi interceptor bat lai -> vong lap vo han
-    const { data } = await axios.post<ApiResponse<RefreshTokenResponse>>(
-      `${Config.apiUrl}${Endpoints.auth.refresh}`,
-      { refreshToken },
-    );
-    const tokens = data.data;
-    if (!tokens?.accessToken) return null;
-
-    await secureStorage.set(StorageKeys.accessToken, tokens.accessToken);
-    if (tokens.refreshToken) await secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken);
+    const { data } = await refreshClient.post<ApiResponse<AuthSession>>(Endpoints.auth.refresh, {
+      refreshToken,
+    });
+    // BE xoay vong refresh token sau moi lan dung: phai luu ca cap, dung lai token cu se bi thu hoi phien
+    const { tokens } = data.data;
+    await Promise.all([
+      secureStorage.set(StorageKeys.accessToken, tokens.accessToken),
+      secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken),
+    ]);
     return tokens.accessToken;
   } catch (error) {
     logger.warn('Refresh token that bai', error);
@@ -64,7 +73,7 @@ async function refreshAccessToken(): Promise<string | null> {
 
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError<ApiErrorBody>) => {
+  async (error: AxiosError<Partial<ApiErrorBody>>) => {
     const original = error.config as RetriableConfig | undefined;
     const status = error.response?.status;
 
@@ -89,15 +98,15 @@ apiClient.interceptors.response.use(
   },
 );
 
-/** Bien loi axios thanh AppError de UI xu ly thong nhat. */
-function normalizeError(error: AxiosError<ApiErrorBody>): AppError {
+/**
+ * Bien loi axios thanh AppError de UI xu ly thong nhat.
+ * Body loi co the khong theo envelope (vd trang HTML cua proxy) nen doc `error.code` kieu Partial.
+ */
+function normalizeError(error: AxiosError<Partial<ApiErrorBody>>): AppError {
   if (error.response) {
-    const body = error.response.data;
-    return new AppError(
-      body?.message ?? ErrorMessages.unknown,
-      error.response.status,
-      body?.errors,
-    );
+    const { status, data } = error.response;
+    const code = data?.error?.code;
+    return new AppError(getApiErrorMessage(code, status), status, code);
   }
   if (error.code === 'ECONNABORTED') {
     return new AppError(ErrorMessages.timeout);

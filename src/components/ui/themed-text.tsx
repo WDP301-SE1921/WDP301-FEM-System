@@ -4,7 +4,15 @@ import { Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextVariant =
-  'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'link' | 'linkPrimary' | 'code';
+  | 'default'
+  | 'title'
+  | 'heading'
+  | 'small'
+  | 'smallBold'
+  | 'subtitle'
+  | 'link'
+  | 'linkPrimary'
+  | 'code';
 
 export type ThemedTextProps = TextProps & {
   type?: TextVariant;
@@ -49,6 +57,12 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 44,
     fontWeight: 600,
+  },
+  /** Tieu de khoi noi dung, nho hon `subtitle`. */
+  heading: {
+    fontSize: 20,
+    lineHeight: 28,
+    fontWeight: 700,
   },
   link: {
     lineHeight: 30,

@@ -5,7 +5,7 @@ import { queryClient } from '@/api/query-client';
 import { StorageKeys } from '@/constants/storage-keys';
 import { logger } from '@/lib/logger';
 import { secureStorage, storage } from '@/lib/storage';
-import type { AuthTokens, User } from '@/types/auth';
+import type { AuthSession, User } from '@/types/auth';
 
 type AuthState = {
   user: User | null;
@@ -13,7 +13,8 @@ type AuthState = {
   /** false cho toi khi doc xong token da luu -> tranh nhay man hinh luc mo app */
   isHydrated: boolean;
   hydrate: () => Promise<void>;
-  signIn: (payload: AuthTokens & { user: User }) => Promise<void>;
+  /** Luu phien BE tra ve sau login, register, claim-and-sign-up. */
+  signIn: (session: AuthSession) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -36,10 +37,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
   },
 
-  signIn: async ({ accessToken, refreshToken, user }) => {
+  signIn: async ({ user, tokens }) => {
     await Promise.all([
-      secureStorage.set(StorageKeys.accessToken, accessToken),
-      secureStorage.set(StorageKeys.refreshToken, refreshToken),
+      secureStorage.set(StorageKeys.accessToken, tokens.accessToken),
+      secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken),
       storage.setJson(StorageKeys.user, user),
     ]);
     set({ user, isAuthenticated: true });

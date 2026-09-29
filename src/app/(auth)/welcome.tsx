@@ -1,0 +1,46 @@
+import { router } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
+
+import { Screen } from '@/components/common/screen';
+import { Button } from '@/components/ui/button';
+import { ThemedText } from '@/components/ui/themed-text';
+import { Radius, Spacing } from '@/constants/theme';
+import { BrandHeader, ValueProposition, WelcomeHero } from '@/features/onboarding';
+
+/** Man hinh chao cho nguoi chua dang nhap: dung ma lien ket hoac dang nhap. */
+export default function WelcomeScreen() {
+  return (
+    <Screen contentStyle={styles.content}>
+      <BrandHeader />
+      <WelcomeHero />
+      <ValueProposition />
+
+      <View style={styles.actions}>
+        <Button
+          title="Tôi có mã liên kết"
+          icon="link-outline"
+          trailingIcon="arrow-forward"
+          style={styles.pill}
+          onPress={() => router.push('/(auth)/link-code')}
+        />
+        <Button
+          title="Đăng nhập"
+          variant="ghost"
+          icon="log-in-outline"
+          style={styles.pill}
+          onPress={() => router.push('/(auth)/login')}
+        />
+        <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
+          Dành cho Phụ huynh & Giáo viên EduGrade
+        </ThemedText>
+      </View>
+    </Screen>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: { gap: Spacing.four },
+  actions: { marginTop: 'auto', gap: Spacing.three },
+  pill: { borderRadius: Radius.full },
+  footer: { textAlign: 'center' },
+});

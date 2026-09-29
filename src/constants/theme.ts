@@ -17,9 +17,17 @@ export const Colors = {
     border: '#D7DBDF',
     primary: '#208AEF',
     primaryText: '#FFFFFF',
+    accent: '#F59E0B',
     danger: '#DC2626',
     success: '#16A34A',
     warning: '#D97706',
+    /** Nen nhat cho chip, icon tron, di kem mau cung ten o tren. */
+    primarySoft: '#DBEAFE',
+    accentSoft: '#FEF3C7',
+    successSoft: '#DCFCE7',
+    dangerSoft: '#FEE2E2',
+    /** Lop phu mo phia sau bottom sheet va modal. */
+    overlay: 'rgba(15, 23, 42, 0.4)',
   },
   dark: {
     text: '#ECEDEE',
@@ -30,9 +38,15 @@ export const Colors = {
     border: '#3A3D42',
     primary: '#3C9DF5',
     primaryText: '#FFFFFF',
+    accent: '#FBBF24',
     danger: '#F87171',
     success: '#4ADE80',
     warning: '#FBBF24',
+    primarySoft: '#172554',
+    accentSoft: '#451A03',
+    successSoft: '#052E16',
+    dangerSoft: '#450A0A',
+    overlay: 'rgba(0, 0, 0, 0.6)',
   },
 } as const;
 
@@ -73,7 +87,11 @@ export const Spacing = {
 export const Radius = {
   sm: 6,
   md: 10,
+  /** O nhap, nut, chip nho: muc toi thieu cua design-mobile.md. */
+  control: 12,
   lg: 16,
+  /** Khoi lon, anh lon (design-mobile.md). */
+  xl: 24,
   full: 999,
 } as const;
 
