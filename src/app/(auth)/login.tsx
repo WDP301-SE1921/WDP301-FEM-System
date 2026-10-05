@@ -22,7 +22,7 @@ export default function LoginScreen() {
           <LoginForm />
         </View>
 
-        <LoginFooter onLinkCode={() => router.push('/(auth)/link-code')} />
+        <LoginFooter onRegister={() => router.push('/(auth)/register')} />
       </KeyboardAvoidingView>
     </Screen>
   );

@@ -21,12 +21,7 @@ const TABS: readonly TabConfig[] = [
     icon: 'document-text-outline',
     focusedIcon: 'document-text',
   },
-  {
-    name: 'notifications',
-    title: 'Thông báo',
-    icon: 'notifications-outline',
-    focusedIcon: 'notifications',
-  },
+  { name: 'tuition', title: 'Học phí', icon: 'wallet-outline', focusedIcon: 'wallet' },
   {
     name: 'profile',
     title: 'Tài khoản',
@@ -34,6 +29,12 @@ const TABS: readonly TabConfig[] = [
     focusedIcon: 'person-circle',
   },
 ];
+
+/**
+ * Route nam trong `(tabs)/` nhung khong co nut tren thanh tab, chi mo tu man hinh khac. Thong bao
+ * mo tu nut chuong va "Xem tất cả" o trang chu.
+ */
+const HIDDEN_ROUTES = ['notifications'] as const;
 
 export default function TabsLayout() {
   const { isAuthenticated } = useAuth();
@@ -62,6 +63,9 @@ export default function TabsLayout() {
             ),
           }}
         />
+      ))}
+      {HIDDEN_ROUTES.map((name) => (
+        <Tabs.Screen key={name} name={name} options={{ href: null }} />
       ))}
     </Tabs>
   );

@@ -22,7 +22,8 @@ export type ScheduleHeaderProps = {
   weekStart: Date;
   /** Con dang xem. Chua co con (dang tai, loi, chua lien ket) thi an nut chon tuan va chon con. */
   student: LinkedStudent | undefined;
-  onPressWeek: () => void;
+  /** Khong truyen khi khong xem lich tuan (mon hoc, diem danh): an nut chon tuan. */
+  onPressWeek?: () => void;
   onPressStudent: () => void;
 };
 
@@ -41,7 +42,7 @@ export function ScheduleHeader({
         <ThemedText type="heading" accessibilityRole="header">
           Lịch học
         </ThemedText>
-        {student ? (
+        {student && onPressWeek ? (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Chọn tuần, đang xem tuần ${weekRange}`}

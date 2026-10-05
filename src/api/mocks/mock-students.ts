@@ -1,13 +1,15 @@
 /**
- * Hoc sinh gia dung chung cho cac mock (parent, link-invitations), dong vai bang `student_profiles`
- * cua BE (StudentProfile: fullName, grade 6-9). Hoc sinh mau:
- * - phuhuynh@example.com    : Nguyễn Minh Anh (lop 8), Nguyễn Hoàng Long (lop 6)
- * - phuhuynh.cu@example.com : chua lien ket con nao
+ * Hoc sinh gia dung chung cho cac mock cua phu huynh, dong vai bang `student_profiles` cua BE
+ * (StudentProfile: fullName, grade 6-9, dateOfBirth). Hoc sinh mau:
+ * - phuhuynh@example.com    : Nguyễn Minh Anh (lop 8, sinh 15/03/2013), Nguyễn Hoàng Long (lop 6,
+ *                             chua co ngay sinh)
+ * - phuhuynh.cu@example.com : chua co con nao
  *
- * Tai khoan tao bang ma DEMONEW1, hoac phu huynh dung ma DEMOADD1/DEMOOLD1 khi da dang nhap
- * (`./link-invitations.ts`), duoc lien ket them mot hoc sinh, chi nam trong bo nho cho toi khi
- * tai lai app.
+ * Con phu huynh tu tao qua POST /parent/students (`./parent.ts`) va thay doi qua
+ * PATCH /me/students/:id (`./registration-flow.ts`) chi nam trong bo nho cho toi khi tai lai app.
  */
+
+const SEED_TIMESTAMP = '2026-09-01T00:00:00.000Z';
 
 export type MockStudent = {
   id: string;
@@ -15,9 +17,16 @@ export type MockStudent = {
   parentUserId: string;
   fullName: string;
   grade: number;
+  /** `YYYY-MM-DD`, null khi phu huynh bo trong. */
+  dateOfBirth: string | null;
   /** Mon cua cac Enrollment `ACTIVE`, lay tu Program cua Class. */
   subjectNames: string[];
+  createdAt: string;
+  updatedAt: string;
 };
+
+/** Cac field phu huynh sua duoc (UpdateStudentDto cua BE). */
+export type MockStudentChanges = Partial<Pick<MockStudent, 'fullName' | 'grade' | 'dateOfBirth'>>;
 
 const students: MockStudent[] = [
   {
@@ -25,14 +34,20 @@ const students: MockStudent[] = [
     parentUserId: 'mock-user-1',
     fullName: 'Nguyễn Minh Anh',
     grade: 8,
-    subjectNames: ['Toán', 'Vật lý'],
+    dateOfBirth: '2013-03-15',
+    subjectNames: ['Toán', 'Vật lý', 'Hóa học'],
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
   },
   {
     id: 'mock-student-2',
     parentUserId: 'mock-user-1',
     fullName: 'Nguyễn Hoàng Long',
     grade: 6,
+    dateOfBirth: null,
     subjectNames: ['Tiếng Anh'],
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
   },
 ];
 
@@ -52,10 +67,37 @@ export function findStudentOfParent(
   );
 }
 
-export function linkStudent(input: Omit<MockStudent, 'id'>): MockStudent {
+/** Khong kiem tra phu huynh: dung khi route phan biet "khong ton tai" (404) voi "cua nguoi khac" (403). */
+export function findStudentById(studentId: string): MockStudent | undefined {
+  return students.find((student) => student.id === studentId);
+}
+
+export function addStudent(
+  input: Omit<MockStudent, 'id' | 'createdAt' | 'updatedAt'>,
+): MockStudent {
   sequence += 1;
+  const now = new Date().toISOString();
   // Date.now giu id khong trung voi id da phat truoc lan tai lai app
-  const student = { ...input, id: `mock-student-${Date.now().toString(36)}${sequence}` };
+  const student = {
+    ...input,
+    id: `mock-student-${Date.now().toString(36)}${sequence}`,
+    createdAt: now,
+    updatedAt: now,
+  };
   students.push(student);
   return student;
+}
+
+/** Ghi thay doi vao ho so. Tra undefined khi khong co hoc sinh nay. */
+export function updateStudent(
+  studentId: string,
+  changes: MockStudentChanges,
+): MockStudent | undefined {
+  const index = students.findIndex((student) => student.id === studentId);
+  const current = students[index];
+  if (!current) return undefined;
+
+  const updated = { ...current, ...changes, updatedAt: new Date().toISOString() };
+  students[index] = updated;
+  return updated;
 }

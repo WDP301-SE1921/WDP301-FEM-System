@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -17,81 +17,97 @@ const HIGHLIGHT_WIDTH = 6;
 const TIME_ICON_SIZE = 18;
 const DETAIL_ICON_SIZE = 16;
 const TEACHER_AVATAR_SIZE = 32;
+const CHEVRON_SIZE = 18;
 
-export type ScheduleSessionCardProps = {
+type SessionBadgeProps = {
   session: ScheduleSession;
   /** Buoi co dinh chi hien trang thai (sap / dang dien ra / da ket thuc) khi la ngay hom nay. */
   isToday: boolean;
 };
 
+export type ScheduleSessionCardProps = SessionBadgeProps & {
+  /** Mo chi tiet buoi hoc. */
+  onPress: () => void;
+};
+
 /** Mot buoi trong lich: gio, lop, ghi chu cua trung tam, giao vien va phong hoc. */
-export function ScheduleSessionCard({ session, isToday }: ScheduleSessionCardProps) {
+export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessionCardProps) {
   const theme = useTheme();
   const appearance = SESSION_TYPES[session.type];
   const tone = TONES[appearance.tone];
   const title = session.topic ? `${session.className} – ${session.topic}` : session.className;
 
   return (
-    <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
-      <View style={[styles.highlight, { backgroundColor: theme[tone.color] }]} />
+    <Pressable
+      accessibilityRole="button"
+      accessibilityHint="Xem chi tiết buổi học"
+      onPress={onPress}
+      style={({ pressed }) => [pressed && styles.pressed]}
+    >
+      <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
+        <View style={[styles.highlight, { backgroundColor: theme[tone.color] }]} />
 
-      <View style={styles.header}>
-        <View style={styles.row}>
-          <Icon name="time-outline" size={TIME_ICON_SIZE} themeColor={tone.color} />
-          <ThemedText type="smallBold">
-            {formatTime(session.startsAt)} – {formatTime(session.endsAt)}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            ({DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)]})
-          </ThemedText>
-        </View>
-        <SessionBadge session={session} isToday={isToday} />
-      </View>
-
-      <ThemedText type="default" style={styles.title}>
-        {title}
-      </ThemedText>
-
-      {session.note ? (
-        <ThemedView type={tone.soft} style={styles.note}>
-          <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.color} />
-          <ThemedText type="small" style={styles.noteText}>
-            {session.note}
-          </ThemedText>
-        </ThemedView>
-      ) : null}
-
-      <View style={styles.footer}>
-        <View style={[styles.row, styles.teacher]}>
-          <ThemedView type={tone.soft} style={styles.teacherAvatar}>
-            <ThemedText type="smallBold" themeColor={tone.color}>
-              {getInitials(session.teacherName)}
+        <View style={styles.header}>
+          <View style={styles.row}>
+            <Icon name="time-outline" size={TIME_ICON_SIZE} themeColor={tone.color} />
+            <ThemedText type="smallBold">
+              {formatTime(session.startsAt)} – {formatTime(session.endsAt)}
             </ThemedText>
-          </ThemedView>
-          <View style={styles.teacherInfo}>
-            <ThemedText type="smallBold" numberOfLines={1}>
-              {session.teacherName}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-              Giáo viên môn {session.subjectName}
+            <ThemedText type="small" themeColor="textSecondary">
+              ({DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)]})
             </ThemedText>
           </View>
+          <SessionBadge session={session} isToday={isToday} />
         </View>
-        {session.room ? (
-          <ThemedView style={[styles.row, styles.room]}>
-            <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor={tone.color} />
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-              Phòng {session.room}
+
+        <View style={styles.titleRow}>
+          <ThemedText type="default" style={styles.title}>
+            {title}
+          </ThemedText>
+          <Icon name="chevron-forward" size={CHEVRON_SIZE} themeColor="textSecondary" />
+        </View>
+
+        {session.note ? (
+          <ThemedView type={tone.soft} style={styles.note}>
+            <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.color} />
+            <ThemedText type="small" style={styles.noteText}>
+              {session.note}
             </ThemedText>
           </ThemedView>
         ) : null}
-      </View>
-    </ThemedView>
+
+        <View style={styles.footer}>
+          <View style={[styles.row, styles.teacher]}>
+            <ThemedView type={tone.soft} style={styles.teacherAvatar}>
+              <ThemedText type="smallBold" themeColor={tone.color}>
+                {getInitials(session.teacherName)}
+              </ThemedText>
+            </ThemedView>
+            <View style={styles.teacherInfo}>
+              <ThemedText type="smallBold" numberOfLines={1}>
+                {session.teacherName}
+              </ThemedText>
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                Giáo viên môn {session.subjectName}
+              </ThemedText>
+            </View>
+          </View>
+          {session.room ? (
+            <ThemedView style={[styles.row, styles.room]}>
+              <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor={tone.color} />
+              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+                Phòng {session.room}
+              </ThemedText>
+            </ThemedView>
+          ) : null}
+        </View>
+      </ThemedView>
+    </Pressable>
   );
 }
 
 /** Buoi hoc bu, doi lich luon hien loai buoi vi day la thong tin phu huynh can biet nhat. */
-function SessionBadge({ session, isToday }: ScheduleSessionCardProps) {
+function SessionBadge({ session, isToday }: SessionBadgeProps) {
   const { badge, tone } = SESSION_TYPES[session.type];
   if (badge) return <ToneBadge label={badge.label} tone={tone} icon={badge.icon} />;
   if (!isToday) return null;
@@ -116,8 +132,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.two,
   },
+  pressed: { opacity: 0.75 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
-  title: { fontWeight: 700 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  title: { flex: 1, fontWeight: 700 },
   note: {
     flexDirection: 'row',
     alignItems: 'center',

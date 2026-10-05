@@ -8,7 +8,7 @@ import { toDateKey } from '@/utils/date';
 import { formatWeekdayDate, getShortName } from '@/utils/format';
 
 import { useStudentSchedule } from '../hooks/use-parent-dashboard';
-import type { LinkedStudent, WeekDay } from '../types';
+import type { LinkedStudent, SessionRef, WeekDay } from '../types';
 import { buildWeekDays, findNextFreeDay, getWeekRange } from '../utils';
 
 import { FreeDayCard } from './free-day-card';
@@ -25,6 +25,7 @@ export type StudentWeekScheduleProps = {
   today: Date;
   onSelectDate: (date: Date) => void;
   onOpenAssignments: () => void;
+  onOpenSession: (session: SessionRef) => void;
 };
 
 /** Lich mot tuan cua con: thanh chon ngay va cac buoi hoc cua ngay dang chon. */
@@ -35,6 +36,7 @@ export function StudentWeekSchedule({
   today,
   onSelectDate,
   onOpenAssignments,
+  onOpenSession,
 }: StudentWeekScheduleProps) {
   const schedule = useStudentSchedule(student.id, getWeekRange(weekStart));
   const days = buildWeekDays(weekStart, schedule.data ?? []);
@@ -64,7 +66,12 @@ export function StudentWeekSchedule({
     return (
       <>
         {selectedDay.sessions.map((session) => (
-          <ScheduleSessionCard key={session.id} session={session} isToday={isToday} />
+          <ScheduleSessionCard
+            key={session.id}
+            session={session}
+            isToday={isToday}
+            onPress={() => onOpenSession({ studentId: student.id, sessionId: session.id })}
+          />
         ))}
         {nextFreeDay ? (
           <NextFreeDayCard date={nextFreeDay.date} onView={() => onSelectDate(nextFreeDay.date)} />

@@ -20,8 +20,8 @@ export type AuthTokens = {
 };
 
 /**
- * Phien BE tra ve sau khi xac thuc (AuthResponseDto): login, register, refresh
- * va claim-and-sign-up deu dung chung hop dong nay.
+ * Phien BE tra ve sau khi xac thuc (AuthResponseDto): login, register va refresh deu dung chung
+ * hop dong nay.
  */
 export type AuthSession = {
   user: User;

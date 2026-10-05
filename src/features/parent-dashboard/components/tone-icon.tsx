@@ -7,9 +7,9 @@ import { Radius } from '@/constants/theme';
 import { TONES, type Tone } from '../constants';
 
 type Variant = 'soft' | 'solid';
-type Size = 'sm' | 'md';
+type Size = 'sm' | 'md' | 'lg';
 
-const ICON_SIZES: Record<Size, number> = { sm: 16, md: 18 };
+const ICON_SIZES: Record<Size, number> = { sm: 16, md: 18, lg: 24 };
 
 export type ToneIconProps = {
   name: IconName;
@@ -38,4 +38,5 @@ const styles = StyleSheet.create({
 const sizeStyles = StyleSheet.create({
   sm: { width: 28, height: 28 },
   md: { width: 36, height: 36 },
+  lg: { width: 48, height: 48 },
 });

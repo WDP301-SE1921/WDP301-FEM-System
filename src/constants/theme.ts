@@ -28,6 +28,8 @@ export const Colors = {
     dangerSoft: '#FEE2E2',
     /** Lop phu mo phia sau bottom sheet va modal. */
     overlay: 'rgba(15, 23, 42, 0.4)',
+    /** Nen chip va hinh trang tri dat tren khoi nen `primary`, vd khoi hero. */
+    primaryOverlay: 'rgba(255, 255, 255, 0.18)',
   },
   dark: {
     text: '#ECEDEE',
@@ -47,6 +49,7 @@ export const Colors = {
     successSoft: '#052E16',
     dangerSoft: '#450A0A',
     overlay: 'rgba(0, 0, 0, 0.6)',
+    primaryOverlay: 'rgba(255, 255, 255, 0.18)',
   },
 } as const;
 

@@ -89,7 +89,11 @@ function mockTwoChildren() {
 }
 
 async function renderSchedule() {
-  const handlers = { onAddChild: jest.fn(), onOpenAssignments: jest.fn() };
+  const handlers = {
+    onAddChild: jest.fn(),
+    onOpenAssignments: jest.fn(),
+    onOpenSession: jest.fn(),
+  };
   // gcTime vo han de React Query khong hen gio don cache sau khi test ket thuc
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
@@ -124,6 +128,20 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     expect(dayButton(TODAY)).toBeSelected();
     // Buoi hoc bu cua ngay khac chi hien khi chon ngay do
     expect(screen.queryByText('Học bù')).not.toBeOnTheScreen();
+  });
+
+  it('bam the buoi hoc thi mo chi tiet dung buoi cua dung con', async () => {
+    mockTwoChildren();
+    const { onOpenSession, user } = await renderSchedule();
+    await waitForTodaySession();
+
+    // Ten nut ghep tu chu trong the, co ca ky tu icon
+    await user.press(screen.getByRole('button', { name: /Toán nâng cao 8A2 – Đại số/ }));
+
+    expect(onOpenSession).toHaveBeenCalledWith({
+      studentId: MINH_ANH.id,
+      sessionId: MATH_TODAY.id,
+    });
   });
 
   it('chon ngay khac xem buoi hoc bu; ngay nghi goi y xem bai tap', async () => {
@@ -192,15 +210,15 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     ).toBeOnTheScreen();
   });
 
-  it('chua lien ket con: an nut chon tuan, hien nut nhap ma', async () => {
+  it('chua co con: an nut chon tuan, hien nut them con', async () => {
     api.getStudents.mockResolvedValue([]);
     const { onAddChild, user } = await renderSchedule();
 
-    expect(await screen.findByText('Chưa liên kết học sinh')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có hồ sơ của con')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /^Chọn tuần/ })).not.toBeOnTheScreen();
     expect(api.getStudentSchedule).not.toHaveBeenCalled();
 
-    await user.press(screen.getByRole('button', { name: 'Nhập mã liên kết' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);
   });
 

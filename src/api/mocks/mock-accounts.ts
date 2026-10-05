@@ -1,13 +1,13 @@
 /**
- * Tai khoan va phien gia dung chung cho cac mock (auth, link-invitations), dong vai bang `users`
- * va `auth_sessions` cua BE. Tai khoan mau, mat khau deu la `Matkhau123`:
+ * Tai khoan va phien gia cua mock auth (cac mock khac kiem tra Bearer qua `./auth`), dong vai
+ * bang `users` va `auth_sessions` cua BE. Tai khoan mau, mat khau deu la `Matkhau123`:
  * - phuhuynh@example.com    : PARENT
- * - phuhuynh.cu@example.com : PARENT, trung email cua ma lien ket DEMOOLD1
+ * - phuhuynh.cu@example.com : PARENT, chua co con nao
  * - giaovien@example.com    : TEACHER
  * - khoa@example.com        : PARENT bi DISABLED, dang nhap bao sai thong tin nhu BE
  *
  * Token mang san userId va sessionId nen tai khoan mau van con dang nhap sau khi tai lai app.
- * Tai khoan tao luc chay (register, claim-and-sign-up) va phien bi thu hoi chi nam trong bo nho.
+ * Tai khoan tao luc chay (register) va phien bi thu hoi chi nam trong bo nho.
  */
 import type { AuthSession, User, UserRole } from '@/types/auth';
 
@@ -78,7 +78,7 @@ export function findAccountByEmail(email: string): MockAccount | undefined {
   return accounts.get(email);
 }
 
-function findUserById(id: string): User | undefined {
+export function findUserById(id: string): User | undefined {
   return [...accounts.values()].find((account) => account.user.id === id)?.user;
 }
 

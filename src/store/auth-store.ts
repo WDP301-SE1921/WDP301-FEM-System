@@ -13,7 +13,7 @@ type AuthState = {
   /** false cho toi khi doc xong token da luu -> tranh nhay man hinh luc mo app */
   isHydrated: boolean;
   hydrate: () => Promise<void>;
-  /** Luu phien BE tra ve sau login, register, claim-and-sign-up. */
+  /** Luu phien BE tra ve sau login, register. */
   signIn: (session: AuthSession) => Promise<void>;
   signOut: () => Promise<void>;
 };

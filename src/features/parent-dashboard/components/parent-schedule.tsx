@@ -8,10 +8,15 @@ import { Spacing } from '@/constants/theme';
 import { startOfDay, startOfWeek } from '@/utils/date';
 
 import { useLinkedStudents } from '../hooks/use-parent-dashboard';
+import type { ScheduleView, SessionRef } from '../types';
 import { getDefaultDayOfWeek } from '../utils';
 
 import { ChildPickerSheet } from './child-picker-sheet';
 import { ScheduleHeader } from './schedule-header';
+import { ScheduleViewSwitch } from './schedule-view-switch';
+import { StudentAttendance } from './student-attendance';
+import { StudentCourses } from './student-courses';
+import { StudentRoadmap } from './student-roadmap';
 import { StudentWeekSchedule } from './student-week-schedule';
 import { WeekPickerSheet } from './week-picker-sheet';
 
@@ -21,15 +26,24 @@ export type ParentScheduleProps = {
   /** Cac nut dan ra ngoai lich hoc; route quyet dinh dieu huong toi dau. */
   onAddChild: () => void;
   onOpenAssignments: () => void;
+  onOpenSession: (session: SessionRef) => void;
 };
 
-/** Lich hoc theo tuan cua con dang chon: doi con, doi tuan, chon ngay de xem cac buoi hoc. */
-export function ParentSchedule({ onAddChild, onOpenAssignments }: ParentScheduleProps) {
+/**
+ * Tab lich hoc cua con dang chon: xem lich theo tuan (doi tuan, chon ngay), danh sach mon con da
+ * ghi danh, lo trinh bai hoc tung mon hoac lich su diem danh. Doi con thi giu nguyen cach xem.
+ */
+export function ParentSchedule({
+  onAddChild,
+  onOpenAssignments,
+  onOpenSession,
+}: ParentScheduleProps) {
   const students = useLinkedStudents();
   const today = startOfDay(new Date());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(today);
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
+  const [view, setView] = useState<ScheduleView>('WEEK');
 
   // Chua chon (hoac con da chon khong con trong danh sach) thi xem con dau tien
   const selected =
@@ -61,11 +75,30 @@ export function ParentSchedule({ onAddChild, onOpenAssignments }: ParentSchedule
     if (!selected) {
       return (
         <EmptyState
-          title="Chưa liên kết học sinh"
-          description="Dùng mã liên kết trung tâm gửi qua email để xem lịch học của con."
-          actionLabel="Nhập mã liên kết"
+          title="Chưa có hồ sơ của con"
+          description="Thêm con vào tài khoản để xem lịch học của con."
+          actionLabel="Thêm con"
           onAction={onAddChild}
         />
+      );
+    }
+    // key theo con de bo loc quay ve "Tất cả" khi doi con
+    if (view === 'COURSES') {
+      return <StudentCourses key={selected.id} student={selected} onOpenSession={onOpenSession} />;
+    }
+    if (view === 'ROADMAP') {
+      return (
+        <StudentRoadmap
+          key={selected.id}
+          student={selected}
+          onOpenSession={onOpenSession}
+          onOpenAssignments={onOpenAssignments}
+        />
+      );
+    }
+    if (view === 'ATTENDANCE') {
+      return (
+        <StudentAttendance key={selected.id} student={selected} onOpenSession={onOpenSession} />
       );
     }
 
@@ -77,6 +110,7 @@ export function ParentSchedule({ onAddChild, onOpenAssignments }: ParentSchedule
         today={today}
         onSelectDate={setSelectedDate}
         onOpenAssignments={onOpenAssignments}
+        onOpenSession={onOpenSession}
       />
     );
   };
@@ -86,9 +120,10 @@ export function ParentSchedule({ onAddChild, onOpenAssignments }: ParentSchedule
       <ScheduleHeader
         weekStart={weekStart}
         student={selected}
-        onPressWeek={() => setOpenSheet('week')}
+        onPressWeek={view === 'WEEK' ? () => setOpenSheet('week') : undefined}
         onPressStudent={() => setOpenSheet('child')}
       />
+      {selected ? <ScheduleViewSwitch value={view} onChange={setView} /> : null}
       {renderBody()}
 
       <WeekPickerSheet

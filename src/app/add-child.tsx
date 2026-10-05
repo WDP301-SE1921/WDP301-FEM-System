@@ -3,13 +3,13 @@ import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import { Screen } from '@/components/common/screen';
 import { useAuth } from '@/features/auth';
-import { AddChildFlow } from '@/features/link-invitation';
+import { AddChildFlow } from '@/features/children';
 
 export default function AddChildScreen() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
 
   // Nam ngoai (tabs) nen tu chan nguoi chua dang nhap
-  if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
+  if (!isAuthenticated || !user) return <Redirect href="/(auth)/welcome" />;
 
   // Mo thang tu deep link thi khong co man hinh truoc de quay lai
   const goHome = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)'));
@@ -20,7 +20,7 @@ export default function AddChildScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.content}
       >
-        <AddChildFlow onBack={goHome} onDone={goHome} />
+        <AddChildFlow parentEmail={user.email} onBack={goHome} onDone={goHome} />
       </KeyboardAvoidingView>
     </Screen>
   );

@@ -22,7 +22,13 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   AUTH_INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng.',
   AUTH_PASSWORD_TOO_LONG: 'Mật khẩu quá dài.',
   AUTH_INVALID_REFRESH_TOKEN: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
-  ACCOUNT_ALREADY_EXISTS: 'Email này đã có tài khoản. Vui lòng đăng nhập.',
-  INVITATION_ALREADY_USED: 'Mã liên kết này đã được sử dụng.',
-  INVITATION_EXPIRED: 'Mã liên kết đã hết hạn. Vui lòng liên hệ trung tâm để được cấp mã mới.',
+  /** Module `registration-flow` cua BE. */
+  STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ của con.',
+  RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
+  STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi con đang có môn học tại trung tâm.',
+  /** Nop bai (module `academic` cua BE). */
+  SUBMISSION_CLOSED: 'Bài tập đã hết hạn nộp.',
+  ATTEMPTS_EXHAUSTED: 'Con đã dùng hết số lần nộp bài.',
+  INVALID_ANSWERS: 'Cần trả lời đủ tất cả câu hỏi trước khi nộp.',
+  INVALID_CHOICE: 'Có câu trả lời không nằm trong các lựa chọn của đề.',
 };

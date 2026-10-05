@@ -16,7 +16,7 @@ export type Paginated<T> = {
 export type ApiErrorBody = {
   success: false;
   error: {
-    /** Ma loi on dinh cua BE, vd `VALIDATION_ERROR`, `INVITATION_EXPIRED`. */
+    /** Ma loi on dinh cua BE, vd `VALIDATION_ERROR`, `AUTH_EMAIL_EXISTS`. */
     code: string;
     /** Thong bao tieng Anh cua BE, chi de debug, khong hien len UI. */
     message: string;

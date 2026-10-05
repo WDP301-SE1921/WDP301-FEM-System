@@ -6,6 +6,8 @@ const PASSWORD_MIN_LENGTH = 8;
 const PASSWORD_MAX_LENGTH = 72;
 const DISPLAY_NAME_MIN_LENGTH = 2;
 const DISPLAY_NAME_MAX_LENGTH = 255;
+/** Tu 8 toi 20 chu so va khoang trang ngan cach, cho phep dau `+` o dau; BE chi gioi han 32 ky tu. */
+const PHONE_PATTERN = /^\+?\d[\d\s]{6,18}\d$/;
 
 const passwordSchema = z
   .string()
@@ -24,6 +26,11 @@ export const registerSchema = loginSchema
       .trim()
       .min(DISPLAY_NAME_MIN_LENGTH, 'Vui lòng nhập họ tên')
       .max(DISPLAY_NAME_MAX_LENGTH, 'Họ tên quá dài'),
+    /** Khong bat buoc: trung tam chi dung de lien he (SRS muc 5.11), bo trong thi khong gui len BE. */
+    phone: z
+      .string()
+      .trim()
+      .refine((value) => value === '' || PHONE_PATTERN.test(value), 'Số điện thoại không hợp lệ'),
     password: passwordSchema.max(
       PASSWORD_MAX_LENGTH,
       `Mật khẩu tối đa ${PASSWORD_MAX_LENGTH} ký tự`,

@@ -58,6 +58,13 @@ export function formatDayMonth(value: string | Date): string {
   return `${padTwoDigits(date.getDate())}/${padTwoDigits(date.getMonth() + 1)}`;
 }
 
+/** Thang va nam, vd `10/2026`. */
+export function formatMonthYear(value: string | Date): string {
+  const date = toValidDate(value);
+  if (!date) return '--';
+  return `${padTwoDigits(date.getMonth() + 1)}/${date.getFullYear()}`;
+}
+
 /** Thu va ngay thang, vd `Thứ Hai 16/10`. */
 export function formatWeekdayDate(value: string | Date): string {
   const date = toValidDate(value);
@@ -71,6 +78,13 @@ export function formatShortWeekday(value: string | Date): string {
   const date = toValidDate(value);
   if (!date) return '--';
   return SHORT_WEEKDAY_NAMES[date.getDay()] ?? '--';
+}
+
+/** Thu viet tat theo so thu ISO 8601 (1 = Thu Hai ... 7 = Chu nhat), vd `T2`, `CN`. */
+export function formatIsoWeekday(isoWeekday: number): string {
+  if (!Number.isInteger(isoWeekday) || isoWeekday < 1 || isoWeekday > DAYS_PER_WEEK) return '--';
+  // `SHORT_WEEKDAY_NAMES` bat dau tu Chu nhat nhu `Date.getDay()`, con ISO ghi Chu nhat la 7
+  return SHORT_WEEKDAY_NAMES[isoWeekday % DAYS_PER_WEEK] ?? '--';
 }
 
 /** Thoi gian da qua so voi `now`, vd `2 giờ trước`, `Hôm qua`. Qua mot tuan thi hien ngay. */

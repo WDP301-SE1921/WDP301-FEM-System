@@ -12,8 +12,8 @@ import { getApiErrorMessage } from '@/utils/error';
 import { Endpoints } from './endpoints';
 import { installMockApi } from './mocks';
 
+/** Khong co baseURL: app chi dung mock (src/api/mocks), khong tro toi BE that nao. */
 const clientConfig = {
-  baseURL: Config.apiUrl,
   timeout: Config.requestTimeout,
   headers: { 'Content-Type': 'application/json' },
 };
@@ -26,7 +26,8 @@ export const apiClient = axios.create(clientConfig);
  */
 const refreshClient = axios.create(clientConfig);
 
-if (Config.useMockApi) installMockApi(apiClient, refreshClient);
+// App chi dung mock (src/api/mocks): moi request deu do server gia tra loi, khong goi BE that
+installMockApi(apiClient, refreshClient);
 
 /**
  * Auth store dang ky callback nay de tranh vong lap import

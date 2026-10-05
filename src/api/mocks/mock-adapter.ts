@@ -8,6 +8,7 @@ const MOCK_LATENCY_MS = 600;
 const HTTP_OK = 200;
 const HTTP_REDIRECT = 300;
 const HTTP_BAD_REQUEST = 400;
+const HTTP_NOT_FOUND = 404;
 const HTTP_SERVER_ERROR = 500;
 const BEARER_PREFIX = 'Bearer ';
 const PATH_SEPARATOR = '/';
@@ -28,8 +29,8 @@ export type MockRequest = {
 export type MockRoute = {
   method: 'get' | 'post' | 'put' | 'patch' | 'delete';
   /**
-   * Lay tu `Endpoints`, so khop voi `config.url` (chua gom baseURL). Doan bat dau bang `:` khop
-   * mot doan bat ky, vd `Endpoints.users.detail(':id')`.
+   * Lay tu `Endpoints`, so khop voi `config.url` (duong dan tuong doi). Doan bat dau bang `:` khop
+   * mot doan bat ky, vd `Endpoints.parent.studentDashboard(':studentId')`.
    */
   url: string;
   handle: (body: unknown, request: MockRequest) => MockReply;
@@ -129,28 +130,37 @@ function findRoute(
   return null;
 }
 
+/** Giong Nest khi khong co route: NotFoundException qua AllExceptionsFilter thanh 404 HTTP_ERROR. */
+function noMockRoute(method: string, url: string | undefined): MockReply {
+  logger.warn(
+    `[mock] Chua co route mock cho ${method} ${url}, request bi chan (app chi dung mock)`,
+  );
+  return mockError(HTTP_NOT_FOUND, 'HTTP_ERROR', `Cannot ${method} ${url}`);
+}
+
 /**
- * Adapter axios dong vai server gia: request trung route mock thi tra response theo envelope BE,
- * request khac chuyen cho adapter mang that. Interceptor, unwrap `data.data` va normalizeError
- * van chay nhu voi BE that, nen doi sang API that khong phai sua code feature.
+ * Adapter axios dong vai server gia va la adapter duy nhat cua app: khong request nao ra mang.
+ * Request trung route mock thi tra response theo envelope BE, request khac nhan 404.
+ * Interceptor, unwrap `data.data` va normalizeError van chay nhu voi BE that, nen luc duoc yeu
+ * cau wire khong phai sua code feature.
  */
 export function createMockAdapter(
   routes: readonly MockRoute[],
-  networkAdapter: AxiosAdapter,
   latencyMs: number = MOCK_LATENCY_MS,
 ): AxiosAdapter {
   return async (config) => {
+    const method = config.method?.toUpperCase() ?? '';
     const matched = findRoute(routes, config.method, config.url);
-    if (!matched) return networkAdapter(config);
 
     await wait(latencyMs);
-    const request: MockRequest = {
-      accessToken: readBearerToken(config.headers.Authorization),
-      params: matched.params,
-      query: readQuery(config.params),
-    };
-    const { status, body } = matched.route.handle(parseBody(config.data), request);
-    logger.debug(`[mock] ${config.method?.toUpperCase()} ${config.url} -> ${status}`);
+    const { status, body } = matched
+      ? matched.route.handle(parseBody(config.data), {
+          accessToken: readBearerToken(config.headers.Authorization),
+          params: matched.params,
+          query: readQuery(config.params),
+        })
+      : noMockRoute(method, config.url);
+    logger.debug(`[mock] ${method} ${config.url} -> ${status}`);
 
     const response: AxiosResponse = {
       data: body,

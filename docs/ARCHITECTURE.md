@@ -13,26 +13,34 @@ src/
 ├── app/                      # Route cua expo-router (file = URL)
 │   ├── _layout.tsx           # Layout goc: provider + splash + Stack
 │   ├── index.tsx             # Cong vao, dieu huong theo trang thai dang nhap
-│   ├── add-child.tsx         # Phu huynh da dang nhap dung ma lien ket de them con
+│   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
+│   ├── children/
+│   │   └── [studentId].tsx   # Phu huynh sua ho so mot con (ho ten, lop, ngay sinh)
+│   ├── assignments/
+│   │   └── [assignmentId].tsx # Mot bai tap cua con: lam bai, nop bai, diem va dap an (query `studentId`)
+│   ├── sessions/
+│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`)
+│   ├── receipts/
+│   │   └── [registrationId].tsx # Bien lai thu hoc phi cua mot don dang ky
 │   ├── +not-found.tsx
 │   ├── (auth)/               # Nhom route cho nguoi chua dang nhap
 │   │   ├── _layout.tsx       # Chan nguoi da dang nhap
 │   │   ├── welcome.tsx       # Man hinh chao, cong vao khi chua dang nhap
-│   │   ├── link-code.tsx     # Dung ma lien ket de tao tai khoan phu huynh
 │   │   ├── login.tsx
-│   │   └── register.tsx
+│   │   └── register.tsx      # Phu huynh tu tao tai khoan
 │   └── (tabs)/               # Nhom route chinh, co bottom tab
 │       ├── _layout.tsx       # Chan nguoi chua dang nhap + cau hinh tab
 │       ├── index.tsx         # Trang chu (phu huynh: tong quan cua con)
-│       ├── schedule.tsx      # Lich hoc (phu huynh: lich tuan cua con)
-│       ├── grades.tsx        # Diem & bai tap (chua lam)
-│       ├── notifications.tsx # Thong bao (chua lam)
-│       └── profile.tsx       # Tai khoan
+│       ├── schedule.tsx      # Lich hoc (phu huynh: lich tuan, cac mon, lo trinh bai hoc va diem danh cua con)
+│       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con)
+│       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
+│       ├── notifications.tsx # Thong bao (chua lam). Khong co nut tren thanh tab, mo tu trang chu
+│       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, danh sach ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token
 │   ├── endpoints.ts          # Tap trung duong dan API
-│   ├── mocks/                # Server gia cho endpoint BE chua co (xem muc Mock API)
+│   ├── mocks/                # Server gia, app chi goi toi day (xem muc Mock API)
 │   └── query-client.ts       # Cau hinh React Query + query key factory
 │
 ├── components/
@@ -93,7 +101,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 
 | Can gi                                        | Dung                                                                                      | O dau                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
-| Khung man hinh (safe area, scroll, padding)   | `Screen`                                                                                  | `components/common`  |
+| Khung man hinh (safe area, scroll, padding)   | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`)                                 | `components/common`  |
 | Trang thai dang tai / loi / rong              | `LoadingState`, `ErrorState`, `EmptyState`                                                | `components/common`  |
 | O nhap noi voi react-hook-form                | `FormInput`                                                                               | `components/common`  |
 | Loi chung cua form (loi tu server)            | `FormError`                                                                               | `components/common`  |
@@ -106,7 +114,8 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | Tri hoan gia tri (o tim kiem)                 | `useDebounce()`                                                                           | `hooks`              |
 | Format tien, ngay, cat chuoi, chu cai dau     | `formatCurrency`, `formatDate`, `truncate`, `getInitials`                                 | `utils/format`       |
 | Format gio, thu, thoi gian tuong doi, ten     | `formatTime`, `formatWeekdayDate`, `formatRelativeTime`, `getShortName`                   | `utils/format`       |
-| Format ngay/thang, thu viet tat (`T2`, `CN`)  | `formatDayMonth`, `formatShortWeekday`                                                    | `utils/format`       |
+| Format ngay/thang, thu viet tat (`T2`, `CN`)  | `formatDayMonth`, `formatShortWeekday`, `formatIsoWeekday` (thu ISO 1-7)                  | `utils/format`       |
+| Format thang/nam (`10/2026`)                  | `formatMonthYear`                                                                         | `utils/format`       |
 | Tinh ngay, tuan (Thu Hai), khoa `YYYY-MM-DD`  | `startOfDay`, `startOfWeek`, `addDays`, `diffInCalendarDays`, `toDateKey`, `parseDateKey` | `utils/date`         |
 | Thong bao loi hien cho nguoi dung             | `getErrorMessage()`                                                                       | `utils/error`        |
 | Chuoi loi chung (mat mang, qua thoi gian)     | `ErrorMessages`                                                                           | `constants/messages` |
@@ -166,12 +175,12 @@ Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-
 
 ## Mock API
 
-Endpoint BE chua co thi mock o tang HTTP, khong mock trong feature:
+App hien **chi dung mock**, khong request nao toi BE that, ke ca endpoint BE da lam xong. Mock nam o tang HTTP, khong mock trong feature:
 
-- `src/api/mocks/` la server gia, gan vao `apiClient` bang axios adapter khi `EXPO_PUBLIC_API_MOCK=true`. Chi request trung route mock bi chan, request khac van goi BE that. `config.ts` bao loi neu bat mock khi `EXPO_PUBLIC_ENV=production`.
+- `src/api/mocks/` la server gia, luon thay adapter mang cua `apiClient` va `refreshClient` (khong co co bat/tat). Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. `config.ts` bao loi neu `EXPO_PUBLIC_ENV=production`.
 - Mock tra dung envelope, HTTP status va `error.code` cua BE (lay tu DTO hoac `EDUGRADE_BACKEND_FLOW.md`), va gia lap `ValidationPipe` (thua hoac thieu field thi 400). Nho vay `features/<ten>/api/`, interceptor va `normalizeError` chay y nhu voi BE that.
-- Them mock: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
-- BE xong endpoint: xoa route mock (va file neu rong), khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature.
+- Them endpoint moi thi them route mock trong cung task: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
+- BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi mo lai duong ra mang cho dung endpoint do, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature.
 
 ## Cau hinh theo moi truong
 

@@ -7,7 +7,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { BrandHeader, ValueProposition, WelcomeHero } from '@/features/onboarding';
 
-/** Man hinh chao cho nguoi chua dang nhap: dung ma lien ket hoac dang nhap. */
+/** Man hinh chao cho nguoi chua dang nhap: tao tai khoan hoac dang nhap. */
 export default function WelcomeScreen() {
   return (
     <Screen contentStyle={styles.content}>
@@ -17,11 +17,11 @@ export default function WelcomeScreen() {
 
       <View style={styles.actions}>
         <Button
-          title="Tôi có mã liên kết"
-          icon="link-outline"
+          title="Tạo tài khoản"
+          icon="person-add-outline"
           trailingIcon="arrow-forward"
           style={styles.pill}
-          onPress={() => router.push('/(auth)/link-code')}
+          onPress={() => router.push('/(auth)/register')}
         />
         <Button
           title="Đăng nhập"

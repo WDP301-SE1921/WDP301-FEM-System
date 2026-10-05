@@ -17,7 +17,7 @@ export type ChildPickerSheetProps = {
   onClose: () => void;
 };
 
-/** Bottom sheet chon con: xem khoi va mon cua tung con, hoac them con bang ma lien ket. */
+/** Bottom sheet chon con: xem khoi va mon cua tung con, hoac mo form them con. */
 export function ChildPickerSheet({
   isVisible,
   students,
@@ -49,9 +49,9 @@ export function ChildPickerSheet({
       </ScrollView>
 
       <Button
-        title="Thêm con bằng mã liên kết"
+        title="Thêm con"
         variant="ghost"
-        icon="link-outline"
+        icon="person-add-outline"
         onPress={onAddChild}
         style={styles.addButton}
       />

@@ -3,16 +3,18 @@ import { router } from 'expo-router';
 import { Screen } from '@/components/common/screen';
 import { ThemedText } from '@/components/ui/themed-text';
 import { useAuth } from '@/features/auth';
-import { ParentDashboard } from '@/features/parent-dashboard';
+import { ParentDashboard, useRefreshParentData } from '@/features/parent-dashboard';
 
 export default function HomeScreen() {
   const { user } = useAuth();
+  const { isRefreshing, refresh } = useRefreshParentData();
 
   if (user?.role === 'PARENT') {
     return (
-      <Screen>
+      <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
         <ParentDashboard
           parentName={user.displayName}
+          parentEmail={user.email}
           onAddChild={() => router.push('/add-child')}
           onOpenNotifications={() => router.navigate('/notifications')}
           onOpenAssignments={() => router.navigate('/grades')}

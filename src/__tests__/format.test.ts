@@ -1,6 +1,8 @@
 import {
   formatDate,
   formatDayMonth,
+  formatIsoWeekday,
+  formatMonthYear,
   formatRelativeTime,
   formatShortWeekday,
   formatTime,
@@ -53,6 +55,17 @@ describe('utils/format', () => {
     });
   });
 
+  describe('formatMonthYear', () => {
+    it('ghi mm/yyyy, them so 0 o dau', () => {
+      expect(formatMonthYear(new Date(2026, 8, 30))).toBe('09/2026');
+      expect(formatMonthYear(new Date(2026, 11, 1).toISOString())).toBe('12/2026');
+    });
+
+    it('tra -- khi ngay khong hop le', () => {
+      expect(formatMonthYear('khong-phai-ngay')).toBe('--');
+    });
+  });
+
   describe('formatShortWeekday', () => {
     it('ghi T2..T7 va CN', () => {
       expect(formatShortWeekday(new Date(2026, 9, 12))).toBe('T2');
@@ -62,6 +75,24 @@ describe('utils/format', () => {
 
     it('tra -- khi ngay khong hop le', () => {
       expect(formatShortWeekday('khong-phai-ngay')).toBe('--');
+    });
+  });
+
+  describe('formatIsoWeekday', () => {
+    it('1 la Thu Hai, 7 la Chu nhat', () => {
+      expect([1, 2, 3, 4, 5, 6, 7].map(formatIsoWeekday)).toEqual([
+        'T2',
+        'T3',
+        'T4',
+        'T5',
+        'T6',
+        'T7',
+        'CN',
+      ]);
+    });
+
+    it.each([0, 8, 2.5, Number.NaN])('tra -- khi so thu %p khong hop le', (weekday) => {
+      expect(formatIsoWeekday(weekday)).toBe('--');
     });
   });
 

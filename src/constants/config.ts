@@ -6,20 +6,18 @@ import { z } from 'zod';
  */
 const envSchema = z
   .object({
-    EXPO_PUBLIC_API_URL: z.url('Phai la URL day du, vi du http://192.168.1.10:3000/api/v1'),
     EXPO_PUBLIC_ENV: z.enum(['development', 'staging', 'production']).default('development'),
-    EXPO_PUBLIC_API_MOCK: z.enum(['true', 'false']).default('false'),
   })
-  .refine((env) => !(env.EXPO_PUBLIC_ENV === 'production' && env.EXPO_PUBLIC_API_MOCK === 'true'), {
-    message: 'Khong duoc bat mock API o production',
-    path: ['EXPO_PUBLIC_API_MOCK'],
+  // App chi dung mock (src/api/mocks), khong co dia chi BE va khong duoc dua du lieu gia toi
+  // nguoi dung that
+  .refine((env) => env.EXPO_PUBLIC_ENV !== 'production', {
+    message: 'App dang chi dung mock API, chua build production duoc',
+    path: ['EXPO_PUBLIC_ENV'],
   });
 
 function readEnv() {
   const result = envSchema.safeParse({
-    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
     EXPO_PUBLIC_ENV: process.env.EXPO_PUBLIC_ENV,
-    EXPO_PUBLIC_API_MOCK: process.env.EXPO_PUBLIC_API_MOCK,
   });
 
   if (!result.success) {
@@ -33,15 +31,9 @@ function readEnv() {
 const env = readEnv();
 
 export const Config = {
-  apiUrl: env.EXPO_PUBLIC_API_URL,
   env: env.EXPO_PUBLIC_ENV,
   /** Timeout mac dinh cho moi request (ms) */
   requestTimeout: 15_000,
-  /**
-   * Tra loi bang mock (src/api/mocks) cho moi endpoint co route mock. Endpoint khong co route
-   * mock van goi BE that. Chi tat khi nguoi dung yeu cau noi toan bo BE that.
-   */
-  useMockApi: env.EXPO_PUBLIC_API_MOCK === 'true',
 } as const;
 
 export const isDev = Config.env === 'development';

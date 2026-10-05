@@ -3,17 +3,21 @@ import { router } from 'expo-router';
 import { EmptyState } from '@/components/common/empty-state';
 import { Screen } from '@/components/common/screen';
 import { useAuth } from '@/features/auth';
-import { ParentSchedule } from '@/features/parent-dashboard';
+import { ParentSchedule, useRefreshParentData } from '@/features/parent-dashboard';
 
 export default function ScheduleScreen() {
   const { user } = useAuth();
+  const { isRefreshing, refresh } = useRefreshParentData();
 
   if (user?.role === 'PARENT') {
     return (
-      <Screen>
+      <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
         <ParentSchedule
           onAddChild={() => router.push('/add-child')}
           onOpenAssignments={() => router.navigate('/grades')}
+          onOpenSession={({ studentId, sessionId }) =>
+            router.push({ pathname: '/sessions/[sessionId]', params: { sessionId, studentId } })
+          }
         />
       </Screen>
     );

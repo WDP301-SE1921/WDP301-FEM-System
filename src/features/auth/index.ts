@@ -1,3 +1,4 @@
+export * from './components/account-summary';
 export * from './components/login-footer';
 export * from './components/login-form';
 export * from './components/login-header';

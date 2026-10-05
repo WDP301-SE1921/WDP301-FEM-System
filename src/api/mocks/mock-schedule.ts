@@ -5,15 +5,19 @@
  * - Minh Anh  : Toan va Vat ly, lap lai moi 7 ngay, nghi vao (hom nay + 2) va (hom nay + 6).
  *               Rieng 7 ngay tu hom nay: (hom nay + 2) co buoi hoc bu Vat ly, buoi Vat ly cua
  *               (hom nay + 4) doi len toi (hom nay + 3) nen (hom nay + 4) nghi
- * - Hoang Long: Tieng Anh vao (hom nay + 1) va (hom nay + 4), hom nay khong hoc
- * Hoc sinh vua lien ket bang ma lien ket chua co lich.
+ * - Hoang Long: Tieng Anh vao (hom nay + 1) va (hom nay + 4), hom nay khong hoc. Rieng
+ *               (hom nay - 18) co buoi hoc bu cho buoi nghi (hom nay - 20)
+ * Con phu huynh vua tao chua co lich.
  */
-import { addDays, diffInCalendarDays, startOfDay, toDateKey } from '@/utils/date';
+import { addDays, diffInCalendarDays, parseDateKey, startOfDay, toDateKey } from '@/utils/date';
 import { formatDayMonth, formatWeekdayDate } from '@/utils/format';
 
 const DAYS_PER_CYCLE = 7;
+/** Ngay cua buoi nam trong id do `toSession` tao, vd `mock-schedule-<hoc sinh>-2026-10-16-0`. */
+const SESSION_ID_DATE_PATTERN = /-(\d{4}-\d{2}-\d{2})-\d+$/;
 
-type ClassInfo = {
+/** Lop trong lich gia, dung chung voi mock mon hoc (`./mock-enrollments.ts`). */
+export type ClassInfo = {
   className: string;
   subjectName: string;
   teacherName: string;
@@ -49,19 +53,19 @@ export type MockScheduleSession = ClassInfo & {
   note: string | null;
 };
 
-const MATH_8A2: ClassInfo = {
+export const MATH_8A2: ClassInfo = {
   className: 'Toán nâng cao 8A2',
   subjectName: 'Toán',
   teacherName: 'Đặng Hải Yến',
   room: 'P.203 (Tầng 2)',
 };
-const PHYSICS_8: ClassInfo = {
+export const PHYSICS_8: ClassInfo = {
   className: 'Vật lý 8 chuyên sâu',
   subjectName: 'Vật lý',
   teacherName: 'Trần Quang Huy',
   room: 'Lab 102',
 };
-const ENGLISH_6A1: ClassInfo = {
+export const ENGLISH_6A1: ClassInfo = {
   className: 'Tiếng Anh 6A1',
   subjectName: 'Tiếng Anh',
   teacherName: 'Jessica Phạm',
@@ -82,6 +86,17 @@ const MATH_GEOMETRY = regular(MATH_8A2, [18, 0], [19, 30], 'Hình học');
 const MATH_PRACTICE = regular(MATH_8A2, [8, 0], [9, 30], 'Luyện đề');
 const PHYSICS_HEAT = regular(PHYSICS_8, [17, 30], [19, 0], 'Nhiệt học');
 const PHYSICS_OPTICS = regular(PHYSICS_8, [17, 30], [19, 0], 'Quang học');
+const ENGLISH_VOCABULARY = regular(ENGLISH_6A1, [17, 45], [19, 15], 'Từ vựng và ngữ pháp');
+
+/**
+ * Ngay con bat dau hoc lop (`Enrollment.startDate`), tinh tu hom nay. Mock coi day cung la ngay lop
+ * hoc bai 1 cua chuong trinh (`./mock-lessons.ts`).
+ */
+export const CLASS_START_DAYS: Partial<Record<string, number>> = {
+  [MATH_8A2.className]: -21,
+  [PHYSICS_8.className]: -28,
+  [ENGLISH_6A1.className]: -42,
+};
 
 const TIMETABLES: Partial<Record<string, Timetable>> = {
   'mock-student-1': {
@@ -97,12 +112,11 @@ const TIMETABLES: Partial<Record<string, Timetable>> = {
     changes: {
       2: [
         {
-          ...PHYSICS_HEAT,
+          // Hoc lai bai Quang hoc cua buoi nghi (hom nay - 3)
+          ...PHYSICS_OPTICS,
           start: [8, 30],
           end: [10, 0],
-          topic: 'Nhiệt học chuyên sâu',
           type: 'MAKEUP',
-          // (hom nay - 3) la ngay co buoi Quang hoc cua chu ky truoc
           getNote: (date) => `Bù cho buổi nghỉ ngày ${formatDayMonth(addDays(date, -5))}`,
         },
       ],
@@ -123,14 +137,22 @@ const TIMETABLES: Partial<Record<string, Timetable>> = {
   'mock-student-2': {
     cycle: [
       [],
-      [regular(ENGLISH_6A1, [17, 45], [19, 15], 'Unit 3: My friends')],
+      [ENGLISH_VOCABULARY],
       [],
       [],
       [regular(ENGLISH_6A1, [17, 45], [19, 15], null)],
       [],
       [],
     ],
-    changes: {},
+    changes: {
+      [-18]: [
+        {
+          ...ENGLISH_VOCABULARY,
+          type: 'MAKEUP',
+          getNote: (date) => `Bù cho buổi nghỉ ngày ${formatDayMonth(addDays(date, -2))}`,
+        },
+      ],
+    },
   },
 };
 
@@ -176,4 +198,16 @@ export function buildMockSchedule(
       return templates.map((template, index) => toSession(studentId, date, template, index));
     },
   );
+}
+
+/** Buoi co id `sessionId` trong lich cua hoc sinh, undefined neu id khong thuoc hoc sinh do. */
+export function findMockSession(
+  studentId: string,
+  sessionId: string,
+  now: Date = new Date(),
+): MockScheduleSession | undefined {
+  const dateKey = SESSION_ID_DATE_PATTERN.exec(sessionId)?.[1];
+  const date = dateKey ? parseDateKey(dateKey) : null;
+  if (!date) return undefined;
+  return buildMockSchedule(studentId, date, date, now).find((session) => session.id === sessionId);
 }

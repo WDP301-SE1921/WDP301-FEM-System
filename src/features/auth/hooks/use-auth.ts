@@ -39,8 +39,8 @@ export function useRegister() {
   const startSession = useStartSession();
 
   return useMutation({
-    mutationFn: ({ confirmPassword: _confirmPassword, ...input }: RegisterInput) =>
-      authApi.register(input),
+    mutationFn: ({ confirmPassword: _confirmPassword, phone, ...input }: RegisterInput) =>
+      authApi.register(phone ? { ...input, phone } : input),
     onSuccess: startSession,
   });
 }

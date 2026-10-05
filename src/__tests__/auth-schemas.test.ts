@@ -33,6 +33,7 @@ describe('features/auth/schemas', () => {
     const valid = {
       displayName: 'Nguyễn Văn A',
       email: 'a@b.vn',
+      phone: '',
       password: '12345678',
       confirmPassword: '12345678',
     };
@@ -51,6 +52,19 @@ describe('features/auth/schemas', () => {
       const password = 'a'.repeat(73);
       const result = registerSchema.safeParse({ ...valid, password, confirmPassword: password });
       expect(firstError(result, 'password')).toBe('Mật khẩu tối đa 72 ký tự');
+    });
+
+    it('so dien thoai khong bat buoc; co nhap thi phai la so, cho phep + va khoang trang', () => {
+      expect(registerSchema.safeParse(valid).success).toBe(true);
+      expect(registerSchema.safeParse({ ...valid, phone: ' 0901 234 567 ' }).data?.phone).toBe(
+        '0901 234 567',
+      );
+      expect(registerSchema.safeParse({ ...valid, phone: '+84901234567' }).success).toBe(true);
+
+      const tooShort = registerSchema.safeParse({ ...valid, phone: '12345' });
+      expect(firstError(tooShort, 'phone')).toBe('Số điện thoại không hợp lệ');
+      const letters = registerSchema.safeParse({ ...valid, phone: 'so cua toi' });
+      expect(firstError(letters, 'phone')).toBe('Số điện thoại không hợp lệ');
     });
 
     it('bao loi o confirmPassword khi mat khau xac nhan khong khop', () => {

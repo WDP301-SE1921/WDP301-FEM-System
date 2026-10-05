@@ -85,7 +85,7 @@ function AddChildItem({ onPress }: { onPress: () => void }) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel="Thêm con"
-      accessibilityHint="Nhập mã liên kết trung tâm gửi qua email"
+      accessibilityHint="Tạo hồ sơ cho con để theo dõi việc học"
       onPress={onPress}
       style={({ pressed }) => [styles.item, pressed && styles.pressed]}
     >

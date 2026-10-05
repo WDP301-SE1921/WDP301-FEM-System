@@ -21,9 +21,7 @@ describe('utils/error', () => {
 
   describe('getApiErrorMessage', () => {
     it('tra thong bao tieng Viet theo error.code cua BE', () => {
-      expect(getApiErrorMessage('INVITATION_EXPIRED', 410)).toBe(
-        ApiErrorMessages.INVITATION_EXPIRED,
-      );
+      expect(getApiErrorMessage('AUTH_EMAIL_EXISTS', 409)).toBe(ApiErrorMessages.AUTH_EMAIL_EXISTS);
     });
 
     it('nhan dien rate limit bang status 429 vi BE tra code chung', () => {

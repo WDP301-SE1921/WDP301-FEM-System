@@ -10,12 +10,15 @@ const TOUCH_TARGET_SIZE = 44;
 const CHEVRON_ICON_SIZE = 16;
 
 export type LoginFooterProps = {
-  /** Phu huynh chua co tai khoan: sang luong nhap ma lien ket. */
-  onLinkCode: () => void;
+  /** Phu huynh chua co tai khoan: sang man hinh dang ky. */
+  onRegister: () => void;
 };
 
-/** Loi vao cho phu huynh moi: tai khoan phu huynh duoc tao tu ma lien ket trung tam gui. */
-export function LoginFooter({ onLinkCode }: LoginFooterProps) {
+/**
+ * Loi vao cho phu huynh moi. BE chi cho tu dang ky tai khoan PARENT, tai khoan giao vien do
+ * trung tam cap.
+ */
+export function LoginFooter({ onRegister }: LoginFooterProps) {
   const theme = useTheme();
 
   return (
@@ -26,17 +29,17 @@ export function LoginFooter({ onLinkCode }: LoginFooterProps) {
         </ThemedText>
         <Pressable
           accessibilityRole="button"
-          onPress={onLinkCode}
+          onPress={onRegister}
           style={({ pressed }) => [styles.link, pressed && styles.pressed]}
         >
           <ThemedText type="smallBold" themeColor="primary">
-            Nhập mã liên kết
+            Đăng ký
           </ThemedText>
           <Icon name="chevron-forward" size={CHEVRON_ICON_SIZE} themeColor="primary" />
         </Pressable>
       </View>
       <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-        Dành cho Phụ huynh mới nhận mã từ EduGrade
+        Dành cho Phụ huynh. Tài khoản Giáo viên do trung tâm cấp.
       </ThemedText>
     </View>
   );

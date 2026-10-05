@@ -13,7 +13,8 @@ export const queryClient = new QueryClient({
         if (status && status >= 400 && status < 500) return false;
         return failureCount < 2;
       },
-      refetchOnWindowFocus: false,
+      // "Focus" la luc app tro lai man hinh, xem `providers/app-providers.tsx`
+      refetchOnWindowFocus: true,
     },
     mutations: {
       retry: 0,
@@ -27,16 +28,43 @@ export const queryKeys = {
     me: ['auth', 'me'] as const,
   },
   parent: {
+    /** Tien to cua moi key `parent`, dung khi tai lai toan bo du lieu cua phu huynh. */
+    all: ['parent'] as const,
     students: ['parent', 'students'] as const,
+    /** Tien to cua moi du lieu hoc tap cua mot con. */
+    student: (studentId: string) => ['parent', 'students', studentId] as const,
     studentDashboard: (studentId: string) =>
       ['parent', 'students', studentId, 'dashboard'] as const,
     studentSchedule: (studentId: string, range: { from: string; to: string }) =>
       ['parent', 'students', studentId, 'schedule', range] as const,
+    studentSession: (studentId: string, sessionId: string) =>
+      ['parent', 'students', studentId, 'sessions', sessionId] as const,
+    studentEnrollments: (studentId: string) =>
+      ['parent', 'students', studentId, 'enrollments'] as const,
+    enrollmentLessons: (studentId: string, enrollmentId: string) =>
+      ['parent', 'students', studentId, 'enrollments', enrollmentId, 'lessons'] as const,
+    studentAttendance: (studentId: string) =>
+      ['parent', 'students', studentId, 'attendance'] as const,
+    studentAssignments: (studentId: string) =>
+      ['parent', 'students', studentId, 'assignments'] as const,
     unreadNotificationCount: ['parent', 'notifications', 'unread-count'] as const,
   },
-  users: {
-    all: ['users'] as const,
-    list: (params?: Record<string, unknown>) => ['users', 'list', params ?? {}] as const,
-    detail: (id: string) => ['users', 'detail', id] as const,
+  me: {
+    all: ['me'] as const,
+    students: ['me', 'students'] as const,
+    studentEnrollments: (studentId: string) =>
+      ['me', 'students', studentId, 'enrollments'] as const,
+    studentRegistrations: (studentId: string) =>
+      ['me', 'students', studentId, 'registrations'] as const,
+  },
+  registrations: {
+    all: ['registrations'] as const,
+    receipt: (registrationId: string) => ['registrations', registrationId, 'receipt'] as const,
+  },
+  academic: {
+    all: ['academic'] as const,
+    assignment: (assignmentId: string) => ['academic', 'assignments', assignmentId] as const,
+    assignmentSubmissions: (assignmentId: string) =>
+      ['academic', 'assignments', assignmentId, 'submissions'] as const,
   },
 } as const;
