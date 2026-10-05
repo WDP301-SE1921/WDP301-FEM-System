@@ -80,6 +80,7 @@ if (!data?.length) return <EmptyState title="Chưa có dữ liệu" />;
 - Form nam trong `features/<ten>/components/<ten>-form.tsx`. Route chi render form, khong goi `useForm`.
 - Schema Zod dat trong `features/<ten>/schemas.ts`, kieu form suy ra bang `z.infer`.
 - O nhap dung `FormInput`, loi server dung `FormError`, nut submit dung `Button` voi `loading={mutation.isPending}`. Khong viet `Controller` bang tay.
+- Man hinh co o nhap dat trong `Screen`: `Screen` da tu nang noi dung len khi ban phim mo, khong boc them `KeyboardAvoidingView` (boc hai lan thi noi dung bi day hai lan).
 
 ```tsx
 <FormInput control={control} name="email" label="Email" keyboardType="email-address" />

@@ -1,5 +1,4 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/common/empty-state';
 import { Screen } from '@/components/common/screen';
@@ -36,16 +35,7 @@ export default function EditChildScreen() {
 
   return (
     <Screen>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.content}
-      >
-        <EditChildFlow studentId={studentId} onBack={goBack} onDone={goBack} />
-      </KeyboardAvoidingView>
+      <EditChildFlow studentId={studentId} onBack={goBack} onDone={goBack} />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { flex: 1 },
-});

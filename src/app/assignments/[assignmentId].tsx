@@ -1,5 +1,4 @@
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import { EmptyState } from '@/components/common/empty-state';
 import { Screen } from '@/components/common/screen';
@@ -38,17 +37,7 @@ export default function AssignmentDetailScreen() {
 
   return (
     <Screen>
-      {/* Cau tu luan co o nhap nhieu dong: day noi dung len khi ban phim mo */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.content}
-      >
-        <ParentAssignmentDetail studentId={studentId} assignmentId={assignmentId} onBack={goBack} />
-      </KeyboardAvoidingView>
+      <ParentAssignmentDetail studentId={studentId} assignmentId={assignmentId} onBack={goBack} />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { flex: 1 },
-});

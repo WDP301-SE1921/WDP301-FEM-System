@@ -1,5 +1,4 @@
 import { Redirect, router } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import { Screen } from '@/components/common/screen';
 import { needsEmailVerification, useAuth } from '@/features/auth';
@@ -16,22 +15,13 @@ export default function AddChildScreen() {
 
   return (
     <Screen>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.content}
-      >
-        <AddChildFlow
-          parentEmail={user.email}
-          isEmailVerified={!needsEmailVerification(user)}
-          onVerifyEmail={() => router.push('/verify-email')}
-          onBack={goHome}
-          onDone={goHome}
-        />
-      </KeyboardAvoidingView>
+      <AddChildFlow
+        parentEmail={user.email}
+        isEmailVerified={!needsEmailVerification(user)}
+        onVerifyEmail={() => router.push('/verify-email')}
+        onBack={goHome}
+        onDone={goHome}
+      />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { flex: 1 },
-});

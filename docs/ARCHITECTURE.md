@@ -104,7 +104,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 
 | Can gi                                        | Dung                                                                                      | O dau                |
 | --------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
-| Khung man hinh (safe area, scroll, padding)   | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`)                                 | `components/common`  |
+| Khung man hinh (safe area, scroll, ban phim)  | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`; tu nang noi dung khoi ban phim) | `components/common`  |
 | Trang thai dang tai / loi / rong              | `LoadingState`, `ErrorState`, `EmptyState`                                                | `components/common`  |
 | O nhap noi voi react-hook-form                | `FormInput`                                                                               | `components/common`  |
 | Loi chung cua form (loi tu server)            | `FormError`                                                                               | `components/common`  |

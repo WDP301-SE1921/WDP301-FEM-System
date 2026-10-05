@@ -23,21 +23,23 @@ export function LoginFooter({ onRegister }: LoginFooterProps) {
 
   return (
     <View style={[styles.container, { borderTopColor: theme.border }]}>
-      <View style={styles.row}>
-        <ThemedText type="small" themeColor="textSecondary">
-          Chưa có tài khoản?
-        </ThemedText>
-        <Pressable
-          accessibilityRole="button"
-          onPress={onRegister}
-          style={({ pressed }) => [styles.link, pressed && styles.pressed]}
-        >
+      <Pressable
+        accessibilityRole="button"
+        onPress={onRegister}
+        style={({ pressed }) => [styles.link, pressed && styles.pressed]}
+      >
+        {/*
+          Ca cau la mot doan chu rong het hang. Tach "Đăng ký" thanh Text rieng thi Text do rong
+          vua khit chu, Android day chu "ký" xuong dong hai roi cat mat.
+        */}
+        <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
+          Chưa có tài khoản?{' '}
           <ThemedText type="smallBold" themeColor="primary">
             Đăng ký
-          </ThemedText>
+          </ThemedText>{' '}
           <Icon name="chevron-forward" size={CHEVRON_ICON_SIZE} themeColor="primary" />
-        </Pressable>
-      </View>
+        </ThemedText>
+      </Pressable>
       <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
         Dành cho Phụ huynh. Tài khoản Giáo viên do trung tâm cấp.
       </ThemedText>
@@ -47,14 +49,7 @@ export function LoginFooter({ onRegister }: LoginFooterProps) {
 
 const styles = StyleSheet.create({
   container: { paddingTop: Spacing.two, borderTopWidth: StyleSheet.hairlineWidth },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center' },
-  link: {
-    minHeight: TOUCH_TARGET_SIZE,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.half,
-    paddingHorizontal: Spacing.one,
-  },
+  link: { minHeight: TOUCH_TARGET_SIZE, justifyContent: 'center' },
   pressed: { opacity: 0.75 },
   center: { textAlign: 'center' },
 });

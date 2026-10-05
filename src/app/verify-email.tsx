@@ -1,5 +1,4 @@
 import { Redirect, router } from 'expo-router';
-import { KeyboardAvoidingView, Platform, StyleSheet } from 'react-native';
 
 import { Screen } from '@/components/common/screen';
 import { useAuth, VerifyEmailFlow } from '@/features/auth';
@@ -15,16 +14,7 @@ export default function VerifyEmailScreen() {
 
   return (
     <Screen>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.content}
-      >
-        <VerifyEmailFlow user={user} onDone={leave} />
-      </KeyboardAvoidingView>
+      <VerifyEmailFlow user={user} onDone={leave} />
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { flex: 1 },
-});
