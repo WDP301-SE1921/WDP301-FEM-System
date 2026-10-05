@@ -7,6 +7,7 @@ import type { AuthSession } from '@/types/auth';
 
 import { authApi } from '../api/auth-api';
 import type { LoginInput, RegisterInput } from '../schemas';
+import { getPostSignInHref } from '../utils';
 
 /** Doc trang thai dang nhap hien tai. */
 export function useAuth() {
@@ -16,13 +17,16 @@ export function useAuth() {
   return { user, isAuthenticated, isHydrated };
 }
 
-/** Luu phien roi vao man hinh chinh. Dung chung cho dang nhap va dang ky. */
+/**
+ * Luu phien roi vao man hinh dau tien cua tai khoan: phu huynh chua xac minh email (luon dung voi
+ * tai khoan vua dang ky) qua buoc xac minh truoc. Dung chung cho dang nhap va dang ky.
+ */
 function useStartSession() {
   const signIn = useAuthStore((s) => s.signIn);
 
   return async (session: AuthSession) => {
     await signIn(session);
-    router.replace('/(tabs)');
+    router.replace(getPostSignInHref(session.user));
   };
 }
 

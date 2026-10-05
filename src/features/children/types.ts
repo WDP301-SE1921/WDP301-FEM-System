@@ -1,14 +1,13 @@
 /**
- * Ho so con cua phu huynh. Tao con dung route TAM POST /parent/students (BE da co POST /me/students
- * nhung mobile chua chuyen, xem dau file `src/api/mocks/parent.ts`). Xem va sua ho so theo module
- * `registration-flow` cua BE nhanh `dev`: GET /me/students, PATCH /me/students/:id (xem dau file
- * `src/api/mocks/registration-flow.ts`).
+ * Ho so con cua phu huynh, theo module `registration-flow` cua BE nhanh `dev` va da noi BE that:
+ * GET, POST /me/students va PATCH /me/students/:id. BE chi cho tao va sua khi email cua phu huynh da
+ * xac minh (409 `PARENT_EMAIL_UNVERIFIED`).
  */
 import type { CHILD_GRADES } from './constants';
 
 export type ChildGrade = (typeof CHILD_GRADES)[number];
 
-/** Body POST /parent/students. */
+/** Body POST /me/students (CreateStudentDto). */
 export type CreateChildPayload = {
   fullName: string;
   grade: ChildGrade;
@@ -16,17 +15,9 @@ export type CreateChildPayload = {
   dateOfBirth?: string;
 };
 
-/** Response POST /parent/students: con vua tao, cung dang phan tu cua GET /parent/students. */
-export type CreatedChild = {
-  id: string;
-  fullName: string;
-  grade: number;
-  subjectNames: string[];
-};
-
 /**
- * Mot phan tu cua GET /me/students va response PATCH /me/students/:id: ban ghi StudentProfile. BE tra
- * nguyen ban ghi Prisma, o day chi khai bao field app dung.
+ * Ban ghi StudentProfile: mot phan tu cua GET /me/students, response POST /me/students va
+ * PATCH /me/students/:id. BE tra nguyen ban ghi Prisma, o day chi khai bao field app dung.
  */
 export type ChildProfile = {
   id: string;

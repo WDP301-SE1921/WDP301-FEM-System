@@ -967,6 +967,17 @@ export function getActivePackages(
   return enrollments.filter((enrollment) => getTermStatus(enrollment, now) !== 'EXPIRED');
 }
 
+/** Ten mon cua cac goi hoc con hieu luc, moi mon mot lan, giu thu tu cua API. */
+export function getActiveSubjectNames(
+  enrollments: readonly TuitionEnrollment[],
+  now: Date = new Date(),
+): string[] {
+  const subjects = getActivePackages(enrollments, now).map(
+    (enrollment) => enrollment.class.program.subject,
+  );
+  return [...new Set(subjects)];
+}
+
 function hasPayment(enrollment: TuitionEnrollment): enrollment is PaidEnrollment {
   return enrollment.registrationOrder.payment !== null;
 }

@@ -1,6 +1,6 @@
 # Design System (Mobile — React Native/Expo)
 
-Applies to every screen/component in the mobile app. Keep it consistent with the web version (design.md); only the implementation differs to fit React Native.
+Applies to every screen/component in the mobile app. Keep it consistent with the web version (`docs/DESIGN.md` in the web repo `WDP301-FE-System`); only the implementation differs to fit React Native.
 
 ## Overall Style
 

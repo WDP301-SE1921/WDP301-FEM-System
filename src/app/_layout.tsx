@@ -29,6 +29,7 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(auth)" />
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="verify-email" />
       <Stack.Screen name="add-child" />
       <Stack.Screen name="children/[studentId]" />
       <Stack.Screen name="assignments/[assignmentId]" />

@@ -15,6 +15,7 @@ import {
   formatPackageLabel,
   formatTermPeriod,
   getActivePackages,
+  getActiveSubjectNames,
   getMonthlyFee,
   getPaymentHistory,
   getPendingRegistrations,
@@ -150,6 +151,28 @@ describe('features/parent-dashboard/utils: hoc phi', () => {
     it('goi dang ap dung bo goi het han, giu thu tu cua API', () => {
       const ids = getActivePackages([EXPIRED, UPCOMING, CURRENT], NOW).map(({ id }) => id);
       expect(ids).toEqual(['upcoming', 'current']);
+    });
+
+    it('mon dang hoc lay tu goi con hieu luc, moi mon mot lan', () => {
+      const physicsClass: TuitionClass = {
+        ...MATH_CLASS,
+        id: 'class-2',
+        name: 'Vật lý 8',
+        program: { name: 'Vật lý 8', subject: 'Vật lý', grade: 8 },
+      };
+      const physics = enrollment('physics', { class: physicsClass });
+      const expiredPhysics = enrollment('expired-physics', {
+        status: 'ENDED',
+        class: physicsClass,
+      });
+
+      // Hai goi Toan (dang hoc, sap hoc) chi tinh mot mon; mon chi con goi het han thi khong tinh
+      expect(getActiveSubjectNames([UPCOMING, CURRENT, physics, EXPIRED], NOW)).toEqual([
+        'Toán',
+        'Vật lý',
+      ]);
+      expect(getActiveSubjectNames([EXPIRED, expiredPhysics], NOW)).toEqual([]);
+      expect(getActiveSubjectNames([], NOW)).toEqual([]);
     });
 
     it('lich su dong hoc phi moi xac nhan truoc, bo ghi danh chua co thanh toan', () => {

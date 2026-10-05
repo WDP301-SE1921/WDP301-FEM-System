@@ -10,24 +10,31 @@ import type { AuthSession } from '@/types/auth';
 import { getApiErrorMessage } from '@/utils/error';
 
 import { Endpoints } from './endpoints';
-import { installMockApi } from './mocks';
+import { MOCK_ROUTES, mockAdapter } from './mocks';
+import { createApiAdapter, WIRED_ROUTES } from './wired-routes';
 
-/** Khong co baseURL: app chi dung mock (src/api/mocks), khong tro toi BE that nao. */
+/**
+ * `baseURL` chi co tac dung voi endpoint da wire (`./wired-routes.ts`): adapter chi cho cac endpoint
+ * do ra BE that, moi request khac do server gia (`./mocks`) tra loi va khong ra mang.
+ */
 const clientConfig = {
+  baseURL: Config.apiUrl,
   timeout: Config.requestTimeout,
   headers: { 'Content-Type': 'application/json' },
+  adapter: createApiAdapter(mockAdapter, () => axios.getAdapter(axios.defaults.adapter)),
 };
 
 export const apiClient = axios.create(clientConfig);
 
 /**
  * Chi dung cho refresh token. Khong gan interceptor de 401 cua chinh no khong kich hoat
- * refresh lan nua (vong lap vo han), nhung van di qua mock nhu apiClient.
+ * refresh lan nua (vong lap vo han), nhung van dung chung adapter voi apiClient.
  */
 const refreshClient = axios.create(clientConfig);
 
-// App chi dung mock (src/api/mocks): moi request deu do server gia tra loi, khong goi BE that
-installMockApi(apiClient, refreshClient);
+logger.info(
+  `[api] ${WIRED_ROUTES.length} endpoint goi BE that tai ${Config.apiUrl}, ${MOCK_ROUTES.length} endpoint con gia lap`,
+);
 
 /**
  * Auth store dang ky callback nay de tranh vong lap import

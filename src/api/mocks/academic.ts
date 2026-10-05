@@ -1,8 +1,8 @@
 /**
  * Mock module `academic` cua BE (nhanh `dev`: academic.controller.ts, assessment.service.ts,
  * academic.dto.ts), phan phu huynh xem de, nop bai va xem ket qua. BE da co cac route nay nhung
- * mobile chua duoc noi that: chi xoa route khi nguoi dung yeu cau wire (Luat so 2 trong CLAUDE.md cua
- * workspace).
+ * mobile chua noi that vi danh sach bai tap dan toi day (`./parent.ts`) BE chua co: chi xoa route khi
+ * nguoi dung yeu cau wire (Luat so 2 trong CLAUDE.md cua workspace).
  * - GET /academic/assignments/:assignmentId
  *     De bai: `id, classId, title, instructions, dueAt, status, maxAttempts`, `recipients`
  *     (`{ id, enrollmentId }` cua cac con thuoc phu huynh) va `questions` (`id, kind, prompt, choices,
@@ -25,15 +25,13 @@
  *
  * De bai gia: `./mock-assignment-details.ts`. Bai da co diem (`./mock-assignments.ts`) thi da dong
  * (`CLOSED`) va da cong bo dap an; bai con lai dang mo (`PUBLISHED`). Bai nop trong app luu o
- * `./mock-submissions.ts`, khong co diem vi khong ai cham. Tai khoan dung thu (mat khau `Matkhau123`):
- * - phuhuynh@example.com : Minh Anh co bai Toan tu luan va bai Vat ly trac nghiem can lam; bai Toan
- *                          gan nhat da nop, con han va con 1 lan nop lai; cac bai cu hon da co diem
- *                          va dap an
+ * `./mock-submissions.ts`, khong co diem vi khong ai cham. Chi phu huynh mau (`./mock-students.ts`)
+ * co bai: Minh Anh co bai Toan tu luan va bai Vat ly trac nghiem can lam; bai Toan gan nhat da nop,
+ * con han va con 1 lan nop lai; cac bai cu hon da co diem va dap an. Tai khoan that cua BE khong co
+ * bai nao o day.
  */
 import { Endpoints } from '@/api/endpoints';
 
-import { authorizeParent, FORBIDDEN, UNAUTHORIZED } from './auth';
-import { authenticate } from './mock-accounts';
 import {
   mockError,
   mockOk,
@@ -52,6 +50,7 @@ import {
 } from './mock-assignment-details';
 import { buildMockAssignments, type MockAssignment } from './mock-assignments';
 import { buildMockEnrollments, type MockEnrollment } from './mock-enrollments';
+import { authorizeParent, FORBIDDEN, readPrincipal, UNAUTHORIZED } from './mock-guard';
 import { findMockAssignmentScore } from './mock-lessons';
 import { buildMockTuitionEnrollments } from './mock-registrations';
 import { findStudentsByParent, type MockStudent } from './mock-students';
@@ -323,14 +322,14 @@ function findSubmissionError(
 
 function submit(body: unknown, { accessToken }: MockRequest): MockReply {
   // Guard chay truoc ValidationPipe, con kiem tra role nam trong service
-  const current = authenticate(accessToken);
-  if (!current) return UNAUTHORIZED;
+  const principal = readPrincipal(accessToken);
+  if (!principal) return UNAUTHORIZED;
   const input = readSubmission(body);
   if (!input) return mockValidationError();
-  if (current.user.role !== 'PARENT') return FORBIDDEN;
+  if (principal.role !== 'PARENT') return FORBIDDEN;
 
   const now = new Date();
-  const entry = findParentAssignments(current.user.id, now).find(
+  const entry = findParentAssignments(principal.userId, now).find(
     ({ recipientId }) => recipientId === input.recipientId,
   );
   if (!entry) return RECIPIENT_NOT_FOUND;

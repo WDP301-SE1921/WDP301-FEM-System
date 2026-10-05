@@ -1,5 +1,6 @@
 import { AxiosError, AxiosHeaders, type AxiosAdapter, type AxiosResponse } from 'axios';
 
+import { matchPath, type RoutePattern } from '@/api/route-pattern';
 import { logger } from '@/lib/logger';
 import type { ApiErrorBody, ApiResponse } from '@/types/api';
 
@@ -11,8 +12,6 @@ const HTTP_BAD_REQUEST = 400;
 const HTTP_NOT_FOUND = 404;
 const HTTP_SERVER_ERROR = 500;
 const BEARER_PREFIX = 'Bearer ';
-const PATH_SEPARATOR = '/';
-const PATH_PARAM_PREFIX = ':';
 
 /** Response gia, bat buoc dung envelope thanh cong hoac loi cua BE. */
 export type MockReply = { status: number; body: ApiResponse<unknown> | ApiErrorBody };
@@ -26,13 +25,7 @@ export type MockRequest = {
   query: Readonly<Record<string, string>>;
 };
 
-export type MockRoute = {
-  method: 'get' | 'post' | 'put' | 'patch' | 'delete';
-  /**
-   * Lay tu `Endpoints`, so khop voi `config.url` (duong dan tuong doi). Doan bat dau bang `:` khop
-   * mot doan bat ky, vd `Endpoints.parent.studentDashboard(':studentId')`.
-   */
-  url: string;
+export type MockRoute = RoutePattern & {
   handle: (body: unknown, request: MockRequest) => MockReply;
 };
 
@@ -99,22 +92,6 @@ function wait(ms: number) {
   return new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
-/** So khop `url` voi mau cua route. Tra ve tham so duong dan, hoac null neu khong khop. */
-function matchPath(pattern: string, url: string): Record<string, string> | null {
-  const patternSegments = pattern.split(PATH_SEPARATOR);
-  const urlSegments = url.split(PATH_SEPARATOR);
-  if (patternSegments.length !== urlSegments.length) return null;
-
-  const params: Record<string, string> = {};
-  const isMatch = patternSegments.every((segment, index) => {
-    const value = urlSegments[index] ?? '';
-    if (!segment.startsWith(PATH_PARAM_PREFIX)) return segment === value;
-    params[segment.slice(PATH_PARAM_PREFIX.length)] = decodeURIComponent(value);
-    return value.length > 0;
-  });
-  return isMatch ? params : null;
-}
-
 type MatchedRoute = { route: MockRoute; params: Record<string, string> };
 
 function findRoute(
@@ -133,15 +110,15 @@ function findRoute(
 /** Giong Nest khi khong co route: NotFoundException qua AllExceptionsFilter thanh 404 HTTP_ERROR. */
 function noMockRoute(method: string, url: string | undefined): MockReply {
   logger.warn(
-    `[mock] Chua co route mock cho ${method} ${url}, request bi chan (app chi dung mock)`,
+    `[mock] ${method} ${url} chua wire va chua co route mock, request bi chan (khong ra mang)`,
   );
   return mockError(HTTP_NOT_FOUND, 'HTTP_ERROR', `Cannot ${method} ${url}`);
 }
 
 /**
- * Adapter axios dong vai server gia va la adapter duy nhat cua app: khong request nao ra mang.
- * Request trung route mock thi tra response theo envelope BE, request khac nhan 404.
- * Interceptor, unwrap `data.data` va normalizeError van chay nhu voi BE that, nen luc duoc yeu
+ * Adapter axios dong vai server gia cho moi endpoint chua wire (`@/api/wired-routes`): khong request
+ * nao qua day ra mang. Request trung route mock thi tra response theo envelope BE, request khac nhan
+ * 404. Interceptor, unwrap `data.data` va normalizeError van chay nhu voi BE that, nen luc duoc yeu
  * cau wire khong phai sua code feature.
  */
 export function createMockAdapter(

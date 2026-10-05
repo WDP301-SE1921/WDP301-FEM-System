@@ -7,17 +7,22 @@ import { z } from 'zod';
 const envSchema = z
   .object({
     EXPO_PUBLIC_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+    /** Dia chi BE kem prefix, vd `http://192.168.1.10:3000/api/v1`. Chi endpoint da wire goi toi. */
+    EXPO_PUBLIC_API_URL: z.url({
+      protocol: /^https?$/,
+      error: 'Can dia chi BE dang http(s)://<host>:<cong>/api/v1',
+    }),
   })
-  // App chi dung mock (src/api/mocks), khong co dia chi BE va khong duoc dua du lieu gia toi
-  // nguoi dung that
+  // Mot so man hinh con dung du lieu gia (src/api/mocks), khong duoc dua toi nguoi dung that
   .refine((env) => env.EXPO_PUBLIC_ENV !== 'production', {
-    message: 'App dang chi dung mock API, chua build production duoc',
+    message: 'App con man hinh dung mock API, chua build production duoc',
     path: ['EXPO_PUBLIC_ENV'],
   });
 
 function readEnv() {
   const result = envSchema.safeParse({
     EXPO_PUBLIC_ENV: process.env.EXPO_PUBLIC_ENV,
+    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL,
   });
 
   if (!result.success) {
@@ -32,6 +37,7 @@ const env = readEnv();
 
 export const Config = {
   env: env.EXPO_PUBLIC_ENV,
+  apiUrl: env.EXPO_PUBLIC_API_URL,
   /** Timeout mac dinh cho moi request (ms) */
   requestTimeout: 15_000,
 } as const;

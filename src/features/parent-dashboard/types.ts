@@ -1,17 +1,24 @@
 /**
  * Hop dong TAM cua trang chu, lich hoc, mon hoc, lo trinh va bai tap phu huynh: BE chua co endpoint,
  * xem dau file `src/api/mocks/parent.ts`.
- * Doi lai theo DTO that khi BE lam xong.
+ * Doi lai theo DTO that khi BE lam xong. Danh sach con, hoc phi va bien lai thi theo BE that.
  */
 import type { IconName } from '@/components/ui/icon';
 
-/** Response GET /parent/students: con da lien ket voi phu huynh (StudentProfile). */
-export type LinkedStudent = {
+/**
+ * Mot phan tu cua GET /me/students (module `registration-flow` cua BE, da noi BE that): ban ghi
+ * StudentProfile. BE tra nguyen ban ghi Prisma, o day chi khai bao field app dung.
+ */
+export type StudentProfile = {
   id: string;
   fullName: string;
   /** Khoi 6-9. */
   grade: number;
-  /** Mon con dang hoc (Enrollment `ACTIVE`), vd `['Toán', 'Vật lý']`. */
+};
+
+/** Con cua phu huynh kem mon dang hoc, ghep tu GET /me/students va ghi danh cua tung con. */
+export type LinkedStudent = StudentProfile & {
+  /** Mon cua cac goi hoc con hieu luc (dang hoc hoac sap hoc), vd `['Toán', 'Vật lý']`. */
   subjectNames: string[];
 };
 
@@ -411,8 +418,10 @@ export type QuestionReview = {
 
 /**
  * Hoc phi: cac kieu tu day toi `TermSessionCount` theo module `registration-flow` tren nhanh `dev`
- * cua BE (xem dau file `src/api/mocks/registration-flow.ts`), rieng `StudentRegistration` la TAM.
- * BE tra nguyen ban ghi Prisma, o day chi khai bao field app dung.
+ * cua BE (`enrollmentsOf` va `receiptResponse` trong `registration-flow.service.ts`), da noi BE that.
+ * Rieng `StudentRegistration` la TAM va con chay bang mock (xem dau file
+ * `src/api/mocks/registration-flow.ts`). BE tra nguyen ban ghi Prisma, o day chi khai bao field app
+ * dung.
  */
 
 /** `PaymentStatus` cua BE: hoc phi thu tai trung tam, chi ghi nhan khi da thu du. */

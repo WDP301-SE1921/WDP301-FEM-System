@@ -8,6 +8,8 @@ const DISPLAY_NAME_MIN_LENGTH = 2;
 const DISPLAY_NAME_MAX_LENGTH = 255;
 /** Tu 8 toi 20 chu so va khoang trang ngan cach, cho phep dau `+` o dau; BE chi gioi han 32 ky tu. */
 const PHONE_PATTERN = /^\+?\d[\d\s]{6,18}\d$/;
+/** Gioi han cua VerifyEmailDto; ma BE gui qua email dai 43 ky tu. */
+const VERIFY_TOKEN_MIN_LENGTH = 32;
 
 const passwordSchema = z
   .string()
@@ -42,5 +44,15 @@ export const registerSchema = loginSchema
     path: ['confirmPassword'],
   });
 
+/** Body POST /auth/verify-email. Phu huynh dan ma tu email nen cat khoang trang hai dau. */
+export const verifyEmailSchema = z.object({
+  token: z
+    .string()
+    .trim()
+    .min(1, 'Vui lòng dán mã xác minh')
+    .min(VERIFY_TOKEN_MIN_LENGTH, 'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email'),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;

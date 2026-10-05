@@ -1,6 +1,7 @@
 /** Kieu cua phien dang nhap, dung chung cho store va cac feature. Khop SafeUserDto cua BE. */
 
-export type UserRole = 'MANAGER' | 'TEACHER' | 'PARENT';
+/** `UserRole` cua BE. App mobile chi co man hinh cho `PARENT`, role khac van dang nhap duoc. */
+export type UserRole = 'STAFF' | 'MANAGER' | 'TEACHER' | 'CURRICULUM_DESIGNER' | 'PARENT';
 
 export type UserStatus = 'ACTIVE' | 'DISABLED';
 
@@ -10,6 +11,8 @@ export type User = {
   displayName: string | null;
   role: UserRole;
   status: UserStatus;
+  /** null khi chua xac minh email: BE chua cho phu huynh tao hay sua ho so con. */
+  emailVerifiedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };

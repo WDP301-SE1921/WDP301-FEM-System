@@ -15,10 +15,12 @@ type AuthState = {
   hydrate: () => Promise<void>;
   /** Luu phien BE tra ve sau login, register. */
   signIn: (session: AuthSession) => Promise<void>;
+  /** Ghi de tai khoan cua phien dang co bang ban moi doc tu BE, vd sau khi xac minh email. */
+  setUser: (user: User) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isHydrated: false,
@@ -44,6 +46,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       storage.setJson(StorageKeys.user, user),
     ]);
     set({ user, isAuthenticated: true });
+  },
+
+  setUser: async (user) => {
+    // Da dang xuat trong luc cho BE tra loi thi khong luu lai tai khoan cua phien cu
+    if (!get().isAuthenticated) return;
+    await storage.setJson(StorageKeys.user, user);
+    set({ user });
   },
 
   signOut: async () => {

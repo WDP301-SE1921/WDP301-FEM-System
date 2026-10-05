@@ -2,7 +2,8 @@
  * Don dang ky (RegistrationOrder), thanh toan (Payment) va ghi danh (Enrollment) gia cua hoc sinh mau
  * (`./mock-students.ts`), dong vai cac bang `registration_orders`, `payments`, `enrollments`,
  * `classes`, `programs`, `class_weekly_schedules` cua BE (nhanh `dev`, module `registration-flow`).
- * Dung cho cac route trong `./registration-flow.ts`.
+ * Ghi danh va bien lai da noi BE that. Du lieu nay con dung cho route TAM liet ke don dang ky
+ * (`./registration-flow.ts`) va de mock bai tap (`./academic.ts`) lay `classId` cua ghi danh mau.
  *
  * Ghi danh trung id, lop, chuong trinh va trang thai voi mock mon hoc (`./mock-enrollments.ts`); lop
  * dang hoc lay lich co dinh va ngay bat dau tu lich gia nen khop voi tab Lich hoc. Ngay tinh theo so
@@ -19,10 +20,9 @@
  */
 import { addDays, parseDateKey, startOfDay, toDateKey } from '@/utils/date';
 
-import { findUserById } from './mock-accounts';
 import { buildMockEnrollments, type MockEnrollment } from './mock-enrollments';
 import { CLASS_START_DAYS } from './mock-schedule';
-import { findStudentById, type MockStudent } from './mock-students';
+import { SAMPLE_PARENT, type MockStudent } from './mock-students';
 
 const CURRENCY = 'VND';
 /** `User.id` cua nhan vien lap don va xac nhan thu tien. Mock chua co tai khoan nay. */
@@ -30,8 +30,6 @@ const STAFF_USER_ID = 'mock-staff-1';
 /** `createdAt` cua lop, chuong trinh va lich co dinh: co truoc moi don dang ky. */
 const SEED_TIMESTAMP = '2026-01-05T02:00:00.000Z';
 const CLASS_CAPACITY = 20;
-/** Do dai cua `YYYY-MM-DD`. */
-const DATE_KEY_LENGTH = 10;
 /** Phu huynh dong hoc phi tai trung tam truoc ngay bat dau hoc chung nay ngay. */
 const PAYMENT_LEAD_DAYS = 3;
 /** Gio nhan vien lap don va gio xac nhan da thu tien trong ngay. */
@@ -134,32 +132,6 @@ export type MockRegistration = MockOrderRow & {
 export type MockTuitionEnrollment = MockEnrollmentRow & {
   class: MockClass;
   registrationOrder: MockOrderRow & { payment: MockPayment | null };
-};
-
-/** Response GET /registrations/:id/receipt (`receiptResponse` cua BE). */
-export type MockReceipt = {
-  registrationId: string;
-  status: MockOrderRow['status'];
-  parentEmail: string;
-  student: { fullName: string; grade: number };
-  class: {
-    id: string;
-    name: string;
-    subject: string;
-    grade: number;
-    schedules: MockClassWeeklySchedule[];
-  };
-  term: { packageMonths: number; startDate: string; endDate: string; label: string };
-  payment: {
-    id: string;
-    receiptNumber: string;
-    amount: number;
-    currency: string;
-    confirmedAt: string;
-  };
-  enrollment: { id: string; status: MockEnrollmentRow['status'] } | null;
-  quotedAmount: number;
-  currency: string;
 };
 
 type OrderTemplate = {
@@ -293,11 +265,6 @@ function toDateColumn(date: Date): string {
   return `${toDateKey(date)}T00:00:00.000Z`;
 }
 
-/** Giong `dateOnly` cua BE: bien lai tra ngay dang `YYYY-MM-DD`. */
-function toDateOnly(dateColumn: string): string {
-  return dateColumn.slice(0, DATE_KEY_LENGTH);
-}
-
 function atTime(date: Date, [hours, minutes]: readonly [number, number]): string {
   return new Date(
     date.getFullYear(),
@@ -420,7 +387,7 @@ function toRegistration(seed: OrderSeed, student: MockStudent): MockRegistration
   return {
     id: seed.id,
     type: 'EXISTING_STUDENT_NEW_SUBJECT',
-    parentEmail: findUserById(student.parentUserId)?.email ?? '',
+    parentEmail: SAMPLE_PARENT.email,
     parentPhone: null,
     studentFullName: student.fullName,
     studentGrade: student.grade,
@@ -499,54 +466,4 @@ export function buildMockTuitionEnrollments(
         : [],
     )
     .sort(byNewest);
-}
-
-/** Tim don theo id tren moi hoc sinh, de route tu kiem tra quyen so huu nhu BE. */
-export function findMockRegistration(
-  registrationId: string,
-  now: Date = new Date(),
-): MockRegistration | undefined {
-  const template = [...PAID_ORDERS, ...DRAFT_ORDERS].find(({ id }) => id === registrationId);
-  const student = template ? findStudentById(template.studentId) : undefined;
-  if (!student) return undefined;
-  return buildMockRegistrations(student, now).find(({ id }) => id === registrationId);
-}
-
-/** Giong `receiptResponse` cua BE. null khi don chua xac nhan thu tien. */
-export function toMockReceipt(order: MockRegistration, now: Date = new Date()): MockReceipt | null {
-  if (!order.payment) return null;
-
-  const { program, weeklySchedules } = order.class;
-  return {
-    registrationId: order.id,
-    status: order.status,
-    parentEmail: order.parentEmail,
-    student: { fullName: order.studentFullName, grade: order.studentGrade },
-    class: {
-      id: order.class.id,
-      name: order.class.name,
-      subject: program.subject,
-      grade: program.grade,
-      schedules: weeklySchedules,
-    },
-    term: {
-      packageMonths: order.packageMonths,
-      startDate: toDateOnly(order.startDate),
-      endDate: toDateOnly(order.endDate),
-      // BE chi phan biet ngay bat dau o tuong lai hay khong, khong bao ky da het han
-      label: order.startDate > toDateColumn(startOfDay(now)) ? 'Sắp học' : 'Đang học',
-    },
-    payment: {
-      id: order.payment.id,
-      receiptNumber: order.payment.receiptNumber,
-      amount: Number(order.payment.amount),
-      currency: order.payment.currency,
-      confirmedAt: order.payment.confirmedAt,
-    },
-    enrollment: order.enrollment
-      ? { id: order.enrollment.id, status: order.enrollment.status }
-      : null,
-    quotedAmount: Number(order.quotedAmount),
-    currency: order.currency,
-  };
 }

@@ -4,6 +4,8 @@ export * from './components/login-form';
 export * from './components/login-header';
 export * from './components/login-intro';
 export * from './components/register-form';
+export * from './components/verify-email-flow';
 export * from './hooks/use-auth';
 export * from './schemas';
 export * from './types';
+export * from './utils';

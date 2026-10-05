@@ -2,35 +2,48 @@ import axios from 'axios';
 
 import { Endpoints } from '@/api/endpoints';
 import { academicRoutes, type MockSubmission } from '@/api/mocks/academic';
-import { authRoutes } from '@/api/mocks/auth';
 import { createMockAdapter } from '@/api/mocks/mock-adapter';
 import type { MockQuestion } from '@/api/mocks/mock-assignment-details';
 import type { MockAssignment } from '@/api/mocks/mock-assignments';
+import { SAMPLE_PARENT } from '@/api/mocks/mock-students';
 import { parentRoutes } from '@/api/mocks/parent';
-import { registrationFlowRoutes } from '@/api/mocks/registration-flow';
 
-// logger doc Config -> can bien moi truong; test nay khong can log
+// Test nay khong can log
 jest.mock('@/lib/logger', () => ({
   logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));
 
 /**
- * Cac route mock ghi du lieu (sua ho so con, nop bai) tach khoi `mock-api.test.ts`: moi file test co
- * bo nho mock rieng nen bai nop o day khong lam doi danh sach bai tap ma file kia kiem tra.
+ * Cac route mock ghi du lieu (nop bai) tach khoi `mock-api.test.ts`: moi file test co bo nho mock
+ * rieng nen bai nop o day khong lam doi danh sach bai tap ma file kia kiem tra.
  */
 const client = axios.create({
-  adapter: createMockAdapter(
-    [...authRoutes, ...parentRoutes, ...registrationFlowRoutes, ...academicRoutes],
-    0,
-  ),
+  adapter: createMockAdapter([...parentRoutes, ...academicRoutes], 0),
 });
 
-const PASSWORD = 'Matkhau123';
-const DEMO_PARENT_EMAIL = 'phuhuynh@example.com';
-const OTHER_PARENT_EMAIL = 'phuhuynh.cu@example.com';
-const TEACHER_EMAIL = 'giaovien@example.com';
 const MINH_ANH_ID = 'mock-student-1';
-const HOANG_LONG_ID = 'mock-student-2';
+
+type Auth = { headers: { Authorization: string } };
+
+function encodeJwtSegment(value: object): string {
+  return Buffer.from(JSON.stringify(value)).toString('base64url');
+}
+
+/** Bearer dang JWT nhu BE phat sau khi dang nhap. Server gia chi doc payload nen chu ky de gia. */
+function authAs(userId: string, role: string): Auth {
+  const accessToken = [
+    encodeJwtSegment({ alg: 'HS256', typ: 'JWT' }),
+    encodeJwtSegment({ sub: userId, sid: 'test-session', jti: 'test-jti', type: 'access', role }),
+    'chu-ky-gia',
+  ].join('.');
+  return { headers: { Authorization: `Bearer ${accessToken}` } };
+}
+
+/** Phu huynh mau: so huu hai hoc sinh mau. */
+const DEMO_PARENT = authAs(SAMPLE_PARENT.id, 'PARENT');
+/** Phu huynh that cua BE: khong co bai tap mau nao. */
+const OTHER_PARENT = authAs('cmg2x1abc0000parentreal', 'PARENT');
+const TEACHER = authAs('cmg2x1abc0002teacher', 'TEACHER');
 
 type AssignmentDetail = {
   id: string;
@@ -39,14 +52,6 @@ type AssignmentDetail = {
   recipients: { id: string; enrollmentId: string }[];
   questions: (Omit<MockQuestion, 'correctAnswer'> & { correctAnswer?: string })[];
 };
-
-async function loginAs(email: string) {
-  const { data } = await client.post<{ data: { tokens: { accessToken: string } } }>(
-    Endpoints.auth.login,
-    { email, password: PASSWORD },
-  );
-  return { headers: { Authorization: `Bearer ${data.data.tokens.accessToken}` } };
-}
 
 /** Lay status va ma loi tu request bi reject. */
 async function captureError(request: Promise<unknown>) {
@@ -60,7 +65,7 @@ async function captureError(request: Promise<unknown>) {
   throw new Error('Request khong bi reject');
 }
 
-async function getAssignments(auth: Awaited<ReturnType<typeof loginAs>>) {
+async function getAssignments(auth: Auth) {
   const { data } = await client.get<{ data: MockAssignment[] }>(
     Endpoints.parent.studentAssignments(MINH_ANH_ID),
     auth,
@@ -68,7 +73,7 @@ async function getAssignments(auth: Awaited<ReturnType<typeof loginAs>>) {
   return data.data;
 }
 
-async function getDetail(auth: Awaited<ReturnType<typeof loginAs>>, assignmentId: string) {
+async function getDetail(auth: Auth, assignmentId: string) {
   const { data } = await client.get<{ data: AssignmentDetail }>(
     Endpoints.academic.assignment(assignmentId),
     auth,
@@ -76,7 +81,7 @@ async function getDetail(auth: Awaited<ReturnType<typeof loginAs>>, assignmentId
   return data.data;
 }
 
-async function getSubmissions(auth: Awaited<ReturnType<typeof loginAs>>, assignmentId: string) {
+async function getSubmissions(auth: Auth, assignmentId: string) {
   const { data } = await client.get<{ data: MockSubmission[] }>(
     Endpoints.academic.assignmentSubmissions(assignmentId),
     auth,
@@ -92,35 +97,10 @@ function answerAll(questions: AssignmentDetail['questions']) {
   }));
 }
 
-describe('api/mocks: ho so con va nop bai', () => {
-  describe('GET /me/students', () => {
-    it('tra ban ghi StudentProfile cua phu huynh kem ngay sinh dang cot ngay Prisma', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
-      const { data } = await client.get(Endpoints.me.students, auth);
-
-      expect(data.data).toEqual([
-        expect.objectContaining({
-          id: MINH_ANH_ID,
-          fullName: 'Nguyễn Minh Anh',
-          grade: 8,
-          dateOfBirth: '2013-03-15T00:00:00.000Z',
-          status: 'ACTIVE',
-        }),
-        expect.objectContaining({ id: HOANG_LONG_ID, grade: 6, dateOfBirth: null }),
-      ]);
-    });
-
-    it('chi PARENT duoc goi, thieu Bearer 401', async () => {
-      expect(await captureError(client.get(Endpoints.me.students))).toMatchObject({ status: 401 });
-      expect(
-        await captureError(client.get(Endpoints.me.students, await loginAs(TEACHER_EMAIL))),
-      ).toEqual({ status: 403, code: 'FORBIDDEN' });
-    });
-  });
-
+describe('api/mocks: nop bai', () => {
   describe('GET /academic/assignments/:id', () => {
     it('bai chua nop dang mo: co cau hoi va recipient cua con, chua co dap an dung', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const assignments = await getAssignments(auth);
       const todo = assignments.find(
         ({ submission, questionCounts }) =>
@@ -148,7 +128,7 @@ describe('api/mocks: ho so con va nop bai', () => {
     });
 
     it('bai da co diem: da dong, co dap an dung, diem tung cau cong lai bang diem cua bai', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const graded = (await getAssignments(auth)).filter(({ grade }) => grade !== null);
       expect(graded.length).toBeGreaterThan(0);
 
@@ -182,112 +162,22 @@ describe('api/mocks: ho so con va nop bai', () => {
     });
 
     it('bai khong giao cho con cua phu huynh 403, giao vien 403, thieu Bearer 401', async () => {
-      const demo = await loginAs(DEMO_PARENT_EMAIL);
+      const demo = DEMO_PARENT;
       const [assignment] = await getAssignments(demo);
       const url = Endpoints.academic.assignment(assignment?.id ?? '');
       const forbidden = { status: 403, code: 'FORBIDDEN' };
 
       expect(await captureError(client.get(url))).toMatchObject({ status: 401 });
-      expect(await captureError(client.get(url, await loginAs(OTHER_PARENT_EMAIL)))).toEqual(
-        forbidden,
-      );
-      expect(await captureError(client.get(url, await loginAs(TEACHER_EMAIL)))).toEqual(forbidden);
+      expect(await captureError(client.get(url, OTHER_PARENT))).toEqual(forbidden);
+      expect(await captureError(client.get(url, TEACHER))).toEqual(forbidden);
       // Phu huynh khac khong thay bai nop cua con nguoi khac
-      expect(await getSubmissions(await loginAs(OTHER_PARENT_EMAIL), assignment?.id ?? '')).toEqual(
-        [],
-      );
+      expect(await getSubmissions(OTHER_PARENT, assignment?.id ?? '')).toEqual([]);
     });
   });
 
   // Tu day cac test ghi vao bo nho mock
-  describe('PATCH /me/students/:id', () => {
-    it('sua ho ten va ngay sinh; danh sach con o ca hai route deu doi theo', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
-
-      const { status, data } = await client.patch(
-        Endpoints.me.student(HOANG_LONG_ID),
-        { fullName: '  Nguyễn Hoàng Long Nhật ', grade: 6, dateOfBirth: '2015-09-02' },
-        auth,
-      );
-      expect(status).toBe(200);
-      expect(data.data).toMatchObject({
-        id: HOANG_LONG_ID,
-        fullName: 'Nguyễn Hoàng Long Nhật',
-        grade: 6,
-        dateOfBirth: '2015-09-02T00:00:00.000Z',
-      });
-
-      const linked = await client.get(Endpoints.parent.students, auth);
-      expect(linked.data.data).toContainEqual(
-        expect.objectContaining({ id: HOANG_LONG_ID, fullName: 'Nguyễn Hoàng Long Nhật' }),
-      );
-
-      // null xoa ngay sinh, field khong gui thi giu nguyen
-      const cleared = await client.patch(
-        Endpoints.me.student(HOANG_LONG_ID),
-        { dateOfBirth: null },
-        auth,
-      );
-      expect(cleared.data.data).toMatchObject({
-        fullName: 'Nguyễn Hoàng Long Nhật',
-        dateOfBirth: null,
-      });
-    });
-
-    it('khong doi duoc khoi khi con dang co mon hoc; con chua co mon thi doi duoc', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
-      expect(
-        await captureError(client.patch(Endpoints.me.student(MINH_ANH_ID), { grade: 9 }, auth)),
-      ).toEqual({ status: 409, code: 'STUDENT_GRADE_LOCKED' });
-
-      const created = await client.post(
-        Endpoints.parent.students,
-        { fullName: 'Nguyễn Gia Huy', grade: 7 },
-        auth,
-      );
-      const updated = await client.patch(
-        Endpoints.me.student(created.data.data.id),
-        { grade: 8 },
-        auth,
-      );
-      expect(updated.data.data).toMatchObject({ fullName: 'Nguyễn Gia Huy', grade: 8 });
-    });
-
-    it.each([
-      ['thua field', { fullName: 'Nguyễn Minh Anh', subjectNames: [] }],
-      ['ho ten rong', { fullName: '' }],
-      ['khoi ngoai 6-9', { grade: 10 }],
-      ['ngay sinh sai dinh dang', { dateOfBirth: '15/03/2013' }],
-    ])('bao VALIDATION_ERROR khi %s', async (_case, body) => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
-      expect(
-        await captureError(client.patch(Endpoints.me.student(MINH_ANH_ID), body, auth)),
-      ).toEqual({ status: 400, code: 'VALIDATION_ERROR' });
-    });
-
-    it('con khong ton tai 404, con cua phu huynh khac 403, thieu Bearer 401', async () => {
-      const body = { fullName: 'Tên mới' };
-      const demo = await loginAs(DEMO_PARENT_EMAIL);
-
-      expect(
-        await captureError(client.patch(Endpoints.me.student(MINH_ANH_ID), body)),
-      ).toMatchObject({ status: 401 });
-      expect(
-        await captureError(client.patch(Endpoints.me.student('khong-ton-tai'), body, demo)),
-      ).toEqual({ status: 404, code: 'STUDENT_NOT_FOUND' });
-      expect(
-        await captureError(
-          client.patch(Endpoints.me.student(MINH_ANH_ID), body, await loginAs(OTHER_PARENT_EMAIL)),
-        ),
-      ).toEqual({ status: 403, code: 'FORBIDDEN' });
-    });
-  });
-
   describe('POST /academic/submissions', () => {
-    async function findTodo(
-      auth: Awaited<ReturnType<typeof loginAs>>,
-      kind: 'MULTIPLE_CHOICE' | 'ESSAY',
-    ) {
+    async function findTodo(auth: Auth, kind: 'MULTIPLE_CHOICE' | 'ESSAY') {
       const todo = (await getAssignments(auth)).find(
         ({ submission, questionCounts }) => submission === null && questionCounts[kind] > 0,
       );
@@ -295,7 +185,7 @@ describe('api/mocks: ho so con va nop bai', () => {
     }
 
     it('tu choi body sai, recipient la, thieu cau, lua chon ngoai de va file dinh kem', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const detail = await findTodo(auth, 'MULTIPLE_CHOICE');
       const recipientId = detail.recipients[0]?.id ?? '';
       const answers = answerAll(detail.questions);
@@ -327,7 +217,7 @@ describe('api/mocks: ho so con va nop bai', () => {
         code: 'INVALID_FILES',
       });
 
-      const otherParent = await loginAs(OTHER_PARENT_EMAIL);
+      const otherParent = OTHER_PARENT;
       expect(
         await captureError(
           client.post(Endpoints.academic.submissions, { recipientId, answers }, otherParent),
@@ -337,7 +227,7 @@ describe('api/mocks: ho so con va nop bai', () => {
     });
 
     it('nop bai trac nghiem: bai chuyen sang da nop cho cham, nop lai duoc toi het luot', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const detail = await findTodo(auth, 'MULTIPLE_CHOICE');
       const body = { recipientId: detail.recipients[0]?.id, answers: answerAll(detail.questions) };
 
@@ -372,7 +262,7 @@ describe('api/mocks: ho so con va nop bai', () => {
     });
 
     it('bai tu luan chi nop mot lan; bai da dong khong nhan bai nua', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const essay = await findTodo(auth, 'ESSAY');
       const body = { recipientId: essay.recipients[0]?.id, answers: answerAll(essay.questions) };
 
@@ -397,7 +287,7 @@ describe('api/mocks: ho so con va nop bai', () => {
     });
 
     it('nop lai bai da nop theo lich gia: giu lan nop cu, lan moi la lan thu hai', async () => {
-      const auth = await loginAs(DEMO_PARENT_EMAIL);
+      const auth = DEMO_PARENT;
       const waiting = (await getAssignments(auth)).find(
         ({ submission, grade, maxAttempts, dueAt }) =>
           submission?.attemptNo === 1 &&

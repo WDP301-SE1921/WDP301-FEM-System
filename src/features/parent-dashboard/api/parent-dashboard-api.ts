@@ -14,6 +14,7 @@ import type {
   StudentAssignment,
   StudentDashboard,
   StudentEnrollment,
+  StudentProfile,
   StudentRegistration,
   SubmissionReceipt,
   SubmissionRecord,
@@ -22,12 +23,23 @@ import type {
   TuitionReceipt,
   UnreadNotificationCount,
 } from '../types';
+import { getActiveSubjectNames } from '../utils';
 
 export const parentDashboardApi = {
-  /** Cac con da lien ket voi tai khoan phu huynh dang dang nhap. */
+  /**
+   * Cac con cua phu huynh dang dang nhap kem mon dang hoc. GET /me/students cua BE khong tra mon,
+   * nen doc them ghi danh cua tung con.
+   */
   async getStudents(): Promise<LinkedStudent[]> {
-    const { data } = await apiClient.get<ApiResponse<LinkedStudent[]>>(Endpoints.parent.students);
-    return data.data;
+    const { data } = await apiClient.get<ApiResponse<StudentProfile[]>>(Endpoints.me.students);
+    return Promise.all(
+      data.data.map(async ({ id, fullName, grade }) => ({
+        id,
+        fullName,
+        grade,
+        subjectNames: getActiveSubjectNames(await parentDashboardApi.getTuitionEnrollments(id)),
+      })),
+    );
   },
 
   /** Tong quan hom nay cua mot con: buoi hoc, diem danh, diem, viec can chu y, thong bao. */

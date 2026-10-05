@@ -18,6 +18,14 @@ Dang ky lop, huy lop va thu hoc phi do Nhan vien lam tai trung tam, khong lam tr
 
 Dac ta day du: [docs/SRS.md](docs/SRS.md).
 
+Du an gom ba repo:
+
+| Repo                | Vai tro                                            |
+| ------------------- | -------------------------------------------------- |
+| `WDP301-FEM-System` | App mobile cho phu huynh (repo nay)                |
+| `WDP301-FE-System`  | FE web cho nhan su trung tam (Next.js)             |
+| `WDP301-BE-System`  | Backend, REST API chung cho web va mobile (NestJS) |
+
 ## Cong nghe
 
 | Thanh phan   | Cong nghe                            |
@@ -44,10 +52,14 @@ git clone https://github.com/WDP301-SE1921/WDP301-FEM-System.git
 cd WDP301-FEM-System
 
 npm install          # tu dong cai luon git hook (husky)
+cp .env.example .env # roi dien EXPO_PUBLIC_API_URL: dia chi backend kem /api/v1
 ```
 
-> App hien **chi dung mock data** (`src/api/mocks/`), khong goi backend nen khong can `.env` hay
-> dia chi backend. Tai khoan dung thu ghi o dau cac file trong `src/api/mocks/`.
+> Dang nhap, dang ky, xac minh email, ho so con, ghi danh va bien lai goi **backend that** tai
+> `EXPO_PUBLIC_API_URL` (danh sach endpoint trong `src/api/wired-routes.ts`), nen phai chay backend
+> va dang nhap bang tai khoan cua backend. Dien thoai that dung IP LAN cua may chay backend, Android
+> emulator dung `10.0.2.2`, khong dung `localhost`. Cac man hinh con lai van dung **mock data**
+> (`src/api/mocks/`) va hien trang thai rong voi tai khoan that.
 
 ## Chay app
 

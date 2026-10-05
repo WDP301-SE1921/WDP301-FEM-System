@@ -4,7 +4,7 @@ Huong dan cho Claude Code (claude.ai/code) khi lam viec trong repo nay.
 
 App mobile cua EduGrade (repo nay goi la "he thong FEM"), danh cho phu huynh: Expo SDK 57, React Native 0.86, React 19.2, TypeScript strict, expo-router, React Query, Zustand, React Hook Form + Zod, Axios.
 
-**App hien CHI DUNG MOCK DATA** (`src/api/mocks/`): khong co dia chi BE, khong co co bat/tat, khong request nao toi BE that. Chi noi BE that khi nguoi dung bao "wire" dung endpoint do.
+**App goi BE that cho dung cac endpoint trong `src/api/wired-routes.ts`** (dang nhap, dang ky, xac minh email, ho so con, ghi danh, bien lai; noi ngay 2026-10-05, dia chi BE lay tu `EXPO_PUBLIC_API_URL`). **Moi endpoint khac van chi dung mock** (`src/api/mocks/`) va khong ra mang. Chi noi them endpoint khi nguoi dung bao "wire" dung endpoint do; khong them co bat/tat mock, khong cho request chua wire roi ra mang.
 
 `docs/ARCHITECTURE.md` va `docs/CODING_CONVENTIONS.md` la luat bat buoc va duoc nap tu dong o cuoi file nay. File nay chi bo sung nhung gi hai tai lieu do chua noi: pham vi san pham, lenh, cho de lam sai, design pattern va chuan clean code.
 
@@ -12,7 +12,7 @@ App mobile cua EduGrade (repo nay goi la "he thong FEM"), danh cho phu huynh: Ex
 
 Nguon: `docs/SRS.md` (dac ta yeu cau, ban ngay 2026-10-03, khong nap tu dong). Doc file do truoc khi lam task dung toi nghiep vu. Duoi day la phan anh huong truc tiep toi code mobile:
 
-- **EduGrade** la nen tang quan ly hoc tap cua mot trung tam day them (Toan, Ly, Hoa, Sinh, khoi 6-9), single-tenant. Web phuc vu 4 vai tro nhan su: Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien. **Mobile chi phuc vu Phu huynh.** Giao vien co dung mobile hay khong con la van de mo (SRS muc 9, tam theo Web-only): khong lam man hinh cho vai tro khac phu huynh khi chua duoc yeu cau.
+- **EduGrade** la nen tang quan ly hoc tap cua mot trung tam day them (Toan, Ly, Hoa, Sinh, khoi 6-9), single-tenant. Web phuc vu 4 vai tro nhan su: Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien; code web nam o repo rieng `WDP301-FE-System` (Next.js), khong nam trong repo nay va co luat rieng cua no. **Mobile chi phuc vu Phu huynh.** Giao vien co dung mobile hay khong con la van de mo (SRS muc 9, tam theo Web-only): khong lam man hinh cho vai tro khac phu huynh khi chua duoc yeu cau.
 - **Khong co tai khoan hoc sinh.** Tai khoan dang nhap la cua phu huynh. Mot tai khoan quan ly nhieu ho so con va chuyen doi giua cac con trong cung phien dang nhap. Con nhan bai, nop bai va xem ket qua qua phien dang nhap cua phu huynh.
 - **Phu huynh tu tao tai khoan (email + mat khau) va tu tao ho so con ngay tren app.** Khong co link hay ma kich hoat trong bat ky truong hop nao, khong them lai luong ma lien ket.
 - **Theo tung con, phu huynh xem:** mon hoc, lop, lich hoc, lich hoc bu, goi hoc phi, diem kem dap an dung, lich su diem, ty le di hoc, tien do hoc tap. Phu huynh nhan va nop bai tap ve nha tren app.
@@ -29,7 +29,7 @@ Code hien tai chua khop het cac diem tren: enum diem danh va cach tinh ty le di 
 
 ```bash
 npm install                  # lan dau (cai luon husky hook)
-cp .env.example .env         # khong bat buoc; app chi dung mock nen khong can dia chi BE
+cp .env.example .env         # bat buoc: dien EXPO_PUBLIC_API_URL (dia chi BE), thieu thi app bao loi luc mo
 npm start                    # Metro + Expo Go (npm run start:clear neu Metro loi la)
 
 npm run validate             # typecheck + lint + test:ci
@@ -51,9 +51,10 @@ PowerShell doi variant: `$env:APP_VARIANT = 'preview'; npx expo start` (cu phap 
 - **Typed routes dang bat.** `href` cua `Link`, `Redirect`, `router.*` duoc kiem tra kieu. Them hoac doi ten route ma typecheck bao sai `href` thi chay `npx expo start` mot lan de sinh lai `.expo/types`.
 - **File route bat buoc `export default`** (expo-router). Moi file khac dung named export.
 - **Expo SDK 57 / RN 0.86 moi hon phan lon tai lieu cu.** Truoc khi dung API la, doc docs.expo.dev dung version. Them thu vien qua `npx expo install` de lay version khop SDK.
-- **Env.** Moi bien `EXPO_PUBLIC_*` bi inline vao bundle nen khong dat secret. Doi `.env` phai tat Metro roi chay lai.
+- **Env.** Moi bien `EXPO_PUBLIC_*` bi inline vao bundle nen khong dat secret. Doi `.env` phai tat Metro roi chay lai. `EXPO_PUBLIC_API_URL` la bat buoc (`http://<host>:3000/api/v1`): dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost`. Test dat san gia tri nay trong `jest.setup.js`.
 - **Envelope API.** Backend tra `ApiResponse<T> = { success: true, data }`, loi la `{ success: false, error: { code, message, requestId, details? } }` voi `message` tieng Anh. Ham trong `features/<ten>/api/` tra ve `data.data` da unwrap, hook va UI khong bao gio thay envelope. Moi loi den UI deu la `AppError` (`message` tieng Viet, `status`, `code`) do interceptor trong `api/client.ts` chuan hoa theo `ApiErrorMessages`. Can thong bao theo ngu canh thi feature doi theo `error.code` trong tang `api/` cua minh.
-- **Chi dung mock API.** App khong goi BE that: moi endpoint (ke ca endpoint BE da co) deu tra loi tu `src/api/mocks/`, request khong co route mock bi chan voi 404. Them endpoint thi them route mock trong cung task (xem muc "Mock API" trong `docs/ARCHITECTURE.md`), khong viet ham gia trong feature. Chi noi BE that khi nguoi dung bao "wire".
+- **BE that va mock.** Chi request khop `WIRED_ROUTES` (`src/api/wired-routes.ts`) ra BE that; moi request khac do `src/api/mocks/` tra loi, khong co route mock thi bi chan voi 404 chu khong ra mang. Them endpoint thi them route mock trong cung task (xem muc "BE that va Mock API" trong `docs/ARCHITECTURE.md`), khong viet ham gia trong feature, va khong tu them vao `WIRED_ROUTES`: chi wire khi nguoi dung bao "wire" dung endpoint do. Dang nhap la tai khoan that cua BE nen mock khong con tai khoan mau; man hinh con dung mock hien trang thai rong voi tai khoan that.
+- **Xac minh email.** BE chi cho phu huynh tao va sua ho so con khi email da xac minh (`PARENT_EMAIL_UNVERIFIED`); SRS khong co buoc nay. `User.emailVerifiedAt` trong phien la ban chup luc dang nhap, man `verify-email` doc lai tu `GET /auth/me`. Dung `needsEmailVerification()` cua feature `auth`, khong tu so sanh field.
 - **Auth.** Token chi doc/ghi qua `secureStorage` (`@/lib/storage`) voi key tu `StorageKeys`. Refresh khi gap 401 da nam trong interceptor (gom request dong thoi vao mot lan refresh), khong viet lai o feature. `api/` khong duoc import `store/`: store dang ky callback qua `setUnauthorizedHandler`.
 - **Ngon ngu.** Ten bien, ham, file: tieng Anh. Comment va tai lieu: tieng Viet khong dau nhu code hien co. Chuoi UI: tieng Viet co dau. Chuoi loi dung chung nam trong `ErrorMessages` (`@/constants/messages`).
 - **Gap code vi pham luat** thi code moi van theo luat, khong bat chuoc. Khong tu sua hang loat ngoai pham vi task; bao lai de nguoi dung quyet dinh.

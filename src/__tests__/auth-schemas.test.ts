@@ -1,4 +1,4 @@
-import { loginSchema, registerSchema } from '@/features/auth/schemas';
+import { loginSchema, registerSchema, verifyEmailSchema } from '@/features/auth/schemas';
 
 type ParseResult = { error?: { issues: { path: PropertyKey[]; message: string }[] } };
 
@@ -70,6 +70,27 @@ describe('features/auth/schemas', () => {
     it('bao loi o confirmPassword khi mat khau xac nhan khong khop', () => {
       const result = registerSchema.safeParse({ ...valid, confirmPassword: '87654321' });
       expect(firstError(result, 'confirmPassword')).toBe('Mật khẩu xác nhận không khớp');
+    });
+  });
+
+  describe('verifyEmailSchema', () => {
+    /** BE phat ma 43 ky tu (32 byte dang base64url). */
+    const token = 'k3J9xQ2mVb7Lw0Zt5Yh8Nf1Rc4Ud6Sa-_pEgIoTqWzA';
+
+    it('chap nhan ma BE gui va cat khoang trang khi dan tu email', () => {
+      expect(verifyEmailSchema.safeParse({ token: ` ${token}\n` }).data).toEqual({ token });
+    });
+
+    it('bo trong thi nhac dan ma', () => {
+      const result = verifyEmailSchema.safeParse({ token: '   ' });
+      expect(firstError(result, 'token')).toBe('Vui lòng dán mã xác minh');
+    });
+
+    it('ma ngan hon 32 ky tu nhu VerifyEmailDto thi bao dan thieu', () => {
+      const result = verifyEmailSchema.safeParse({ token: token.slice(0, 31) });
+      expect(firstError(result, 'token')).toBe(
+        'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email',
+      );
     });
   });
 });

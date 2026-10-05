@@ -13,6 +13,7 @@ src/
 ├── app/                      # Route cua expo-router (file = URL)
 │   ├── _layout.tsx           # Layout goc: provider + splash + Stack
 │   ├── index.tsx             # Cong vao, dieu huong theo trang thai dang nhap
+│   ├── verify-email.tsx      # Phu huynh dan ma BE gui qua email de xac minh tai khoan
 │   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
 │   ├── children/
 │   │   └── [studentId].tsx   # Phu huynh sua ho so mot con (ho ten, lop, ngay sinh)
@@ -40,7 +41,9 @@ src/
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token
 │   ├── endpoints.ts          # Tap trung duong dan API
-│   ├── mocks/                # Server gia, app chi goi toi day (xem muc Mock API)
+│   ├── wired-routes.ts       # Endpoint da noi BE that; chi cac endpoint nay ra mang
+│   ├── route-pattern.ts      # So khop method + duong dan co tham so, dung chung cho wired va mock
+│   ├── mocks/                # Server gia cho moi endpoint chua wire (xem muc BE that va Mock API)
 │   └── query-client.ts       # Cau hinh React Query + query key factory
 │
 ├── components/
@@ -145,6 +148,11 @@ Mo app
             ├─ isAuthenticated = true   -> (tabs)
             └─ isAuthenticated = false  -> (auth)/welcome
 
+Dang nhap / dang ky xong
+  └─ luu phien, roi theo getPostSignInHref(user)
+       ├─ phu huynh chua xac minh email -> verify-email (bo qua duoc)
+       └─ con lai                        -> (tabs)
+
 Moi request
   └─ interceptor gan header Authorization
 
@@ -155,6 +163,8 @@ Gap 401
 ```
 
 Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong nam trong AsyncStorage. Tren web SecureStore khong ton tai nen `src/lib/storage.ts` tu dong fallback ve AsyncStorage.
+
+BE chi cho phu huynh tao va sua ho so con khi email da xac minh. `user` trong store la ban chup luc dang nhap: man `verify-email` doc lai `GET /auth/me` roi ghi vao store qua `setUser`, va man `add-child` thay form bang loi nhac khi `needsEmailVerification(user)`.
 
 ## Them mot feature moi
 
@@ -170,17 +180,24 @@ Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong na
 
 Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-fast neu thieu).
 
+| Bien                  | Bat buoc | Y nghia                                                                                                                                                            |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `EXPO_PUBLIC_ENV`     | Khong    | `development` (mac dinh), `staging`. `production` bi chan vi con man hinh dung mock                                                                                |
+| `EXPO_PUBLIC_API_URL` | Co       | Dia chi BE kem prefix, vd `http://192.168.1.10:3000/api/v1`. Dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost` |
+
 > `EXPO_PUBLIC_*` bi **inline thang vao file bundle** va ai cung doc duoc.
 > Khong bao gio dat API key rieng tu, secret, hay chuoi ket noi DB o day.
 
-## Mock API
+## BE that va Mock API
 
-App hien **chi dung mock**, khong request nao toi BE that, ke ca endpoint BE da lam xong. Mock nam o tang HTTP, khong mock trong feature:
+Mot phan endpoint da noi BE that, phan con lai chay bang mock. Ca hai nam o tang HTTP, feature khong biet request cua minh di dau:
 
-- `src/api/mocks/` la server gia, luon thay adapter mang cua `apiClient` va `refreshClient` (khong co co bat/tat). Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. `config.ts` bao loi neu `EXPO_PUBLIC_ENV=production`.
+- `src/api/wired-routes.ts` liet ke cac endpoint da noi BE that (`WIRED_ROUTES`). Adapter cua `apiClient` va `refreshClient` (`createApiAdapter`) chi cho request khop danh sach nay ra mang, toi `EXPO_PUBLIC_API_URL`. Khong co co bat/tat.
+- Moi request khac do `src/api/mocks/` (server gia) tra loi. Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. `config.ts` bao loi neu `EXPO_PUBLIC_ENV=production`.
 - Mock tra dung envelope, HTTP status va `error.code` cua BE (lay tu DTO hoac `EDUGRADE_BACKEND_FLOW.md`), va gia lap `ValidationPipe` (thua hoac thieu field thi 400). Nho vay `features/<ten>/api/`, interceptor va `normalizeError` chay y nhu voi BE that.
+- Dang nhap da noi BE that nen token la JWT cua BE. `mocks/mock-guard.ts` chi doc `sub` va `role` trong payload de gia lap guard; mock khong con tai khoan mau. Ho so con cung do BE quan ly: route mock nhan `studentId` khong co trong du lieu mau thi coi la con that va tra du lieu rong, nen cac man hinh con dung mock hien trang thai rong voi tai khoan that. Du lieu mau trong `mocks/mock-*.ts` chi con test goi toi.
 - Them endpoint moi thi them route mock trong cung task: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
-- BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi mo lai duong ra mang cho dung endpoint do, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature.
+- BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi them endpoint do vao `WIRED_ROUTES`, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature. `src/__tests__/wired-routes.test.ts` bao loi neu mot endpoint vua wire vua con route mock.
 
 ## Cau hinh theo moi truong
 

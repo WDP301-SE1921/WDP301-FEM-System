@@ -18,9 +18,10 @@ const DONE_BUTTON_NAME = /Về trang chủ$/;
 /** Lan render dau phai transform nhieu module, mat hon 1 giay mac dinh cua findBy khi CI. */
 const FIRST_RENDER_TIMEOUT_MS = 5000;
 
-async function renderFlow() {
+async function renderFlow({ isEmailVerified = true } = {}) {
   const onBack = jest.fn();
   const onDone = jest.fn();
+  const onVerifyEmail = jest.fn();
   // gcTime vo han de React Query khong hen gio don cache, giu Jest khong thoat sau khi test xong
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false, gcTime: Infinity } },
@@ -28,21 +29,28 @@ async function renderFlow() {
   const invalidateQueries = jest.spyOn(queryClient, 'invalidateQueries');
   await render(
     <QueryClientProvider client={queryClient}>
-      <AddChildFlow parentEmail="phuhuynh@example.com" onBack={onBack} onDone={onDone} />
+      <AddChildFlow
+        parentEmail="phuhuynh@example.com"
+        isEmailVerified={isEmailVerified}
+        onVerifyEmail={onVerifyEmail}
+        onBack={onBack}
+        onDone={onDone}
+      />
     </QueryClientProvider>,
   );
-  return { onBack, onDone, invalidateQueries, user: userEvent.setup() };
+  return { onBack, onDone, onVerifyEmail, invalidateQueries, user: userEvent.setup() };
 }
 
 describe('features/children/AddChildFlow', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('dien form roi tao; xong thi lam moi danh sach con va ve trang chu', async () => {
+    // BE tra ban ghi StudentProfile cua con vua tao
     api.create.mockResolvedValue({
       id: 'student-3',
       fullName: 'Nguyễn Gia Huy',
       grade: 7,
-      subjectNames: [],
+      dateOfBirth: '2014-05-20T00:00:00.000Z',
     });
     const { onDone, invalidateQueries, user } = await renderFlow();
 
@@ -118,5 +126,19 @@ describe('features/children/AddChildFlow', () => {
 
     await user.press(screen.getByRole('button', { name: 'Quay lại' }));
     expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('email chua xac minh: thay form bang loi nhac va dan toi man hinh xac minh', async () => {
+    const { onVerifyEmail, user } = await renderFlow({ isEmailVerified: false });
+
+    expect(
+      await screen.findByText('Cần xác minh email trước', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('phuhuynh@example.com')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Họ và tên của con')).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Xác minh email' }));
+    expect(onVerifyEmail).toHaveBeenCalledTimes(1);
+    expect(api.create).not.toHaveBeenCalled();
   });
 });

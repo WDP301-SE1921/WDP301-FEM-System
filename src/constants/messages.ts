@@ -22,7 +22,11 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   AUTH_INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng.',
   AUTH_PASSWORD_TOO_LONG: 'Mật khẩu quá dài.',
   AUTH_INVALID_REFRESH_TOKEN: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
+  /** Ma xac minh email sai, da dung hoac qua 24 gio. */
+  AUTH_INVALID_EMAIL_TOKEN:
+    'Mã xác minh không đúng hoặc đã hết hạn. Hãy gửi lại mã để nhận mã mới.',
   /** Module `registration-flow` cua BE. */
+  PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ của con.',
   STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ của con.',
   RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
   STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi con đang có môn học tại trung tâm.',
