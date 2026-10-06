@@ -205,6 +205,7 @@ describe('features/parent-dashboard/StudentAttendance', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: MATH_OCT_16.sessionId,
+      startsAt: MATH_OCT_16.startsAt,
     });
   });
 

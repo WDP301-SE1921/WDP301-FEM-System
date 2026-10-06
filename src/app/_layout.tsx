@@ -35,6 +35,7 @@ function RootNavigator() {
       <Stack.Screen name="assignments/[assignmentId]" />
       <Stack.Screen name="sessions/[sessionId]" />
       <Stack.Screen name="receipts/[registrationId]" />
+      <Stack.Screen name="bills/[registrationId]" />
       <Stack.Screen name="+not-found" options={{ headerShown: true, title: 'Không tìm thấy' }} />
     </Stack>
   );

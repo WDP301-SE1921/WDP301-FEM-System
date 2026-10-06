@@ -29,6 +29,7 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ của con.',
   STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ của con.',
   RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
+  BILL_NOT_FOUND: 'Không tìm thấy bill học phí.',
   STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi con đang có môn học tại trung tâm.',
   /** Nop bai (module `academic` cua BE). */
   SUBMISSION_CLOSED: 'Bài tập đã hết hạn nộp.',

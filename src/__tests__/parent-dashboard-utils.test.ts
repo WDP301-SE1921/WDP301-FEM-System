@@ -24,6 +24,7 @@ import {
   formatDateKey,
   formatLessonSchedule,
   formatLessonScore,
+  formatLessonTitle,
   formatNextSession,
   formatQuestionCount,
   formatScore,
@@ -107,6 +108,9 @@ describe('features/parent-dashboard/utils', () => {
       ['da co ket qua diem danh', 'COMPLETED', 'EXCUSED', after, 'Nghỉ có phép'],
       ['chua diem danh, chua toi gio', 'SCHEDULED', 'UNMARKED', before, 'Sắp diễn ra'],
       ['chua diem danh, da het gio', 'SCHEDULED', 'UNMARKED', after, 'Chưa điểm danh'],
+      ['app khong co ket qua diem danh, chua toi gio', 'SCHEDULED', null, before, 'Sắp diễn ra'],
+      ['app khong co ket qua diem danh, da het gio', 'COMPLETED', null, after, 'Đã kết thúc'],
+      ['app khong co ket qua diem danh, buoi bi huy', 'CANCELLED', null, after, 'Buổi học bị huỷ'],
     ] as const)('getSessionDetailStatus: %s', (_case, status, attendance, now, label) => {
       expect(getSessionDetailStatus({ status, attendance, startsAt, endsAt }, now).label).toBe(
         label,
@@ -123,6 +127,15 @@ describe('features/parent-dashboard/utils', () => {
         tone,
         icon: 'checkmark-circle',
       });
+    });
+
+    it('formatLessonTitle kem thu tu bai khi co', () => {
+      expect(formatLessonTitle({ sequence: 12, title: 'Phương trình bậc hai' })).toBe(
+        'Bài 12: Phương trình bậc hai',
+      );
+      expect(formatLessonTitle({ sequence: null, title: 'Phương trình bậc hai' })).toBe(
+        'Phương trình bậc hai',
+      );
     });
 
     it('getAttendanceBadge khong co gio vao lop thi chi hien ket qua', () => {

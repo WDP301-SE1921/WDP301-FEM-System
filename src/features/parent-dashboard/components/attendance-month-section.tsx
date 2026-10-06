@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
-import type { AttendanceMonth } from '../types';
+import type { AttendanceMonth, SessionLink } from '../types';
 import { countAttendance, formatAttendanceBreakdown } from '../utils';
 
 import { AttendanceRecordCard } from './attendance-record-card';
@@ -13,7 +13,7 @@ const ICON_SIZE = 20;
 
 export type AttendanceMonthSectionProps = {
   month: AttendanceMonth;
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
 };
 
 /** Cac buoi trong mot thang, tieu de kem so buoi theo ket qua diem danh. */
@@ -36,7 +36,7 @@ export function AttendanceMonthSection({ month, onOpenSession }: AttendanceMonth
         <AttendanceRecordCard
           key={record.sessionId}
           record={record}
-          onPress={() => onOpenSession(record.sessionId)}
+          onPress={() => onOpenSession({ id: record.sessionId, startsAt: record.startsAt })}
         />
       ))}
     </View>

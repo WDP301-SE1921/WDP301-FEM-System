@@ -17,6 +17,9 @@ export default function TuitionScreen() {
           onOpenReceipt={(registrationId) =>
             router.push({ pathname: '/receipts/[registrationId]', params: { registrationId } })
           }
+          onOpenBill={(registrationId) =>
+            router.push({ pathname: '/bills/[registrationId]', params: { registrationId } })
+          }
         />
       </Screen>
     );

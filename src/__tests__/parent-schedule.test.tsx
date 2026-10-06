@@ -130,6 +130,17 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     expect(screen.queryByText('Học bù')).not.toBeOnTheScreen();
   });
 
+  it('buoi tu BE chua co ten giao vien va phong: the chi hien mon hoc', async () => {
+    api.getStudents.mockResolvedValue([MINH_ANH]);
+    api.getStudentSchedule.mockResolvedValue([{ ...MATH_TODAY, teacherName: null, room: null }]);
+    await renderSchedule();
+    await waitForTodaySession();
+
+    expect(screen.getByText('Môn Toán')).toBeOnTheScreen();
+    expect(screen.queryByText('Giáo viên môn Toán')).not.toBeOnTheScreen();
+    expect(screen.queryByText(/^Phòng/)).not.toBeOnTheScreen();
+  });
+
   it('bam the buoi hoc thi mo chi tiet dung buoi cua dung con', async () => {
     mockTwoChildren();
     const { onOpenSession, user } = await renderSchedule();
@@ -141,6 +152,7 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: MATH_TODAY.id,
+      startsAt: MATH_TODAY.startsAt,
     });
   });
 

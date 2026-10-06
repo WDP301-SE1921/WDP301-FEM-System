@@ -7,9 +7,9 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 import { getShortName } from '@/utils/format';
 
-import { useStudentRegistrations, useTuitionEnrollments } from '../hooks/use-parent-dashboard';
+import { useStudentBills, useTuitionEnrollments } from '../hooks/use-parent-dashboard';
 import type { LinkedStudent } from '../types';
-import { getActivePackages, getPaymentHistory, getPendingRegistrations } from '../utils';
+import { getActivePackages, getPaymentHistory, getUnpaidBills } from '../utils';
 
 import { PaymentHistoryCard } from './payment-history-card';
 import { PendingRegistrationCard } from './pending-registration-card';
@@ -21,26 +21,28 @@ export type StudentTuitionProps = {
   student: LinkedStudent;
   /** Mo bien lai cua don dang ky. */
   onOpenReceipt: (registrationId: string) => void;
+  /** Mo bill cua don dang ky chua thu tien. */
+  onOpenBill: (registrationId: string) => void;
 };
 
 /**
- * Hoc phi cua con: don dang cho trung tam xac nhan thu, cac goi hoc con hieu luc va lich su dong
+ * Hoc phi cua con: bill chua thanh toan (bam de xem bill), cac goi hoc con hieu luc va lich su dong
  * hoc phi (bam de xem bien lai).
  */
-export function StudentTuition({ student, onOpenReceipt }: StudentTuitionProps) {
+export function StudentTuition({ student, onOpenReceipt, onOpenBill }: StudentTuitionProps) {
   const enrollments = useTuitionEnrollments(student.id);
-  const registrations = useStudentRegistrations(student.id);
+  const bills = useStudentBills(student.id);
 
-  if (enrollments.isPending || registrations.isPending) return <LoadingState />;
+  if (enrollments.isPending || bills.isPending) return <LoadingState />;
   if (enrollments.isError) {
     return <ErrorState error={enrollments.error} onRetry={() => void enrollments.refetch()} />;
   }
-  if (registrations.isError) {
-    return <ErrorState error={registrations.error} onRetry={() => void registrations.refetch()} />;
+  if (bills.isError) {
+    return <ErrorState error={bills.error} onRetry={() => void bills.refetch()} />;
   }
 
-  const pendingRegistrations = getPendingRegistrations(registrations.data);
-  if (enrollments.data.length === 0 && pendingRegistrations.length === 0) {
+  const unpaidBills = getUnpaidBills(bills.data);
+  if (enrollments.data.length === 0 && unpaidBills.length === 0) {
     return (
       <EmptyState
         title="Chưa có gói học nào"
@@ -54,8 +56,12 @@ export function StudentTuition({ student, onOpenReceipt }: StudentTuitionProps) 
 
   return (
     <View style={styles.container}>
-      {pendingRegistrations.map((registration) => (
-        <PendingRegistrationCard key={registration.id} registration={registration} />
+      {unpaidBills.map((bill) => (
+        <PendingRegistrationCard
+          key={bill.registrationId}
+          bill={bill}
+          onPress={() => onOpenBill(bill.registrationId)}
+        />
       ))}
 
       {packages.length > 0 ? (

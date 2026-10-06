@@ -1,7 +1,7 @@
 /**
- * Lich hoc gia cua hoc sinh mau (`./mock-students.ts`), dung cho route lich hoc trong `./parent.ts`.
- * Lich tinh theo so ngay ke tu hom nay chu khong theo thu, de buoi Toan 18:00 hom nay cua Minh Anh
- * khop voi `todaySessions` cua mock trang chu va tuan nao cung co du lieu:
+ * Lich hoc gia cua hoc sinh mau (`./mock-students.ts`). Lich tuan da noi BE that; du lieu nay con la
+ * nguon cho mock diem danh (`./mock-attendance.ts`).
+ * Lich tinh theo so ngay ke tu hom nay chu khong theo thu, de tuan nao cung co du lieu:
  * - Minh Anh  : Toan va Vat ly, lap lai moi 7 ngay, nghi vao (hom nay + 2) va (hom nay + 6).
  *               Rieng 7 ngay tu hom nay: (hom nay + 2) co buoi hoc bu Vat ly, buoi Vat ly cua
  *               (hom nay + 4) doi len toi (hom nay + 3) nen (hom nay + 4) nghi
@@ -16,7 +16,7 @@ const DAYS_PER_CYCLE = 7;
 /** Ngay cua buoi nam trong id do `toSession` tao, vd `mock-schedule-<hoc sinh>-2026-10-16-0`. */
 const SESSION_ID_DATE_PATTERN = /-(\d{4}-\d{2}-\d{2})-\d+$/;
 
-/** Lop trong lich gia, dung chung voi mock mon hoc (`./mock-enrollments.ts`). */
+/** Lop trong lich gia. */
 export type ClassInfo = {
   className: string;
   subjectName: string;

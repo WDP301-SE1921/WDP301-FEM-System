@@ -1,6 +1,6 @@
 import { CENTER_NAME } from '@/features/parent-dashboard/constants';
 import type {
-  StudentRegistration,
+  TuitionBill,
   TuitionClass,
   TuitionEnrollment,
   TuitionPayment,
@@ -12,14 +12,15 @@ import {
   formatAmount,
   formatAmountInWords,
   formatApiDate,
+  formatBillParent,
   formatPackageLabel,
   formatTermPeriod,
   getActivePackages,
   getActiveSubjectNames,
   getMonthlyFee,
   getPaymentHistory,
-  getPendingRegistrations,
   getTermStatus,
+  getUnpaidBills,
   parseAmount,
   parseApiDate,
   readVietnameseNumber,
@@ -68,6 +69,7 @@ function enrollment(id: string, overrides: Partial<TuitionEnrollment> = {}): Tui
     endDate: dateColumn('2026-11-05'),
     activatedAt: new Date(2026, 9, 2, 9, 30).toISOString(),
     class: MATH_CLASS,
+    placements: [],
     registrationOrder: { payment: payment(`PT-${id}`, new Date(2026, 9, 2, 9, 30)) },
     ...overrides,
   };
@@ -186,25 +188,51 @@ describe('features/parent-dashboard/utils: hoc phi', () => {
       expect(enrollments.map(({ id }) => id)).toEqual(['expired', 'unpaid', 'current', 'upcoming']);
     });
 
-    it('don cho xac nhan chi gom don DRAFT', () => {
-      const registration = (id: string, status: StudentRegistration['status']) => ({
-        id,
+    it('don cho xac nhan chi gom bill UNPAID', () => {
+      const bill = (registrationId: string, status: TuitionBill['status']): TuitionBill => ({
+        registrationId,
         status,
-        packageMonths: 2,
-        quotedAmount: '1200000',
-        currency: 'VND',
-        startDate: dateColumn('2026-10-22'),
-        endDate: dateColumn('2026-12-22'),
-        createdAt: NOW.toISOString(),
-        class: MATH_CLASS,
+        issuedAt: NOW.toISOString(),
+        student: { id: 'student-1', fullName: 'Nguyễn Minh Anh', grade: 8 },
+        class: {
+          id: 'class-1',
+          name: 'Toán nâng cao 8A2',
+          subject: 'Toán',
+          grade: 8,
+          schedules: [],
+        },
+        term: { packageMonths: 2, startDate: '2026-10-22', endDate: '2026-12-22' },
+        pricing: {
+          monthlyFee: '600000.00',
+          packageMonths: 2,
+          total: '1200000.00',
+          currency: 'VND',
+        },
+        payment: null,
       });
-      const registrations = [
-        registration('completed', 'COMPLETED'),
-        registration('draft', 'DRAFT'),
-        registration('cancelled', 'CANCELLED'),
+      const bills = [
+        bill('paid', 'PAID'),
+        bill('unpaid', 'UNPAID'),
+        bill('cancelled', 'CANCELLED'),
       ];
 
-      expect(getPendingRegistrations(registrations).map(({ id }) => id)).toEqual(['draft']);
+      expect(getUnpaidBills(bills).map(({ registrationId }) => registrationId)).toEqual(['unpaid']);
+    });
+
+    it.each([
+      [
+        'du ten, email, so dien thoai',
+        { displayName: 'Nguyễn Văn A', email: 'a@example.com', phone: '0900000000' },
+        'Nguyễn Văn A · a@example.com · 0900000000',
+      ],
+      [
+        'chua co ten va so dien thoai',
+        { displayName: null, email: 'a@example.com', phone: null },
+        'a@example.com',
+      ],
+      ['ten rong', { displayName: '  ', email: 'a@example.com', phone: '' }, 'a@example.com'],
+    ])('formatBillParent: %s', (_case, parent, expected) => {
+      expect(formatBillParent(parent)).toBe(expected);
     });
   });
 

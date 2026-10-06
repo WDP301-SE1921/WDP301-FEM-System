@@ -14,13 +14,14 @@ import { StudentSwitcherBar } from './student-switcher-bar';
 import { StudentTuition } from './student-tuition';
 
 export type ParentTuitionProps = {
-  /** Route quyet dinh dieu huong toi form them con va man bien lai. */
+  /** Route quyet dinh dieu huong toi form them con, man bien lai va man bill. */
   onAddChild: () => void;
   onOpenReceipt: (registrationId: string) => void;
+  onOpenBill: (registrationId: string) => void;
 };
 
-/** Tab hoc phi cua con dang chon: don cho xac nhan, goi hoc dang ap dung va lich su dong hoc phi. */
-export function ParentTuition({ onAddChild, onOpenReceipt }: ParentTuitionProps) {
+/** Tab hoc phi cua con dang chon: bill chua thanh toan, goi hoc dang ap dung va lich su dong hoc phi. */
+export function ParentTuition({ onAddChild, onOpenReceipt, onOpenBill }: ParentTuitionProps) {
   const students = useLinkedStudents();
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
@@ -56,7 +57,9 @@ export function ParentTuition({ onAddChild, onOpenReceipt }: ParentTuitionProps)
         />
       );
     }
-    return <StudentTuition student={selected} onOpenReceipt={onOpenReceipt} />;
+    return (
+      <StudentTuition student={selected} onOpenReceipt={onOpenReceipt} onOpenBill={onOpenBill} />
+    );
   };
 
   return (

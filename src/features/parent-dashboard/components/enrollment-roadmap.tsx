@@ -6,7 +6,7 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 
 import { useEnrollmentLessons } from '../hooks/use-parent-dashboard';
-import type { StudentEnrollment } from '../types';
+import type { SessionLink, StudentEnrollment } from '../types';
 import { getAssessmentMarkers, getRoadmapLessons, summarizeRoadmap } from '../utils';
 
 import { RoadmapSummaryCard } from './roadmap-summary-card';
@@ -15,7 +15,7 @@ import { RoadmapTimeline } from './roadmap-timeline';
 export type EnrollmentRoadmapProps = {
   studentId: string;
   enrollment: StudentEnrollment;
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
   onOpenAssignments: () => void;
 };
 

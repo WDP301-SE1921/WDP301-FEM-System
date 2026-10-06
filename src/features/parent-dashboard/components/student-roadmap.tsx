@@ -54,7 +54,9 @@ export function StudentRoadmap({ student, onOpenSession, onOpenAssignments }: St
         key={selected.id}
         studentId={student.id}
         enrollment={selected}
-        onOpenSession={(sessionId) => onOpenSession({ studentId: student.id, sessionId })}
+        onOpenSession={({ id, startsAt }) =>
+          onOpenSession({ studentId: student.id, sessionId: id, startsAt })
+        }
         onOpenAssignments={onOpenAssignments}
       />
     </View>

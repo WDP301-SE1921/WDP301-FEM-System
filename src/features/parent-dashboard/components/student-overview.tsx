@@ -3,8 +3,9 @@ import { StyleSheet, View } from 'react-native';
 import { ErrorState } from '@/components/common/error-state';
 import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
+import { toDateKey } from '@/utils/date';
 
-import { useStudentDashboard } from '../hooks/use-parent-dashboard';
+import { useStudentDashboard, useStudentSchedule } from '../hooks/use-parent-dashboard';
 
 import { AttendanceStatCard } from './attendance-stat-card';
 import { AttentionList } from './attention-list';
@@ -25,18 +26,23 @@ export function StudentOverview({
   onOpenNotifications,
 }: StudentOverviewProps) {
   const dashboard = useStudentDashboard(studentId);
+  // Buoi hom nay lay tu lich hoc cua BE; cac phan con lai cua tong quan BE chua co nen con la mock
+  const today = toDateKey(new Date());
+  const todaySessions = useStudentSchedule(studentId, { from: today, to: today });
 
-  if (dashboard.isPending) return <LoadingState />;
+  if (dashboard.isPending || todaySessions.isPending) return <LoadingState />;
   if (dashboard.isError) {
     return <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} />;
   }
+  if (todaySessions.isError) {
+    return <ErrorState error={todaySessions.error} onRetry={() => void todaySessions.refetch()} />;
+  }
 
-  const { todaySessions, attendance, scoreSummary, attentionItems, recentNotifications } =
-    dashboard.data;
+  const { attendance, scoreSummary, attentionItems, recentNotifications } = dashboard.data;
 
   return (
     <View style={styles.sections}>
-      <TodaySessions sessions={todaySessions} onPrepare={onOpenAssignments} />
+      <TodaySessions sessions={todaySessions.data} onPrepare={onOpenAssignments} />
       <View style={styles.stats}>
         <AttendanceStatCard attendance={attendance} />
         <ScoreStatCard score={scoreSummary} />

@@ -82,10 +82,17 @@ export function useTuitionEnrollments(studentId: string) {
   });
 }
 
-export function useStudentRegistrations(studentId: string) {
+export function useStudentBills(studentId: string) {
   return useQuery({
-    queryKey: queryKeys.me.studentRegistrations(studentId),
-    queryFn: () => parentDashboardApi.getStudentRegistrations(studentId),
+    queryKey: queryKeys.me.studentBills(studentId),
+    queryFn: () => parentDashboardApi.getStudentBills(studentId),
+  });
+}
+
+export function useBill(registrationId: string) {
+  return useQuery({
+    queryKey: queryKeys.registrations.bill(registrationId),
+    queryFn: () => parentDashboardApi.getBill(registrationId),
   });
 }
 

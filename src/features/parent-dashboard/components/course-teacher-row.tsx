@@ -13,38 +13,32 @@ const AVATAR_SIZE = 32;
 const ICON_SIZE = 16;
 
 export type CourseTeacherRowProps = {
-  /** null khi lop chua co giao vien. */
+  /** null khi app chua co ten giao vien (BE chua tra cho phu huynh). */
   teacherName: string | null;
   /** null khi con chua co diem mon nay. */
   averageScore: number | null;
   tone: Tone;
 };
 
-/** Giao vien cua lop va diem trung binh mon cua con. */
+/** Giao vien cua lop va diem trung binh mon cua con. Thieu ca hai thi khong hien gi. */
 export function CourseTeacherRow({ teacherName, averageScore, tone }: CourseTeacherRowProps) {
   const { color, soft } = TONES[tone];
+  if (!teacherName && averageScore === null) return null;
 
   return (
     <View style={styles.container}>
-      <View style={styles.teacher}>
-        <ThemedView type={soft} style={styles.avatar}>
-          {teacherName ? (
+      {teacherName ? (
+        <View style={styles.teacher}>
+          <ThemedView type={soft} style={styles.avatar}>
             <ThemedText type="smallBold" themeColor={color}>
               {getInitials(teacherName)}
             </ThemedText>
-          ) : (
-            <Icon name="person-outline" size={ICON_SIZE} themeColor={color} />
-          )}
-        </ThemedView>
-        <ThemedText
-          type={teacherName ? 'smallBold' : 'small'}
-          themeColor={teacherName ? 'text' : 'textSecondary'}
-          numberOfLines={1}
-          style={styles.teacherName}
-        >
-          {teacherName ?? 'Chưa phân công giáo viên'}
-        </ThemedText>
-      </View>
+          </ThemedView>
+          <ThemedText type="smallBold" numberOfLines={1} style={styles.teacherName}>
+            {teacherName}
+          </ThemedText>
+        </View>
+      ) : null}
 
       {averageScore === null ? null : (
         <View

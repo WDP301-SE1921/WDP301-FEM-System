@@ -5,7 +5,7 @@ import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashb
 import { ParentTuition } from '@/features/parent-dashboard/components/parent-tuition';
 import type {
   LinkedStudent,
-  StudentRegistration,
+  TuitionBill,
   TuitionClass,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
@@ -17,7 +17,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
     getStudents: jest.fn(),
     getTuitionEnrollments: jest.fn(),
-    getStudentRegistrations: jest.fn(),
+    getStudentBills: jest.fn(),
   },
 }));
 
@@ -80,6 +80,7 @@ function enrollment({ days, receiptNumber, amount, ...rest }: EnrollmentInput): 
     startDate: dateColumn(startDay),
     endDate: dateColumn(endDay),
     activatedAt: morningOf(confirmedDay),
+    placements: [],
     registrationOrder: {
       payment: {
         id: `payment-${rest.id}`,
@@ -127,23 +128,33 @@ const ENGLISH = enrollment({
   amount: '3000000',
 });
 
-const GEOMETRY_DRAFT: StudentRegistration = {
-  id: 'order-geometry',
-  status: 'DRAFT',
-  packageMonths: 2,
-  quotedAmount: '1200000',
-  currency: 'VND',
-  startDate: dateColumn(6),
-  endDate: dateColumn(67),
-  createdAt: morningOf(-1),
-  class: classroom('Hình học 8 bổ trợ', 'Toán', 1),
+const GEOMETRY_UNPAID: TuitionBill = {
+  registrationId: 'order-geometry',
+  status: 'UNPAID',
+  issuedAt: morningOf(-1),
+  student: { id: MINH_ANH.id, fullName: MINH_ANH.fullName, grade: MINH_ANH.grade },
+  class: {
+    id: 'class-geometry',
+    name: 'Hình học 8 bổ trợ',
+    subject: 'Toán',
+    grade: 8,
+    schedules: [],
+  },
+  term: {
+    packageMonths: 2,
+    startDate: dateColumn(6).slice(0, 10),
+    endDate: dateColumn(67).slice(0, 10),
+  },
+  pricing: { monthlyFee: '600000.00', packageMonths: 2, total: '1200000.00', currency: 'VND' },
+  payment: null,
 };
-/** Don da thu tien da co goi hoc, khong con cho xac nhan. */
-const MATH_COMPLETED: StudentRegistration = {
-  ...GEOMETRY_DRAFT,
-  id: MATH.registrationOrderId,
-  status: 'COMPLETED',
-  class: MATH.class,
+/** Bill da thu tien da co goi hoc, khong con cho xac nhan. */
+const MATH_PAID: TuitionBill = {
+  ...GEOMETRY_UNPAID,
+  registrationId: MATH.registrationOrderId,
+  status: 'PAID',
+  class: { ...GEOMETRY_UNPAID.class, id: MATH.class.id, name: MATH.class.name },
+  payment: { receiptNumber: 'PT-1082', paidAmount: '3600000.00', confirmedAt: morningOf(-24) },
 };
 
 function mockTwoChildren() {
@@ -152,24 +163,29 @@ function mockTwoChildren() {
   api.getTuitionEnrollments.mockImplementation(async (studentId) =>
     studentId === MINH_ANH.id ? [LITERATURE_ENDED, MATH, PHYSICS_UPCOMING] : [ENGLISH],
   );
-  api.getStudentRegistrations.mockImplementation(async (studentId) =>
-    studentId === MINH_ANH.id ? [MATH_COMPLETED, GEOMETRY_DRAFT] : [],
+  api.getStudentBills.mockImplementation(async (studentId) =>
+    studentId === MINH_ANH.id ? [MATH_PAID, GEOMETRY_UNPAID] : [],
   );
 }
 
 async function renderTuition() {
   const onAddChild = jest.fn();
   const onOpenReceipt = jest.fn();
+  const onOpenBill = jest.fn();
   // gcTime vo han de React Query khong hen gio don cache sau khi test ket thuc
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: Infinity } },
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentTuition onAddChild={onAddChild} onOpenReceipt={onOpenReceipt} />
+      <ParentTuition
+        onAddChild={onAddChild}
+        onOpenReceipt={onOpenReceipt}
+        onOpenBill={onOpenBill}
+      />
     </QueryClientProvider>,
   );
-  return { onAddChild, onOpenReceipt, user: userEvent.setup() };
+  return { onAddChild, onOpenReceipt, onOpenBill, user: userEvent.setup() };
 }
 
 /** Nhan cua cac the trong lich su dong hoc phi theo thu tu tren man hinh. */
@@ -194,16 +210,17 @@ describe('features/parent-dashboard/ParentTuition', () => {
       ),
     ).toBeOnTheScreen();
     expect(api.getTuitionEnrollments).toHaveBeenCalledWith(MINH_ANH.id);
-    expect(api.getStudentRegistrations).toHaveBeenCalledWith(MINH_ANH.id);
+    expect(api.getStudentBills).toHaveBeenCalledWith(MINH_ANH.id);
     expect(
       screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }),
     ).toBeOnTheScreen();
 
-    // Chi don DRAFT la dang cho trung tam xac nhan thu hoc phi
-    expect(screen.getAllByText('Chờ xác nhận')).toHaveLength(1);
+    // Chi bill UNPAID la dang cho trung tam xac nhan thu hoc phi
+    expect(screen.getAllByText('Chưa thanh toán')).toHaveLength(1);
+    expect(screen.getAllByRole('button', { name: /^Xem bill/ })).toHaveLength(1);
     expect(
       screen.getByText(
-        `Trung tâm đã lập đăng ký gói 2 tháng ngày ${formatDate(GEOMETRY_DRAFT.createdAt)}, dự kiến bắt đầu học ${formatDate(addDays(today, 6))}. Gói học được kích hoạt sau khi trung tâm xác nhận đã thu đủ học phí.`,
+        `Trung tâm đã lập đăng ký gói 2 tháng ngày ${formatDate(GEOMETRY_UNPAID.issuedAt)}, dự kiến bắt đầu học ${formatDate(addDays(today, 6))}. Gói học được kích hoạt sau khi trung tâm xác nhận đã thu đủ học phí.`,
       ),
     ).toBeOnTheScreen();
     expect(screen.getByText(formatCurrency(1_200_000))).toBeOnTheScreen();
@@ -254,6 +271,23 @@ describe('features/parent-dashboard/ParentTuition', () => {
     expect(onOpenReceipt).toHaveBeenCalledWith(MATH.registrationOrderId);
   });
 
+  it('bam bill chua thanh toan thi mo bill cua don dang ky do', async () => {
+    mockTwoChildren();
+    const { onOpenBill, onOpenReceipt, user } = await renderTuition();
+
+    await user.press(
+      await screen.findByRole(
+        'button',
+        { name: 'Xem bill Hình học 8 bổ trợ' },
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    );
+
+    expect(onOpenBill).toHaveBeenCalledTimes(1);
+    expect(onOpenBill).toHaveBeenCalledWith(GEOMETRY_UNPAID.registrationId);
+    expect(onOpenReceipt).not.toHaveBeenCalled();
+  });
+
   it('doi con thi tai hoc phi cua con do', async () => {
     mockTwoChildren();
     const { user } = await renderTuition();
@@ -270,8 +304,8 @@ describe('features/parent-dashboard/ParentTuition', () => {
       await screen.findByRole('header', { name: 'Gói 3 tháng · Tiếng Anh 6A1' }),
     ).toBeOnTheScreen();
     expect(api.getTuitionEnrollments).toHaveBeenLastCalledWith(HOANG_LONG.id);
-    expect(api.getStudentRegistrations).toHaveBeenLastCalledWith(HOANG_LONG.id);
-    expect(screen.queryByText('Chờ xác nhận')).not.toBeOnTheScreen();
+    expect(api.getStudentBills).toHaveBeenLastCalledWith(HOANG_LONG.id);
+    expect(screen.queryByText('Chưa thanh toán')).not.toBeOnTheScreen();
     expect(receiptButtonLabels()).toEqual(['Xem biên lai PT-0893']);
     expect(screen.getByText('1 lần đóng')).toBeOnTheScreen();
   });
@@ -279,7 +313,7 @@ describe('features/parent-dashboard/ParentTuition', () => {
   it('moi co don cho xac nhan thi chua co goi hoc va lich su', async () => {
     api.getStudents.mockResolvedValue([MINH_ANH]);
     api.getTuitionEnrollments.mockResolvedValue([]);
-    api.getStudentRegistrations.mockResolvedValue([GEOMETRY_DRAFT]);
+    api.getStudentBills.mockResolvedValue([GEOMETRY_UNPAID]);
     await renderTuition();
 
     expect(
@@ -297,7 +331,7 @@ describe('features/parent-dashboard/ParentTuition', () => {
   it('con chua co goi hoc va don nao thi bao rong', async () => {
     api.getStudents.mockResolvedValue([HOANG_LONG]);
     api.getTuitionEnrollments.mockResolvedValue([]);
-    api.getStudentRegistrations.mockResolvedValue([]);
+    api.getStudentBills.mockResolvedValue([]);
     await renderTuition();
 
     expect(
@@ -322,12 +356,12 @@ describe('features/parent-dashboard/ParentTuition', () => {
 
     expect(onAddChild).toHaveBeenCalledTimes(1);
     expect(api.getTuitionEnrollments).not.toHaveBeenCalled();
-    expect(api.getStudentRegistrations).not.toHaveBeenCalled();
+    expect(api.getStudentBills).not.toHaveBeenCalled();
   });
 
   it('loi tai hoc phi thi hien thu lai, bam thu lai tai lai', async () => {
     api.getStudents.mockResolvedValue([MINH_ANH]);
-    api.getStudentRegistrations.mockResolvedValue([]);
+    api.getStudentBills.mockResolvedValue([]);
     api.getTuitionEnrollments
       .mockRejectedValueOnce(new AppError('Không kết nối được tới máy chủ.'))
       .mockResolvedValueOnce([MATH]);

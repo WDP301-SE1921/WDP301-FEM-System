@@ -7,37 +7,23 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 
 import { TONES, type Tone } from '../constants';
-import type { ClassSessionStatus, SessionDetail, SessionMaterial } from '../types';
+import type { SessionDetail, SessionMaterial } from '../types';
 
 import { SectionCard } from './section-card';
 
 const BLOCK_ICON_SIZE = 16;
 const MATERIAL_ICON_SIZE = 18;
 
-/** Chua co nhan xet va tai lieu thi giai thich theo trang thai cua buoi. */
-const EMPTY_MESSAGES: Record<ClassSessionStatus, string> = {
-  SCHEDULED: 'Nhận xét và tài liệu sẽ có sau buổi học.',
-  COMPLETED: 'Giáo viên không gửi nhận xét hay tài liệu cho buổi học này.',
-  CANCELLED: 'Buổi học bị huỷ nên không có nhận xét hay tài liệu.',
-};
-
 export type SessionReviewCardProps = {
   session: SessionDetail;
 };
 
-/** Nhan xet cua giao vien va tai lieu cua buoi hoc. */
+/** Nhan xet cua giao vien va tai lieu cua buoi hoc. Chi dung khi buoi co it nhat mot trong hai. */
 export function SessionReviewCard({ session }: SessionReviewCardProps) {
   const { teacherComment, materials } = session;
-  const isEmpty = !teacherComment && materials.length === 0;
 
   return (
     <SectionCard title="Nhận xét & tài liệu" icon="document-text-outline" tone="accent">
-      {isEmpty ? (
-        <ThemedText type="small" themeColor="textSecondary">
-          {EMPTY_MESSAGES[session.status]}
-        </ThemedText>
-      ) : null}
-
       {teacherComment ? (
         <ReviewBlock
           icon="chatbubble-ellipses-outline"

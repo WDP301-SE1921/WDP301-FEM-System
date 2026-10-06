@@ -5,6 +5,7 @@ import { matchPath, type RoutePattern } from './route-pattern';
 
 const STUDENT_ID_PARAM = ':studentId';
 const REGISTRATION_ID_PARAM = ':registrationId';
+const ASSIGNMENT_ID_PARAM = ':assignmentId';
 
 /**
  * Cac endpoint da noi toi BE that (wire). Chi request khop danh sach nay moi ra mang; moi request
@@ -24,7 +25,15 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'post', url: Endpoints.me.students },
   { method: 'patch', url: Endpoints.me.student(STUDENT_ID_PARAM) },
   { method: 'get', url: Endpoints.me.studentEnrollments(STUDENT_ID_PARAM) },
+  { method: 'get', url: Endpoints.me.bills },
   { method: 'get', url: Endpoints.registrations.receipt(REGISTRATION_ID_PARAM) },
+  { method: 'get', url: Endpoints.registrations.bill(REGISTRATION_ID_PARAM) },
+  { method: 'get', url: Endpoints.academic.scheduledSessions },
+  { method: 'get', url: Endpoints.academic.leaves },
+  { method: 'get', url: Endpoints.academic.assignments },
+  { method: 'get', url: Endpoints.academic.assignment(ASSIGNMENT_ID_PARAM) },
+  { method: 'get', url: Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID_PARAM) },
+  { method: 'post', url: Endpoints.academic.submissions },
 ];
 
 export function isWiredRequest(method: string | undefined, url: string | undefined): boolean {

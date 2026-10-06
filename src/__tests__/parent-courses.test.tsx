@@ -154,7 +154,8 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(screen.getByText('T3, T6 · 18:00 – 19:30')).toBeOnTheScreen();
     expect(screen.getByText('Phòng P.203')).toBeOnTheScreen();
     expect(screen.getByLabelText('Tiến độ khóa học: 9/24 buổi (38%)')).toBeOnTheScreen();
-    expect(screen.getByText('Chưa phân công giáo viên')).toBeOnTheScreen();
+    // Mon chua co ten giao vien (Hoa hoc) thi khong hien dong giao vien
+    expect(screen.getAllByText('Đặng Hải Yến')).toHaveLength(2);
     expect(screen.getByText('Kết thúc ngày 28/08/2026')).toBeOnTheScreen();
   });
 
@@ -171,6 +172,7 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session-next-math',
+      startsAt: NEXT_MATH_STARTS_AT,
     });
   });
 

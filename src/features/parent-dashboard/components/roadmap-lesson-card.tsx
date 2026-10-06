@@ -6,7 +6,7 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import type { RoadmapLesson } from '../types';
+import type { RoadmapLesson, SessionLink } from '../types';
 import { formatLessonScore, formatLessonSchedule, getLessonBadge } from '../utils';
 
 import { ToneBadge } from './tone-badge';
@@ -16,7 +16,7 @@ const ICON_SIZE = 16;
 export type RoadmapLessonCardProps = {
   lesson: RoadmapLesson;
   /** Mo chi tiet buoi day bai, chi co khi lop da xep buoi cho bai. */
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
 };
 
 /** The bai da hoc hoac chua hoc tren lo trinh: ngay hoc, ten bai, diem bai tap hoac bai kiem tra. */
@@ -82,7 +82,7 @@ export function RoadmapLessonCard({ lesson, onOpenSession }: RoadmapLessonCardPr
         .filter(Boolean)
         .join(', ')}
       accessibilityHint="Xem chi tiết buổi học"
-      onPress={() => onOpenSession(session.id)}
+      onPress={() => onOpenSession(session)}
       style={({ pressed }) => [pressed && styles.pressed]}
     >
       {card}

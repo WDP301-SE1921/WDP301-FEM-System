@@ -9,11 +9,13 @@ type SessionDetailParams = {
   sessionId: string;
   /** Id buoi chi co nghia trong lich cua mot con, nen luon di kem id cua con. */
   studentId: string;
+  /** Gio bat dau cua buoi: BE chi cho phu huynh doc buoi theo ngay, khong doc theo id. */
+  startsAt: string;
 };
 
 export default function SessionDetailScreen() {
   const { isAuthenticated, user } = useAuth();
-  const { sessionId, studentId } = useLocalSearchParams<SessionDetailParams>();
+  const { sessionId, studentId, startsAt } = useLocalSearchParams<SessionDetailParams>();
 
   // Nam ngoai (tabs) nen tu chan nguoi chua dang nhap
   if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
@@ -22,7 +24,7 @@ export default function SessionDetailScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/schedule'));
 
   // Chua chot giao vien, quan ly co dung app mobile hay khong: chi phu huynh xem duoc
-  if (user?.role !== 'PARENT' || !studentId) {
+  if (user?.role !== 'PARENT' || !studentId || !startsAt) {
     return (
       <Screen>
         <EmptyState
@@ -37,7 +39,12 @@ export default function SessionDetailScreen() {
 
   return (
     <Screen>
-      <ParentSessionDetail studentId={studentId} sessionId={sessionId} onBack={goBack} />
+      <ParentSessionDetail
+        studentId={studentId}
+        sessionId={sessionId}
+        startsAt={startsAt}
+        onBack={goBack}
+      />
     </Screen>
   );
 }

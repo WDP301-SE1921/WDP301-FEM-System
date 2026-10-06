@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
-import type { RoadmapLesson, StudentEnrollment } from '../types';
+import type { RoadmapLesson, SessionLink, StudentEnrollment } from '../types';
 import { getRoadmapWindow } from '../utils';
 
 import { CurrentLessonCard } from './current-lesson-card';
@@ -17,7 +17,7 @@ export type RoadmapTimelineProps = {
   /** Da sap theo thu tu bai (`getRoadmapLessons`). */
   lessons: readonly RoadmapLesson[];
   enrollment: Pick<StudentEnrollment, 'teacherName' | 'room'>;
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
   onOpenAssignments: () => void;
 };
 

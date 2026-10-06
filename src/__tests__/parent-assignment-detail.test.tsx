@@ -47,6 +47,7 @@ const ENROLLMENT: TuitionEnrollment = {
   startDate: '2026-09-01T00:00:00.000Z',
   endDate: '2026-12-01T00:00:00.000Z',
   activatedAt: '2026-09-01T02:00:00.000Z',
+  placements: [],
   class: {
     id: 'class-1',
     name: 'Toán nâng cao 8A2',
@@ -73,6 +74,7 @@ const ESSAY_QUESTION: AssignmentQuestion = {
 
 const DETAIL: AssignmentDetail = {
   id: ASSIGNMENT_ID,
+  classId: 'class-1',
   title: 'Bài tập về nhà bài 10',
   instructions: 'Làm trực tiếp trên EduGrade.',
   dueAt: daysFromToday(3),

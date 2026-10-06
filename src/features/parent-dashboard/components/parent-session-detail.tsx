@@ -1,5 +1,6 @@
 import { StyleSheet, View } from 'react-native';
 
+import { EmptyState } from '@/components/common/empty-state';
 import { ErrorState } from '@/components/common/error-state';
 import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
@@ -18,8 +19,13 @@ export type ParentSessionDetailProps = SessionRef & {
 };
 
 /** Chi tiet mot buoi hoc cua con: trang thai, thong tin buoi, diem danh, nhan xet va tai lieu. */
-export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSessionDetailProps) {
-  const detail = useSessionDetail({ studentId, sessionId });
+export function ParentSessionDetail({
+  studentId,
+  sessionId,
+  startsAt,
+  onBack,
+}: ParentSessionDetailProps) {
+  const detail = useSessionDetail({ studentId, sessionId, startsAt });
   // Chi de hien ten va khoi cua con; mo tu lich hoc thi danh sach con da co san trong cache
   const students = useLinkedStudents();
   const student = students.data?.find((item) => item.id === studentId);
@@ -31,12 +37,23 @@ export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSess
     }
 
     const session = detail.data;
+    if (!session) {
+      return (
+        <EmptyState
+          title="Không tìm thấy buổi học"
+          description="Buổi học có thể đã bị huỷ hoặc đổi sang ngày khác. Vào Lịch học để xem lịch mới nhất của con."
+        />
+      );
+    }
+
+    // BE chua tra nhan xet va tai lieu cho phu huynh: khong co thi an han muc nay
+    const hasReview = Boolean(session.teacherComment) || session.materials.length > 0;
     return (
       <>
         <SessionHero session={session} student={student} />
         {session.note ? <SessionNoticeCard type={session.type} note={session.note} /> : null}
         <SessionInfoCard session={session} />
-        <SessionReviewCard session={session} />
+        {hasReview ? <SessionReviewCard session={session} /> : null}
       </>
     );
   };

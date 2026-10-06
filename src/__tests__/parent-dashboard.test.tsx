@@ -3,13 +3,19 @@ import { render, screen, userEvent } from '@testing-library/react-native';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { ParentDashboard } from '@/features/parent-dashboard/components/parent-dashboard';
-import type { LinkedStudent, StudentDashboard } from '@/features/parent-dashboard/types';
+import type {
+  LinkedStudent,
+  ScheduleSession,
+  StudentDashboard,
+} from '@/features/parent-dashboard/types';
 import { AppError } from '@/types/api';
+import { toDateKey } from '@/utils/date';
 
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
     getStudents: jest.fn(),
     getStudentDashboard: jest.fn(),
+    getStudentSchedule: jest.fn(),
     getUnreadNotificationCount: jest.fn(),
   },
 }));
@@ -44,18 +50,23 @@ const HOANG_LONG: LinkedStudent = {
   subjectNames: ['Tiếng Anh'],
 };
 
+/** Buoi hom nay lay tu lich hoc cua BE: chua co phong va ten giao vien. */
+const MINH_ANH_TODAY: ScheduleSession[] = [
+  {
+    id: 'session-1',
+    className: 'Toán nâng cao 8A2',
+    subjectName: 'Toán',
+    startsAt: hoursFromNow(2),
+    endsAt: hoursFromNow(3),
+    room: null,
+    teacherName: null,
+    type: 'REGULAR',
+    topic: 'Phương trình bậc nhất',
+    note: null,
+  },
+];
+
 const MINH_ANH_DASHBOARD: StudentDashboard = {
-  todaySessions: [
-    {
-      id: 'session-1',
-      className: 'Toán nâng cao 8A2',
-      subjectName: 'Toán',
-      startsAt: hoursFromNow(2),
-      endsAt: hoursFromNow(3),
-      room: 'P.203',
-      teacherName: 'Đặng Hải Yến',
-    },
-  ],
   attendance: { attendedSessions: 16, totalSessions: 17 },
   scoreSummary: { average: 8.2, changeFromLastMonth: 0.4 },
   attentionItems: [
@@ -79,7 +90,6 @@ const MINH_ANH_DASHBOARD: StudentDashboard = {
 };
 
 const EMPTY_DASHBOARD: StudentDashboard = {
-  todaySessions: [],
   attendance: { attendedSessions: 0, totalSessions: 0 },
   scoreSummary: null,
   attentionItems: [],
@@ -99,6 +109,12 @@ function mockTwoChildren() {
   api.getStudents.mockResolvedValue([MINH_ANH, HOANG_LONG]);
   api.getStudentDashboard.mockImplementation(async (studentId) =>
     studentId === MINH_ANH.id ? MINH_ANH_DASHBOARD : EMPTY_DASHBOARD,
+  );
+}
+
+function mockTodaySessions(sessions: ScheduleSession[] = MINH_ANH_TODAY) {
+  api.getStudentSchedule.mockImplementation(async (studentId) =>
+    studentId === MINH_ANH.id ? sessions : [],
   );
 }
 
@@ -130,6 +146,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 0 });
+    mockTodaySessions();
   });
 
   it('xem con dau tien, bam con khac thi tai tong quan cua con do', async () => {
@@ -138,6 +155,12 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
     await waitForMinhAnhDashboard();
     expect(screen.getByText('Chào Hà 👋')).toBeOnTheScreen();
+    // Buoi hom nay lay tu lich hoc cua BE, chua co ten giao vien nen chi hien mon
+    expect(api.getStudentSchedule).toHaveBeenCalledWith(MINH_ANH.id, {
+      from: toDateKey(new Date()),
+      to: toDateKey(new Date()),
+    });
+    expect(screen.getByText('Môn Toán')).toBeOnTheScreen();
     expect(screen.getByText('94%')).toBeOnTheScreen();
     expect(screen.getByText('Tốt')).toBeOnTheScreen();
     expect(screen.getByText('Học phí tháng 10')).toBeOnTheScreen();
@@ -146,6 +169,10 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     await user.press(screen.getByRole('button', { name: HOANG_LONG_BUTTON }));
 
     expect(await screen.findByText('Hôm nay con không có buổi học nào.')).toBeOnTheScreen();
+    expect(api.getStudentSchedule).toHaveBeenLastCalledWith(HOANG_LONG.id, {
+      from: toDateKey(new Date()),
+      to: toDateKey(new Date()),
+    });
     expect(screen.getByText('Chưa có điểm')).toBeOnTheScreen();
     expect(screen.queryByText('Cần chú ý')).not.toBeOnTheScreen();
     expect(api.getStudentDashboard).toHaveBeenLastCalledWith(HOANG_LONG.id);
@@ -209,13 +236,10 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
   it('khong co nut chuan bi bai khi buoi hoc da bat dau', async () => {
     api.getStudents.mockResolvedValue([MINH_ANH]);
-    api.getStudentDashboard.mockResolvedValue({
-      ...MINH_ANH_DASHBOARD,
-      todaySessions: MINH_ANH_DASHBOARD.todaySessions.map((session) => ({
-        ...session,
-        startsAt: hoursFromNow(-1),
-      })),
-    });
+    api.getStudentDashboard.mockResolvedValue(MINH_ANH_DASHBOARD);
+    mockTodaySessions(
+      MINH_ANH_TODAY.map((session) => ({ ...session, startsAt: hoursFromNow(-1) })),
+    );
     await renderDashboard();
     await waitForMinhAnhDashboard();
 

@@ -1,5 +1,6 @@
 export * from './components/parent-assignment-detail';
 export * from './components/parent-assignments';
+export * from './components/parent-bill-detail';
 export * from './components/parent-dashboard';
 export * from './components/parent-receipt-detail';
 export * from './components/parent-schedule';

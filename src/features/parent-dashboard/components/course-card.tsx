@@ -8,7 +8,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { COURSE_STATUSES, DEFAULT_SUBJECT_ICON, SUBJECT_ICONS, TONES } from '../constants';
-import type { StudentEnrollment } from '../types';
+import type { SessionLink, StudentEnrollment } from '../types';
 import { formatWeeklySlots, getCourseProgress, getCourseStatus } from '../utils';
 
 import { CourseFooter } from './course-footer';
@@ -23,7 +23,7 @@ const DETAIL_ICON_SIZE = 16;
 export type CourseCardProps = {
   enrollment: StudentEnrollment;
   /** Mo chi tiet buoi tiep theo cua mon. */
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
 };
 
 /** The mot mon cua con: lop, giao vien, diem, lich co dinh, tien do va dong cuoi theo trang thai. */

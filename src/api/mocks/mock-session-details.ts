@@ -1,7 +1,8 @@
 /**
- * Chi tiet buoi hoc gia, dung cho route chi tiet buoi hoc trong `./parent.ts`. Buoi hoc tim theo id
- * trong lich gia (`./mock-schedule.ts`) nen chi tiet luon khop voi the trong lich tuan. Bai hoc lay
- * tu lo trinh gia (`./mock-lessons.ts`); buoi hoc bu day lai bai cua buoi con nghi. Phan them tinh
+ * Chi tiet buoi hoc gia. Man chi tiet buoi da noi BE that; du lieu nay con la nguon ket qua diem
+ * danh cua mock diem danh (`./mock-attendance.ts`). Buoi hoc tim theo id trong lich gia
+ * (`./mock-schedule.ts`). Bai hoc lay tu `./mock-lessons.ts`; buoi hoc bu day lai bai cua buoi con
+ * nghi. Phan them tinh
  * theo gio ket thuc cua buoi so voi luc goi:
  * - Buoi chua ket thuc: `SCHEDULED`, chua diem danh, chua co nhan xet va tai lieu
  * - Buoi da ket thuc: da chot diem danh (`COMPLETED`), con vao lop som 5 phut, co nhan xet va tai

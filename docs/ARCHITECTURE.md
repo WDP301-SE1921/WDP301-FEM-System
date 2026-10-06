@@ -20,9 +20,11 @@ src/
 │   ├── assignments/
 │   │   └── [assignmentId].tsx # Mot bai tap cua con: lam bai, nop bai, diem va dap an (query `studentId`)
 │   ├── sessions/
-│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`)
+│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`, `startsAt`)
 │   ├── receipts/
 │   │   └── [registrationId].tsx # Bien lai thu hoc phi cua mot don dang ky
+│   ├── bills/
+│   │   └── [registrationId].tsx # Bill hoc phi cua mot don dang ky (chua thu, da thu hoac da huy)
 │   ├── +not-found.tsx
 │   ├── (auth)/               # Nhom route cho nguoi chua dang nhap
 │   │   ├── _layout.tsx       # Chan nguoi da dang nhap
@@ -198,6 +200,7 @@ Mot phan endpoint da noi BE that, phan con lai chay bang mock. Ca hai nam o tang
 - Dang nhap da noi BE that nen token la JWT cua BE. `mocks/mock-guard.ts` chi doc `sub` va `role` trong payload de gia lap guard; mock khong con tai khoan mau. Ho so con cung do BE quan ly: route mock nhan `studentId` khong co trong du lieu mau thi coi la con that va tra du lieu rong, nen cac man hinh con dung mock hien trang thai rong voi tai khoan that. Du lieu mau trong `mocks/mock-*.ts` chi con test goi toi.
 - Them endpoint moi thi them route mock trong cung task: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
 - BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi them endpoint do vao `WIRED_ROUTES`, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature. `src/__tests__/wired-routes.test.ts` bao loi neu mot endpoint vua wire vua con route mock.
+- BE tra du lieu khac dang man hinh can (vd buoi hoc va bai tap chung cho moi con cua phu huynh, khong kem id cua con) thi ghep trong `features/<ten>/api/`: ham cua `<ten>Api` goi cac route that roi dua qua ham thuan trong `api/parent-data-mappers.ts` (co test rieng). Hook va component van nhan kieu cua man hinh, khong biet du lieu ghep tu may route. Field BE chua co thi de null va UI an di, khong dien gia tri gia.
 
 ## Cau hinh theo moi truong
 

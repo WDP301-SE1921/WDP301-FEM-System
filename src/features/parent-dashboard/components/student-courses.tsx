@@ -59,7 +59,9 @@ export function StudentCourses({ student, onOpenSession }: StudentCoursesProps) 
         <CourseCard
           key={enrollment.id}
           enrollment={enrollment}
-          onOpenSession={(sessionId) => onOpenSession({ studentId: student.id, sessionId })}
+          onOpenSession={({ id, startsAt }) =>
+            onOpenSession({ studentId: student.id, sessionId: id, startsAt })
+          }
         />
       ))}
     </View>

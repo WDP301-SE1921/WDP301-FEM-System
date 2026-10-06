@@ -4,7 +4,7 @@ Huong dan cho Claude Code (claude.ai/code) khi lam viec trong repo nay.
 
 App mobile cua EduGrade (repo nay goi la "he thong FEM"), danh cho phu huynh: Expo SDK 57, React Native 0.86, React 19.2, TypeScript strict, expo-router, React Query, Zustand, React Hook Form + Zod, Axios.
 
-**App goi BE that cho dung cac endpoint trong `src/api/wired-routes.ts`** (dang nhap, dang ky, xac minh email, ho so con, ghi danh, bien lai; noi ngay 2026-10-05, dia chi BE lay tu `EXPO_PUBLIC_API_URL`). **Moi endpoint khac van chi dung mock** (`src/api/mocks/`) va khong ra mang. Chi noi them endpoint khi nguoi dung bao "wire" dung endpoint do; khong them co bat/tat mock, khong cho request chua wire roi ra mang.
+**App goi BE that cho dung cac endpoint trong `src/api/wired-routes.ts`** (dang nhap, dang ky, xac minh email, ho so con, ghi danh, bien lai: noi ngay 2026-10-05; buoi hoc, don bao luu, bai tap, bai nop cua module `academic` va bill hoc phi (`GET /me/bills`): noi ngay 2026-10-06; dia chi BE lay tu `EXPO_PUBLIC_API_URL`). **Moi endpoint khac van chi dung mock** (`src/api/mocks/`: tong quan trang chu, diem danh, thong bao) va khong ra mang. Chi noi them endpoint khi nguoi dung bao "wire" dung endpoint do; khong them co bat/tat mock, khong cho request chua wire roi ra mang.
 
 `docs/ARCHITECTURE.md` va `docs/CODING_CONVENTIONS.md` la luat bat buoc va duoc nap tu dong o cuoi file nay. File nay chi bo sung nhung gi hai tai lieu do chua noi: pham vi san pham, lenh, cho de lam sai, design pattern va chuan clean code.
 
@@ -23,7 +23,7 @@ Nguon: `docs/SRS.md` (dac ta yeu cau, ban ngay 2026-10-03, khong nap tu dong). D
 
 Thuat ngu dung trong code va tai lieu: `StudentProfile` la ho so con duoi mot tai khoan phu huynh; `Enrollment` la mot luot dang ky hoc (1 hoc sinh, 1 mon, 1 lop, so thang tu 1 den 12); `ClassSession` la mot buoi hoc cu the, sinh tu lich co dinh cua lop.
 
-Code hien tai chua khop het cac diem tren: enum diem danh va cach tinh ty le di hoc dang theo BE, bai tu luan moi nop duoc bang chu (chua dinh kem anh), con nut chuong va route thong bao trong app. Nghiep vu theo SRS, con ten field va enum cua API van theo contract BE. Gap cho SRS va BE lech nhau thi bao lai de nguoi dung quyet dinh, khong tu chon mot ben va khong tu sua hang loat ngoai pham vi task.
+Code hien tai chua khop het cac diem tren: enum diem danh va cach tinh ty le di hoc dang theo BE, bai tu luan moi nop duoc bang chu (chua dinh kem anh), con nut chuong va route thong bao trong app. Lich hoc, chi tiet buoi, mon hoc, lo trinh va bai tap lay tu BE that nen thieu nhung gi BE chua tra cho phu huynh: ten giao vien, phong hoc, ket qua diem danh, nhan xet cua buoi, buoi hoc bu o lop khac, bai chua xep buoi (xem `docs/BE_FIX_REQUESTS.md`, file viet de gui nhom BE). Nghiep vu theo SRS, con ten field va enum cua API van theo contract BE. Gap cho SRS va BE lech nhau thi bao lai de nguoi dung quyet dinh, khong tu chon mot ben va khong tu sua hang loat ngoai pham vi task.
 
 ## Lenh
 

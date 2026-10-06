@@ -15,8 +15,11 @@ export default function ScheduleScreen() {
         <ParentSchedule
           onAddChild={() => router.push('/add-child')}
           onOpenAssignments={() => router.navigate('/grades')}
-          onOpenSession={({ studentId, sessionId }) =>
-            router.push({ pathname: '/sessions/[sessionId]', params: { sessionId, studentId } })
+          onOpenSession={({ studentId, sessionId, startsAt }) =>
+            router.push({
+              pathname: '/sessions/[sessionId]',
+              params: { sessionId, studentId, startsAt },
+            })
           }
         />
       </Screen>

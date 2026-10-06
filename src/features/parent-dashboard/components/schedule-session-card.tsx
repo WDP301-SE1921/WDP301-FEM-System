@@ -7,7 +7,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatTime, getInitials } from '@/utils/format';
 
-import { DAY_PERIOD_LABELS, SESSION_STATUSES, SESSION_TYPES, TONES } from '../constants';
+import { DAY_PERIOD_LABELS, SESSION_STATUSES, SESSION_TYPES, TONES, type Tone } from '../constants';
 import type { ScheduleSession } from '../types';
 import { getDayPeriod, getSessionStatus } from '../utils';
 
@@ -30,7 +30,7 @@ export type ScheduleSessionCardProps = SessionBadgeProps & {
   onPress: () => void;
 };
 
-/** Mot buoi trong lich: gio, lop, ghi chu cua trung tam, giao vien va phong hoc. */
+/** Mot buoi trong lich: gio, lop, ghi chu cua trung tam, giao vien (hoac mon) va phong hoc. */
 export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessionCardProps) {
   const theme = useTheme();
   const appearance = SESSION_TYPES[session.type];
@@ -77,21 +77,11 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
         ) : null}
 
         <View style={styles.footer}>
-          <View style={[styles.row, styles.teacher]}>
-            <ThemedView type={tone.soft} style={styles.teacherAvatar}>
-              <ThemedText type="smallBold" themeColor={tone.color}>
-                {getInitials(session.teacherName)}
-              </ThemedText>
-            </ThemedView>
-            <View style={styles.teacherInfo}>
-              <ThemedText type="smallBold" numberOfLines={1}>
-                {session.teacherName}
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                Giáo viên môn {session.subjectName}
-              </ThemedText>
-            </View>
-          </View>
+          <SessionTeacher
+            teacherName={session.teacherName}
+            subjectName={session.subjectName}
+            tone={appearance.tone}
+          />
           {session.room ? (
             <ThemedView style={[styles.row, styles.room]}>
               <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor={tone.color} />
@@ -103,6 +93,41 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
         </View>
       </ThemedView>
     </Pressable>
+  );
+}
+
+type SessionTeacherProps = Pick<ScheduleSession, 'teacherName' | 'subjectName'> & { tone: Tone };
+
+/** Giao vien cua buoi. Chua co ten giao vien thi chi hien mon hoc. */
+function SessionTeacher({ teacherName, subjectName, tone }: SessionTeacherProps) {
+  const { color, soft } = TONES[tone];
+  if (!teacherName) {
+    return (
+      <View style={[styles.row, styles.teacher]}>
+        <Icon name="book-outline" size={DETAIL_ICON_SIZE} themeColor={color} />
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          Môn {subjectName}
+        </ThemedText>
+      </View>
+    );
+  }
+
+  return (
+    <View style={[styles.row, styles.teacher]}>
+      <ThemedView type={soft} style={styles.teacherAvatar}>
+        <ThemedText type="smallBold" themeColor={color}>
+          {getInitials(teacherName)}
+        </ThemedText>
+      </ThemedView>
+      <View style={styles.teacherInfo}>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {teacherName}
+        </ThemedText>
+        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+          Giáo viên môn {subjectName}
+        </ThemedText>
+      </View>
+    </View>
   );
 }
 

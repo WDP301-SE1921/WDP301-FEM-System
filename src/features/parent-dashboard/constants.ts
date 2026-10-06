@@ -7,6 +7,7 @@ import type {
   AssignmentTab,
   AttendanceCounts,
   AttendanceStatus,
+  BillStatus,
   CourseStatus,
   DayPeriod,
   LessonKind,
@@ -293,11 +294,39 @@ export const RECEIPT_PAID_STATUS: StatusAppearance = {
   icon: 'checkmark-circle',
 };
 
-/** Don `DRAFT`: nhan vien da lap don, trung tam chua xac nhan thu hoc phi. */
-export const PENDING_REGISTRATION_STATUS: StatusAppearance = {
-  label: 'Chờ xác nhận',
-  tone: 'accent',
-  icon: 'time-outline',
+type BillStatusAppearance = StatusAppearance & {
+  /** Nhan cua o tong tien tren bill. */
+  totalLabel: string;
+  /** Loi nhan duoi tong tien. */
+  note: string;
+};
+
+/**
+ * Nhan theo `status` cua bill, cung chu voi web va `PAYMENT_BILL_API.md` cua BE: chi bill `PAID` moi
+ * duoc ghi la da thanh toan.
+ */
+export const BILL_STATUSES: Record<BillStatus, BillStatusAppearance> = {
+  UNPAID: {
+    label: 'Chưa thanh toán',
+    tone: 'accent',
+    icon: 'time-outline',
+    totalLabel: 'Học phí cần đóng',
+    note: 'Vui lòng đóng học phí tại trung tâm và báo mã bill cho nhân viên. Gói học được kích hoạt sau khi trung tâm xác nhận đã thu đủ học phí.',
+  },
+  PAID: {
+    label: 'Đã thanh toán',
+    tone: 'success',
+    icon: 'checkmark-circle',
+    totalLabel: 'Tổng học phí đã thu',
+    note: 'Trung tâm đã xác nhận thu đủ học phí của bill này.',
+  },
+  CANCELLED: {
+    label: 'Đã huỷ',
+    tone: 'neutral',
+    icon: 'close-circle',
+    totalLabel: 'Học phí của đơn đã huỷ',
+    note: 'Đơn đăng ký này đã huỷ, không cần đóng học phí.',
+  },
 };
 
 export const TERM_STATUSES: Record<TermStatus, StatusAppearance> = {

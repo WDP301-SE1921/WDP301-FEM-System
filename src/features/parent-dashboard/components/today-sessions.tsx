@@ -84,17 +84,24 @@ function TodaySessionCard({
 
       <ThemedView style={styles.teacher}>
         <ThemedView type="primary" style={styles.teacherAvatar}>
-          <ThemedText type="smallBold" themeColor="primaryText">
-            {getInitials(session.teacherName)}
-          </ThemedText>
+          {session.teacherName ? (
+            <ThemedText type="smallBold" themeColor="primaryText">
+              {getInitials(session.teacherName)}
+            </ThemedText>
+          ) : (
+            <Icon name="book-outline" size={DETAIL_ICON_SIZE} themeColor="primaryText" />
+          )}
         </ThemedView>
+        {/* Chua co ten giao vien thi chi hien mon hoc */}
         <View style={styles.teacherInfo}>
           <ThemedText type="smallBold" numberOfLines={1}>
-            {session.teacherName}
+            {session.teacherName ?? `Môn ${session.subjectName}`}
           </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-            Giáo viên môn {session.subjectName}
-          </ThemedText>
+          {session.teacherName ? (
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              Giáo viên môn {session.subjectName}
+            </ThemedText>
+          ) : null}
         </View>
         {/* Buoi da bat dau hoac da xong thi khong con gi de chuan bi */}
         {statusKey === 'UPCOMING' ? (

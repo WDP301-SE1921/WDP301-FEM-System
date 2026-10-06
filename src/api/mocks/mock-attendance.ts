@@ -1,8 +1,8 @@
 /**
  * Lich su diem danh gia cua hoc sinh mau (`./mock-students.ts`), dung cho route diem danh trong
  * `./parent.ts`. Buoi hoc lay tu lich gia (`./mock-schedule.ts`), ket qua diem danh lay tu chi tiet
- * buoi gia (`./mock-session-details.ts`), nen khop voi lich tuan va man chi tiet buoi hoc. Chi tra
- * buoi da ket thuc, tu ngay con vao lop (`CLASS_START_DAYS`), moi nhat truoc. Ngay tinh tu hom nay:
+ * buoi gia (`./mock-session-details.ts`). Chi tra buoi da ket thuc, tu ngay con vao lop
+ * (`CLASS_START_DAYS`), moi nhat truoc. Ngay tinh tu hom nay:
  * - Minh Anh  : Vat ly tu (hom nay - 28), Toan tu (hom nay - 21), khop so buoi da hoc cua mock mon
  *               hoc. 17 buoi truoc hom nay, nghi co phep (hom nay - 3) va da xep hoc bu vao
  *               (hom nay + 2): 16/17 nhu mock trang chu. Buoi Toan hom nay tinh them khi ket thuc

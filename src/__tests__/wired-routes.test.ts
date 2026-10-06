@@ -11,6 +11,7 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 const STUDENT_ID = 'cmg2x1abc0001student';
+const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -26,16 +27,27 @@ describe('api/wired-routes', () => {
       ['post', Endpoints.me.students],
       ['patch', Endpoints.me.student(STUDENT_ID)],
       ['get', Endpoints.me.studentEnrollments(STUDENT_ID)],
+      ['get', Endpoints.me.bills],
       ['get', Endpoints.registrations.receipt('cmg2x1abc0003order')],
+      ['get', Endpoints.registrations.bill('cmg2x1abc0003order')],
+      ['get', Endpoints.academic.scheduledSessions],
+      ['get', Endpoints.academic.leaves],
+      ['get', Endpoints.academic.assignments],
+      ['get', Endpoints.academic.assignment(ASSIGNMENT_ID)],
+      ['get', Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID)],
+      ['post', Endpoints.academic.submissions],
     ])('%s %s ra BE that', (method, url) => {
       expect(isWiredRequest(method, url)).toBe(true);
     });
 
     it.each([
       ['BE chua co route nay', 'get', Endpoints.parent.studentDashboard(STUDENT_ID)],
-      ['route TAM, BE chua co', 'get', Endpoints.me.studentRegistrations(STUDENT_ID)],
-      ['chua wire', 'get', Endpoints.academic.assignment('assignment-1')],
-      ['chua wire', 'post', Endpoints.academic.submissions],
+      ['BE chua co route nay', 'get', Endpoints.parent.studentAttendance(STUDENT_ID)],
+      ['route TAM da bo', 'get', `${Endpoints.me.student(STUDENT_ID)}/registrations`],
+      ['route cua nhan vien', 'post', '/registrations/cmg2x1abc0003order/confirm-payment'],
+      ['sai method', 'post', Endpoints.academic.assignments],
+      ['sai method', 'get', Endpoints.academic.submissions],
+      ['route cua giao vien', 'post', `${Endpoints.academic.assignment(ASSIGNMENT_ID)}/publish`],
       ['sai method', 'delete', Endpoints.me.student(STUDENT_ID)],
       ['sai method', 'get', Endpoints.auth.login],
       ['thua doan duong dan', 'get', `${Endpoints.me.students}/${STUDENT_ID}/extra`],

@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 
-import type { EnrollmentPause, StudentEnrollment } from '../types';
+import type { EnrollmentPause, SessionLink, StudentEnrollment } from '../types';
 import { formatDateKey, formatNextSession } from '../utils';
 
 const ICON_SIZE = 16;
@@ -14,7 +14,7 @@ const TOUCH_TARGET_SIZE = 44;
 
 export type CourseFooterProps = {
   enrollment: StudentEnrollment;
-  onOpenSession: (sessionId: string) => void;
+  onOpenSession: (session: SessionLink) => void;
 };
 
 /** Dong cuoi the mon hoc: buoi tiep theo, don bao luu hoac ngay ket thuc tuy trang thai. */
@@ -29,19 +29,19 @@ export function CourseFooter({ enrollment, onOpenSession }: CourseFooterProps) {
   if (enrollment.pause) return <PauseNotice pause={enrollment.pause} />;
   if (!enrollment.nextSession) return null;
 
-  const { id, startsAt } = enrollment.nextSession;
-  const nextSession = formatNextSession(startsAt);
+  const { nextSession } = enrollment;
+  const nextSessionLabel = formatNextSession(nextSession.startsAt);
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Buổi tiếp theo: ${nextSession}`}
+      accessibilityLabel={`Buổi tiếp theo: ${nextSessionLabel}`}
       accessibilityHint="Xem chi tiết buổi học"
-      onPress={() => onOpenSession(id)}
+      onPress={() => onOpenSession(nextSession)}
       style={({ pressed }) => [styles.nextSession, pressed && styles.pressed]}
     >
       <Icon name="calendar-outline" size={ICON_SIZE} themeColor="primary" />
       <ThemedText type="small" style={styles.nextSessionText}>
-        Buổi tiếp theo: <ThemedText type="smallBold">{nextSession}</ThemedText>
+        Buổi tiếp theo: <ThemedText type="smallBold">{nextSessionLabel}</ThemedText>
       </ThemedText>
       <Icon name="chevron-forward" size={ICON_SIZE} themeColor="primary" />
     </Pressable>

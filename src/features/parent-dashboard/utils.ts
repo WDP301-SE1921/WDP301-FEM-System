@@ -65,7 +65,9 @@ import type {
   AttendanceCounts,
   AttendanceMonth,
   AttendanceRecord,
+  AttendanceStatus,
   AttendanceSummary,
+  BillParent,
   ChoiceState,
   ClassSession,
   CourseFilter,
@@ -85,15 +87,16 @@ import type {
   ScheduleSession,
   ScoreTrend,
   SessionDetail,
+  SessionLesson,
   SessionStatus,
   StudentAssignment,
   StudentEnrollment,
-  StudentRegistration,
   SubmissionAnswer,
   SubmissionGrade,
   SubmissionRecord,
   TermSessionCount,
   TermStatus,
+  TuitionBill,
   TuitionEnrollment,
   TuitionReceipt,
   WeekDay,
@@ -155,16 +158,28 @@ export function getSessionDetailStatus(
   now: Date = new Date(),
 ): StatusAppearance {
   if (session.status === 'CANCELLED') return CANCELLED_SESSION_STATUS;
-  if (session.attendance !== 'UNMARKED') return ATTENDANCE_STATUSES[session.attendance];
+
+  const { attendance } = session;
+  if (attendance !== null && attendance !== 'UNMARKED') return ATTENDANCE_STATUSES[attendance];
 
   const timeStatus = getSessionStatus(session, now);
-  // Da ket thuc ma chua co ket qua thi bao chua diem danh, phu huynh can biet dieu nay hon
-  return timeStatus === 'FINISHED' ? ATTENDANCE_STATUSES.UNMARKED : SESSION_STATUSES[timeStatus];
+  // Da ket thuc ma giao vien chua chot thi bao chua diem danh, phu huynh can biet dieu nay hon.
+  // `null` la app khong co ket qua diem danh, khong phai giao vien chua diem danh
+  const isAwaitingAttendance = timeStatus === 'FINISHED' && attendance === 'UNMARKED';
+  return isAwaitingAttendance ? ATTENDANCE_STATUSES.UNMARKED : SESSION_STATUSES[timeStatus];
+}
+
+/** Vd `Bài 12: Phương trình bậc nhất`; chi ten bai khi khong co thu tu bai. */
+export function formatLessonTitle({
+  sequence,
+  title,
+}: Pick<SessionLesson, 'sequence' | 'title'>): string {
+  return sequence === null ? title : `Bài ${sequence}: ${title}`;
 }
 
 /** Nhan diem danh, co mat thi kem dung gio hay muon, vd `Có mặt · Muộn 10 phút`. */
 export function getAttendanceBadge(
-  session: Pick<SessionDetail, 'attendance' | 'startsAt' | 'checkedInAt'>,
+  session: Pick<SessionDetail, 'startsAt' | 'checkedInAt'> & { attendance: AttendanceStatus },
 ): StatusAppearance {
   const status = ATTENDANCE_STATUSES[session.attendance];
   if (session.attendance !== 'PRESENT' || !session.checkedInAt) return status;
@@ -989,11 +1004,17 @@ export function getPaymentHistory(enrollments: readonly TuitionEnrollment[]): Pa
   return enrollments.filter(hasPayment).sort((a, b) => confirmedTime(b) - confirmedTime(a));
 }
 
-/** Don nhan vien da lap nhung trung tam chua xac nhan thu hoc phi. */
-export function getPendingRegistrations(
-  registrations: readonly StudentRegistration[],
-): StudentRegistration[] {
-  return registrations.filter(({ status }) => status === 'DRAFT');
+/** Bill cua don nhan vien da lap nhung trung tam chua xac nhan thu hoc phi. */
+export function getUnpaidBills(bills: readonly TuitionBill[]): TuitionBill[] {
+  return bills.filter(({ status }) => status === 'UNPAID');
+}
+
+/** Dong phu huynh tren bill, vd `Nguyễn Văn A · a@example.com · 0900000000`. Bo phan de trong. */
+export function formatBillParent({ displayName, email, phone }: BillParent): string {
+  return [displayName, email, phone]
+    .map((part) => part?.trim())
+    .filter((part) => !!part)
+    .join(' · ');
 }
 
 function toIsoWeekday(date: Date): number {

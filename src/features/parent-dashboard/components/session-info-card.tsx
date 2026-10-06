@@ -6,8 +6,8 @@ import { Radius, Spacing } from '@/constants/theme';
 import { formatTime, getInitials } from '@/utils/format';
 
 import { DAY_PERIOD_LABELS } from '../constants';
-import type { SessionDetail } from '../types';
-import { getAttendanceBadge, getDayPeriod, getMinutesBetween } from '../utils';
+import type { AttendanceStatus, SessionDetail } from '../types';
+import { formatLessonTitle, getAttendanceBadge, getDayPeriod, getMinutesBetween } from '../utils';
 
 import { SectionCard } from './section-card';
 import { SessionInfoRow } from './session-info-row';
@@ -21,12 +21,15 @@ export type SessionInfoCardProps = {
   session: SessionDetail;
 };
 
-/** Thoi gian, phong, giao vien, bai hoc va diem danh cua buoi hoc. */
+/**
+ * Thoi gian, phong, giao vien, bai hoc va diem danh cua buoi hoc. Phong, giao vien va diem danh chi
+ * hien khi co du lieu: BE chua tra cac thong tin nay cho phu huynh.
+ */
 export function SessionInfoCard({ session }: SessionInfoCardProps) {
   const period = DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)];
   const duration = getMinutesBetween(session.startsAt, session.endsAt);
   const { lesson } = session;
-  const lessonTitle = lesson ? `Bài ${lesson.sequence}: ${lesson.title}` : session.topic;
+  const lessonTitle = lesson ? formatLessonTitle(lesson) : session.topic;
 
   return (
     <SectionCard title="Thông tin buổi học" icon="information-circle-outline">
@@ -37,17 +40,21 @@ export function SessionInfoCard({ session }: SessionInfoCardProps) {
           value={`${formatTime(session.startsAt)} – ${formatTime(session.endsAt)}`}
           hint={`${period} · ${duration} phút`}
         />
-        <SessionInfoRow
-          leading={<ToneIcon name="location-outline" tone="accent" />}
-          label="Phòng học"
-          value={session.room ? `Phòng ${session.room}` : 'Chưa xếp phòng'}
-        />
-        <SessionInfoRow
-          leading={<TeacherAvatar name={session.teacherName} />}
-          label="Giáo viên phụ trách"
-          value={session.teacherName}
-          hint={`Giáo viên môn ${session.subjectName}`}
-        />
+        {session.room ? (
+          <SessionInfoRow
+            leading={<ToneIcon name="location-outline" tone="accent" />}
+            label="Phòng học"
+            value={`Phòng ${session.room}`}
+          />
+        ) : null}
+        {session.teacherName ? (
+          <SessionInfoRow
+            leading={<TeacherAvatar name={session.teacherName} />}
+            label="Giáo viên phụ trách"
+            value={session.teacherName}
+            hint={`Giáo viên môn ${session.subjectName}`}
+          />
+        ) : null}
         {lessonTitle ? (
           <SessionInfoRow
             leading={<ToneIcon name="book-outline" tone="primary" />}
@@ -56,14 +63,20 @@ export function SessionInfoCard({ session }: SessionInfoCardProps) {
             hint={lesson?.description}
           />
         ) : null}
-        {session.status === 'CANCELLED' ? null : <AttendanceRow session={session} />}
+        {session.status === 'CANCELLED' || session.attendance === null ? null : (
+          <AttendanceRow session={session} attendance={session.attendance} />
+        )}
       </View>
     </SectionCard>
   );
 }
 
-function AttendanceRow({ session }: SessionInfoCardProps) {
-  const badge = getAttendanceBadge(session);
+type AttendanceRowProps = SessionInfoCardProps & {
+  attendance: AttendanceStatus;
+};
+
+function AttendanceRow({ session, attendance }: AttendanceRowProps) {
+  const badge = getAttendanceBadge({ ...session, attendance });
 
   return (
     <SessionInfoRow

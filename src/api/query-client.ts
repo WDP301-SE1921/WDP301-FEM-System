@@ -54,12 +54,12 @@ export const queryKeys = {
     students: ['me', 'students'] as const,
     studentEnrollments: (studentId: string) =>
       ['me', 'students', studentId, 'enrollments'] as const,
-    studentRegistrations: (studentId: string) =>
-      ['me', 'students', studentId, 'registrations'] as const,
+    studentBills: (studentId: string) => ['me', 'students', studentId, 'bills'] as const,
   },
   registrations: {
     all: ['registrations'] as const,
     receipt: (registrationId: string) => ['registrations', registrationId, 'receipt'] as const,
+    bill: (registrationId: string) => ['registrations', registrationId, 'bill'] as const,
   },
   academic: {
     all: ['academic'] as const,

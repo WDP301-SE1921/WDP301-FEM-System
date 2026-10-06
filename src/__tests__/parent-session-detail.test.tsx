@@ -25,11 +25,11 @@ const MINH_ANH: LinkedStudent = {
   grade: 8,
   subjectNames: ['Toán', 'Vật lý'],
 };
-const SESSION_REF = { studentId: MINH_ANH.id, sessionId: 'session-1' };
-
 function at(hours: number, minutes = 0): string {
   return new Date(2026, 9, 16, hours, minutes).toISOString();
 }
+
+const SESSION_REF = { studentId: MINH_ANH.id, sessionId: 'session-1', startsAt: at(18) };
 
 function hoursFromNow(hours: number): string {
   return new Date(Date.now() + hours * HOUR_MS).toISOString();
@@ -67,6 +67,16 @@ const UPCOMING_REGULAR: SessionDetail = {
   checkedInAt: null,
   teacherComment: null,
   materials: [],
+};
+
+/** Buoi dung nhu app ghep tu BE: chua co phong, ten giao vien, diem danh, nhan xet va tai lieu. */
+const BACKEND_SESSION: SessionDetail = {
+  ...UPCOMING_REGULAR,
+  room: null,
+  teacherName: null,
+  topic: 'Hằng đẳng thức đáng nhớ',
+  lesson: { sequence: null, title: 'Hằng đẳng thức đáng nhớ', description: null },
+  attendance: null,
 };
 
 async function renderDetail() {
@@ -124,10 +134,40 @@ describe('features/parent-dashboard/ParentSessionDetail', () => {
     ).toBeOnTheScreen();
     expect(screen.getByText('Sắp diễn ra')).toBeOnTheScreen();
     expect(screen.getByText('Chưa điểm danh')).toBeOnTheScreen();
-    expect(screen.getByText('Nhận xét và tài liệu sẽ có sau buổi học.')).toBeOnTheScreen();
+    expect(screen.queryByText('Nhận xét & tài liệu')).not.toBeOnTheScreen();
     expect(screen.queryByText('Nội dung bài học')).not.toBeOnTheScreen();
     expect(screen.queryByText(/^Thông báo/)).not.toBeOnTheScreen();
     expect(screen.queryByText('Điểm danh đã được giáo viên xác nhận')).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Quay lại' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('buoi tu BE: chi hien thong tin BE co, an phong, giao vien, diem danh va nhan xet', async () => {
+    api.getSessionDetail.mockResolvedValue(BACKEND_SESSION);
+    await renderDetail();
+
+    expect(
+      await screen.findByText('Nội dung bài học', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    expect(screen.getAllByText('Hằng đẳng thức đáng nhớ')).toHaveLength(2);
+    expect(screen.getByText('Sắp diễn ra')).toBeOnTheScreen();
+    expect(screen.getByText('Thời gian học')).toBeOnTheScreen();
+
+    expect(screen.queryByText('Phòng học')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Giáo viên phụ trách')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Trạng thái điểm danh')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Chưa điểm danh')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Nhận xét & tài liệu')).not.toBeOnTheScreen();
+  });
+
+  it('khong thay buoi trong lich cua ngay do thi bao khong tim thay', async () => {
+    api.getSessionDetail.mockResolvedValue(null);
+    const { onBack, user } = await renderDetail();
+
+    expect(
+      await screen.findByText('Không tìm thấy buổi học', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Quay lại' }));
     expect(onBack).toHaveBeenCalledTimes(1);
