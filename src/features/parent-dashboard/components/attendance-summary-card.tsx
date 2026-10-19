@@ -81,7 +81,7 @@ function AttendanceCounter({ label, value, tone }: AttendanceCounterProps) {
     >
       <View style={styles.counterLabel}>
         <View style={[styles.dot, { backgroundColor: theme[TONES[tone].color] }]} />
-        <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.counterText}>
           {label}
         </ThemedText>
       </View>
@@ -101,13 +101,18 @@ const styles = StyleSheet.create({
   rateBlock: { flex: 1, gap: Spacing.half },
   rateRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: Spacing.two },
   counters: { flexDirection: 'row', gap: Spacing.two },
+  // Nhan xuong dong thi o cao hon: day so xuong day de so cua bon o van thang hang
   counter: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.one,
     borderRadius: Radius.lg,
   },
   counterLabel: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  // Man hinh 360dp moi o con khoang 56dp, khong du cho cham va "Có phép" tren mot dong: cho nhan
+  // xuong dong thay vi tran ra ngoai o
+  counterText: { flexShrink: 1, textAlign: 'center' },
   dot: { width: DOT_SIZE, height: DOT_SIZE, borderRadius: Radius.full },
 });

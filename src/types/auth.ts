@@ -13,6 +13,8 @@ export type User = {
   status: UserStatus;
   /** null khi chua xac minh email: BE chua cho phu huynh tao hay sua ho so con. */
   emailVerifiedAt: string | null;
+  /** So dien thoai lien he dang luu. BE chi tra voi tai khoan `PARENT`; null khi chua nhap. */
+  phone?: string | null;
   createdAt: string;
   updatedAt: string;
 };

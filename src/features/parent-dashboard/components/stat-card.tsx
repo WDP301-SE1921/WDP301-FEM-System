@@ -37,8 +37,11 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.two,
   },
+  // Hai o tren mot hang chi rong khoang 115dp tren man hinh 360dp: nhan xep loai ("Khá", "Chưa đạt")
+  // xuong dong duoi tieu de thay vi cat tieu de con vai chu
   header: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.one,

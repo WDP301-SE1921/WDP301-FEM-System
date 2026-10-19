@@ -66,7 +66,7 @@ export function CurrentLessonCard({
           {enrollment.room ? (
             <View style={styles.room}>
               <Icon name="location-outline" size={ICON_SIZE} themeColor="textSecondary" />
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="small" themeColor="textSecondary" style={styles.roomText}>
                 {enrollment.room}
               </ThemedText>
             </View>
@@ -105,4 +105,5 @@ const styles = StyleSheet.create({
   titleBlock: { gap: Spacing.one },
   classInfo: { gap: Spacing.two, padding: Spacing.two, borderRadius: Radius.lg },
   room: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  roomText: { flexShrink: 1 },
 });

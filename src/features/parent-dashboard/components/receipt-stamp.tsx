@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/ui/themed-text';
-import { Radius } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const STAMP_SIZE = 112;
@@ -27,10 +27,24 @@ export function ReceiptStamp({ date }: ReceiptStampProps) {
       style={[styles.outerRing, { borderColor: theme.danger }]}
     >
       <View style={[styles.innerRing, { borderColor: theme.danger }]}>
-        <ThemedText type="smallBold" themeColor="danger" style={styles.text}>
+        {/* Con dau co kich thuoc co dinh: chu he thong phong to thi thu nho chu cho vua vong tron.
+            Ngay thu van doc duoc o dong "Thời gian thu" va qua accessibilityLabel */}
+        <ThemedText
+          type="smallBold"
+          themeColor="danger"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={styles.text}
+        >
           ĐÃ THU TIỀN
         </ThemedText>
-        <ThemedText type="small" themeColor="danger" style={styles.text}>
+        <ThemedText
+          type="small"
+          themeColor="danger"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          style={styles.text}
+        >
           {date}
         </ThemedText>
       </View>
@@ -48,10 +62,12 @@ const styles = StyleSheet.create({
     opacity: STAMP_OPACITY,
     transform: [{ rotate: STAMP_ROTATION }],
   },
+  // Le ngang de hai dong chu nam trong day cung cua vong tron, khong cham vien
   innerRing: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
     borderWidth: 1,
     borderRadius: Radius.full,
   },

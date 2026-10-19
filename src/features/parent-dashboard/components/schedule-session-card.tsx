@@ -48,12 +48,12 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
         <View style={[styles.highlight, { backgroundColor: theme[tone.color] }]} />
 
         <View style={styles.header}>
-          <View style={styles.row}>
+          <View style={[styles.row, styles.time]}>
             <Icon name="time-outline" size={TIME_ICON_SIZE} themeColor={tone.color} />
             <ThemedText type="smallBold">
               {formatTime(session.startsAt)} – {formatTime(session.endsAt)}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" style={styles.period}>
               ({DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)]})
             </ThemedText>
           </View>
@@ -159,6 +159,9 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.75 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  // Chu phong to lam gio hoc dai hon ca hang: buoi trong ngay xuong dong, khong tran the
+  time: { flexShrink: 1 },
+  period: { flexShrink: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   title: { flex: 1, fontWeight: 700 },
   note: {

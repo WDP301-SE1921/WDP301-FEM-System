@@ -54,6 +54,7 @@ const ENROLLMENT: TuitionEnrollment = {
     roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
+    teacher: null,
   },
   registrationOrder: { payment: null },
 };

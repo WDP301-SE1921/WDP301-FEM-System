@@ -725,7 +725,6 @@ describe('features/parent-dashboard/utils', () => {
         id,
         testType: null,
         title: `Bài ${id}`,
-        instructions: '',
         subjectName: 'Toán',
         className: 'Toán nâng cao 8A2',
         teacherName: 'Đặng Hải Yến',

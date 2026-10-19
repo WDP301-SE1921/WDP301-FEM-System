@@ -2,9 +2,11 @@ import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig 
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import type {
-  AssignmentDetail,
+  AppNotification,
+  AssignmentListItem,
   AttendanceReport,
-  MakeupBooking,
+  CurriculumUnit,
+  GradeHistoryItem,
   ScheduledSession,
   ScheduledSessionDetail,
   TuitionBill,
@@ -13,9 +15,9 @@ import type {
 import { addDays, toDateKey } from '@/utils/date';
 
 /**
- * `parentDashboardApi` voi adapter mang gia (xem `api-client.test.ts`): kiem tra cac route da wire cua
- * module `academic` ra mang voi dung duong dan va query, va du lieu BE tra chung cho moi con duoc tach
- * theo ghi danh cua con dang xem. Khong phai goi BE that.
+ * `parentDashboardApi` voi adapter mang gia (xem `api-client.test.ts`): kiem tra cac route da wire ra
+ * mang voi dung duong dan va query, doc het cac trang theo `total`, va du lieu BE duoc ghep cho con
+ * dang xem. Khong phai goi BE that.
  */
 
 jest.mock('@/lib/logger', () => ({
@@ -41,6 +43,8 @@ type SentRequest = {
 const API_URL = 'http://localhost:3000/api/v1';
 const STUDENT_ID = 'cmg2x1abc0001student';
 const PAGE_LIMIT = 100;
+/** Query cua route phan trang `academic` khi app doc trang dau. */
+const FIRST_PAGE = { paginated: 'true', page: '1', limit: String(PAGE_LIMIT) };
 
 /** `respond` tra gia tri nay thi BE tra loi voi envelope loi. */
 class BeError {
@@ -92,6 +96,11 @@ function sentTo(path: string): SentRequest[] {
   return sent.filter((request) => request.path === path);
 }
 
+/** Response phan trang cua BE; mac dinh mot trang chua het `items`. */
+function page<T>(items: T[], total = items.length, pageNumber = 1) {
+  return { items, page: pageNumber, limit: PAGE_LIMIT, total };
+}
+
 function at(daysFromToday: number, hours = 18): string {
   const date = addDays(new Date(), daysFromToday);
   date.setHours(hours, 0, 0, 0);
@@ -117,6 +126,7 @@ const ENROLLMENT: TuitionEnrollment = {
     roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
+    teacher: { id: 'teacher-1', displayName: 'Đặng Hải Yến' },
   },
   placements: [],
   registrationOrder: { payment: null },
@@ -133,7 +143,10 @@ function session(
     startsAt: at(daysFromToday),
     endsAt: at(daysFromToday, 20),
     status: 'SCHEDULED',
+    cancelReason: null,
     class: { name: 'Lớp', program: { grade: 8, subject: 'Toán' } },
+    teacher: { id: 'teacher-1', displayName: 'Đặng Hải Yến' },
+    room: { id: 'room-a101', name: 'Phòng A101' },
     lesson: { id: `lesson-${id}`, title: `Bài ${id}`, kind: 'LESSON' },
     participations: [],
     ...overrides,
@@ -144,18 +157,30 @@ const ROUTES = {
   enrollments: `/me/students/${STUDENT_ID}/enrollments`,
   sessions: '/academic/scheduled-sessions',
   attendance: `/academic/me/students/${STUDENT_ID}/attendance`,
-  makeups: '/academic/makeups',
+  grades: `/academic/me/students/${STUDENT_ID}/grades`,
+  curriculum: `/academic/me/students/${STUDENT_ID}/curriculum`,
   leaves: '/academic/leaves',
   rooms: '/rooms',
   assignments: '/academic/assignments',
   bills: '/me/bills',
+  notifications: '/notifications',
 };
 
 const ROOMS = [{ id: 'room-a101', name: 'Phòng A101' }];
+const EMPTY_GRADES = { studentId: STUDENT_ID, subjects: [], history: [], ...page([]) };
+
+/** BE tra rong cho moi route, rieng ghi danh tra ghi danh cua con. */
+function respondEmpty({ path }: SentRequest): unknown {
+  if (path === ROUTES.enrollments) return [ENROLLMENT];
+  if (path === ROUTES.rooms) return [];
+  if (path === ROUTES.grades) return EMPTY_GRADES;
+  if (path === ROUTES.curriculum) return { studentId: STUDENT_ID, ...page([]) };
+  return page([]);
+}
 
 beforeEach(() => {
   sent = [];
-  respond = ({ path }) => (path === ROUTES.enrollments ? [ENROLLMENT] : []);
+  respond = respondEmpty;
   jest.spyOn(axios, 'getAdapter').mockReturnValue(networkAdapter);
 });
 
@@ -163,47 +188,37 @@ afterEach(() => jest.restoreAllMocks());
 
 describe('features/parent-dashboard/api/parentDashboardApi', () => {
   describe('getStudentSchedule', () => {
-    it('hoi buoi hoc cua con dang xem theo khoang ngay, bo buoi ma con da mat cho', async () => {
+    it('hoi buoi hoc cua con dang xem theo khoang ngay, gom ca buoi bi huy', async () => {
       const sessions = [
         session('math', 1),
-        session('da-chuyen-lop', 2, {
-          participations: [
-            {
-              enrollmentId: ENROLLMENT.id,
-              kind: 'REGULAR',
-              attendance: 'UNMARKED',
-              cancelled: true,
-            },
-          ],
-        }),
+        session('bi-huy', 2, { status: 'CANCELLED', cancelReason: 'Giáo viên ốm' }),
       ];
-      respond = ({ path }) => (path === ROUTES.sessions ? sessions : [ENROLLMENT]);
+      respond = ({ path }) => (path === ROUTES.sessions ? page(sessions) : [ENROLLMENT]);
       const range = { from: toDateKey(new Date()), to: toDateKey(addDays(new Date(), 6)) };
 
       const schedule = await parentDashboardApi.getStudentSchedule(STUDENT_ID, range);
 
-      expect(schedule.map(({ id }) => id)).toEqual(['math']);
+      expect(schedule).toEqual([
+        expect.objectContaining({ id: 'math', type: 'REGULAR', room: 'Phòng A101' }),
+        expect.objectContaining({ id: 'bi-huy', type: 'CANCELLED', note: 'Giáo viên ốm' }),
+      ]);
       expect(sent).toEqual([
         {
           method: 'get',
           path: ROUTES.sessions,
-          query: {
-            studentId: STUDENT_ID,
-            fromDate: range.from,
-            toDate: range.to,
-            page: '1',
-            limit: String(PAGE_LIMIT),
-          },
+          query: { studentId: STUDENT_ID, fromDate: range.from, toDate: range.to, ...FIRST_PAGE },
           body: undefined,
         },
       ]);
     });
 
-    it('BE tra du mot trang thi doc tiep trang sau cho toi trang chua day', async () => {
+    it('doc tiep trang sau cho toi khi du `total` cua BE', async () => {
       const fullPage = Array.from({ length: PAGE_LIMIT }, (_, index) => session(`s${index}`, 1));
       respond = ({ path, query }) => {
         if (path !== ROUTES.sessions) return [ENROLLMENT];
-        return query.page === '1' ? fullPage : [session('trang-hai', 2)];
+        return query.page === '1'
+          ? page(fullPage, PAGE_LIMIT + 1)
+          : page([session('trang-hai', 2)], PAGE_LIMIT + 1, 2);
       };
       const today = toDateKey(new Date());
 
@@ -215,32 +230,37 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       expect(schedule).toHaveLength(PAGE_LIMIT + 1);
       expect(sentTo(ROUTES.sessions).map(({ query }) => query.page)).toEqual(['1', '2']);
     });
+
+    it('trang dau du `total` thi khong doc trang sau, ke ca trang day', async () => {
+      const fullPage = Array.from({ length: PAGE_LIMIT }, (_, index) => session(`s${index}`, 1));
+      respond = () => page(fullPage);
+      const today = toDateKey(new Date());
+
+      await parentDashboardApi.getStudentSchedule(STUDENT_ID, { from: today, to: today });
+
+      expect(sentTo(ROUTES.sessions)).toHaveLength(1);
+    });
   });
 
   describe('getSessionDetail', () => {
     const detail: ScheduledSessionDetail = {
       id: 'math',
       classId: 'class-math',
-      roomId: 'room-a101',
       startsAt: at(-1),
       endsAt: at(-1, 20),
       status: 'COMPLETED',
       summary: null,
       cancelReason: null,
-      class: { name: 'Toán nâng cao 8A2', roomId: null, program: { subject: 'Toán' } },
+      class: { name: 'Toán nâng cao 8A2', program: { subject: 'Toán' } },
       teacher: { id: 'teacher-1', displayName: 'Đặng Hải Yến' },
+      room: { id: 'room-a101', name: 'Phòng A101' },
       lesson: { id: 'lesson-1', title: 'Phương trình', kind: 'LESSON' },
-      participation: {
-        enrollmentId: ENROLLMENT.id,
-        kind: 'REGULAR',
-        attendance: 'PRESENT',
-        cancelled: false,
-      },
+      participation: { enrollmentId: ENROLLMENT.id, kind: 'REGULAR', attendance: 'PRESENT' },
     };
     const ref = { studentId: STUDENT_ID, sessionId: 'math' };
 
-    it('doc mot buoi theo con va ten phong', async () => {
-      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : detail);
+    it('doc mot buoi theo con trong mot request, phong lay tu buoi', async () => {
+      respond = () => detail;
 
       await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toMatchObject({
         id: 'math',
@@ -248,25 +268,19 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         teacherName: 'Đặng Hải Yến',
         attendance: 'PRESENT',
       });
-      expect(sentTo(`${ROUTES.sessions}/math`)[0]?.query).toEqual({ studentId: STUDENT_ID });
+      expect(sent.map(({ path, query }) => [path, query])).toEqual([
+        [`${ROUTES.sessions}/math`, { studentId: STUDENT_ID }],
+      ]);
     });
 
-    it('buoi khong (con) thuoc lich cua con thi tra null', async () => {
-      respond = ({ path }) =>
-        path === ROUTES.rooms ? ROOMS : new BeError(404, 'SESSION_NOT_FOUND');
+    it('buoi khong (con) thuoc lich cua con thi tra null; loi khac thi bao loi', async () => {
+      respond = () => new BeError(404, 'SESSION_NOT_FOUND');
       await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toBeNull();
 
-      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : new BeError(403, 'FORBIDDEN'));
+      respond = () => new BeError(403, 'FORBIDDEN');
       await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toBeNull();
-    });
 
-    it('khong tai duoc phong thi an phong; loi khac cua buoi thi bao loi', async () => {
-      respond = ({ path }) => (path === ROUTES.rooms ? new BeError(500, 'INTERNAL_ERROR') : detail);
-      await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toMatchObject({
-        room: null,
-      });
-
-      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : new BeError(500, 'INTERNAL_ERROR'));
+      respond = () => new BeError(500, 'INTERNAL_ERROR');
       await expect(parentDashboardApi.getSessionDetail(ref)).rejects.toMatchObject({
         status: 500,
       });
@@ -274,25 +288,20 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
   });
 
   describe('getStudentEnrollments', () => {
-    it('ghep ghi danh voi don bao luu hom nay, buoi sap toi trong 30 ngay va phong', async () => {
-      respond = ({ path }) => {
-        if (path === ROUTES.sessions) return [session('tiep-theo', 2)];
-        if (path === ROUTES.rooms) return ROOMS;
-        if (path === ROUTES.leaves) {
-          return [
-            {
-              id: 'leave-1',
-              enrollmentId: 'enrollment-khac',
-              kind: 'PERIOD_PAUSE',
-              sessionId: null,
-              fromDate: dateColumn(-1),
-              toDate: dateColumn(5),
-              reason: 'Ôn thi',
-              status: 'APPROVED',
-            },
-          ];
+    it('ghep ghi danh voi don bao luu, buoi sap toi, phong va diem trung binh mon', async () => {
+      respond = (request) => {
+        if (request.path === ROUTES.sessions) return page([session('tiep-theo', 2)]);
+        if (request.path === ROUTES.rooms) return ROOMS;
+        if (request.path === ROUTES.grades) {
+          return {
+            ...EMPTY_GRADES,
+            subjects: [{ subject: 'Toán', count: 2, averageOutOf10: 8.25 }],
+          };
         }
-        return [{ ...ENROLLMENT, class: { ...ENROLLMENT.class, roomId: 'room-a101' } }];
+        if (request.path === ROUTES.enrollments) {
+          return [{ ...ENROLLMENT, class: { ...ENROLLMENT.class, roomId: 'room-a101' } }];
+        }
+        return respondEmpty(request);
       };
       const today = toDateKey(new Date());
 
@@ -303,7 +312,9 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         status: 'ACTIVE',
         pause: null,
         className: 'Toán nâng cao 8A2',
+        teacherName: 'Đặng Hải Yến',
         room: 'Phòng A101',
+        averageScore: 8.25,
         nextSession: { id: 'tiep-theo', startsAt: at(2) },
       });
       expect(sentTo(ROUTES.leaves)[0]?.query).toEqual({
@@ -312,8 +323,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         status: 'APPROVED',
         fromDate: today,
         toDate: today,
-        page: '1',
-        limit: String(PAGE_LIMIT),
+        ...FIRST_PAGE,
       });
       expect(sentTo(ROUTES.sessions)[0]?.query).toMatchObject({
         studentId: STUDENT_ID,
@@ -321,31 +331,66 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         toDate: toDateKey(addDays(new Date(), 30)),
       });
     });
+
+    it('khong tai duoc phong hay diem thi an phan do, van hien mon', async () => {
+      respond = (request) =>
+        request.path === ROUTES.rooms || request.path === ROUTES.grades
+          ? new BeError(500, 'INTERNAL_ERROR')
+          : respondEmpty(request);
+
+      await expect(parentDashboardApi.getStudentEnrollments(STUDENT_ID)).resolves.toEqual([
+        expect.objectContaining({ id: 'enrollment-math', room: null, averageScore: null }),
+      ]);
+    });
   });
 
   describe('getEnrollmentLessons', () => {
-    it('hoi buoi hoc cua ca ky ghi danh, khong gom ngay het han', async () => {
-      respond = ({ path }) =>
-        path === ROUTES.sessions ? [session('sau', 2), session('truoc', -2)] : [ENROLLMENT];
+    it('ghep hoc phan da duyet voi buoi hoc cua ca ky ghi danh', async () => {
+      const unit: CurriculumUnit = {
+        id: 'unit-1',
+        title: 'Tháng này',
+        programId: 'program-math',
+        fromDate: dateColumn(-30),
+        toDate: dateColumn(0),
+        version: 1,
+        program: { subject: 'Toán', grade: 8 },
+        classes: [{ id: 'class-math', name: 'Toán nâng cao 8A2' }],
+        lessons: [
+          { id: 'lesson-truoc', title: 'Bài 1', sequence: 1, kind: 'LESSON', monthKey: null },
+          { id: 'chua-xep', title: 'Bài 2', sequence: 2, kind: 'LESSON', monthKey: null },
+        ],
+      };
+      respond = (request) => {
+        if (request.path === ROUTES.sessions) return page([session('truoc', -2)]);
+        if (request.path === ROUTES.curriculum) return { studentId: STUDENT_ID, ...page([unit]) };
+        return respondEmpty(request);
+      };
 
       const lessons = await parentDashboardApi.getEnrollmentLessons(STUDENT_ID, ENROLLMENT.id);
 
-      expect(lessons.map(({ id, sequence }) => [id, sequence])).toEqual([
-        ['truoc', 1],
-        ['sau', 2],
+      expect(
+        lessons.map(({ id, sequence, session: lessonSession }) => [
+          id,
+          sequence,
+          lessonSession?.id ?? null,
+        ]),
+      ).toEqual([
+        ['lesson-truoc', 1, 'truoc'],
+        ['chua-xep', 2, null],
       ]);
       expect(sentTo(ROUTES.sessions)[0]?.query).toMatchObject({
         studentId: STUDENT_ID,
         fromDate: toDateKey(addDays(new Date(), -30)),
         toDate: toDateKey(addDays(new Date(), 59)),
       });
+      expect(sentTo(ROUTES.curriculum)[0]?.query).toEqual({ page: '1', limit: String(PAGE_LIMIT) });
     });
 
-    it('ghi danh khong thuoc con thi khong hoi buoi hoc', async () => {
+    it('ghi danh khong thuoc con thi khong hoi buoi hoc va giao trinh', async () => {
       const lessons = await parentDashboardApi.getEnrollmentLessons(STUDENT_ID, 'ghi-danh-khac');
 
       expect(lessons).toEqual([]);
-      expect(sentTo(ROUTES.sessions)).toEqual([]);
+      expect(sent.map(({ path }) => path)).toEqual([ROUTES.enrollments]);
     });
   });
 
@@ -357,14 +402,18 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
           enrollmentId: ENROLLMENT.id,
           effectiveStatus: 'ABSENT',
           session: { id: 'vang', classId: 'class-math', startsAt: at(-3), endsAt: at(-3, 20) },
+          class: { name: 'Toán nâng cao 8A2', program: { subject: 'Toán' } },
+          approvedLeave: { id: 'leave-1', kind: 'SINGLE_ABSENCE', reason: 'Con bị sốt' },
+          latestMakeup: {
+            id: 'makeup-1',
+            status: 'BOOKED',
+            replacement: {
+              sessionId: 'bu',
+              session: { id: 'bu', startsAt: at(2, 9), endsAt: at(2, 11) },
+            },
+          },
         },
       ],
-    };
-    const booking: MakeupBooking = {
-      id: 'makeup-1',
-      status: 'BOOKED',
-      original: { sessionId: 'vang', enrollmentId: ENROLLMENT.id },
-      replacement: { session: { id: 'bu', startsAt: at(2, 9) } },
     };
 
     it('ty le di hoc tinh tu so buoi cua BE, chi goi mot route', async () => {
@@ -377,13 +426,8 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       expect(sent.map(({ path }) => path)).toEqual([ROUTES.attendance]);
     });
 
-    it('lich su ghep ghi danh, lich hoc bu va don nghi da duyet cua con', async () => {
-      respond = ({ path }) => {
-        if (path === ROUTES.attendance) return report;
-        if (path === ROUTES.makeups) return [booking];
-        if (path === ROUTES.leaves) return [];
-        return [ENROLLMENT];
-      };
+    it('lich su lay lop, don nghi va lich hoc bu tu chinh route diem danh', async () => {
+      respond = () => report;
 
       const records = await parentDashboardApi.getStudentAttendance(STUDENT_ID);
 
@@ -392,59 +436,51 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
           sessionId: 'vang',
           className: 'Toán nâng cao 8A2',
           status: 'ABSENT',
+          leaveReason: 'Con bị sốt',
           makeup: { status: 'BOOKED', startsAt: at(2, 9) },
         }),
       ]);
-      expect(sentTo(ROUTES.attendance)[0]?.query).toEqual({});
-      expect(sentTo(ROUTES.leaves)[0]?.query).toEqual({
-        studentId: STUDENT_ID,
-        status: 'APPROVED',
-        page: '1',
-        limit: String(PAGE_LIMIT),
-      });
-      expect(sentTo(ROUTES.makeups)[0]?.query).toEqual({ page: '1', limit: String(PAGE_LIMIT) });
+      expect(sent).toEqual([
+        { method: 'get', path: ROUTES.attendance, query: {}, body: undefined },
+      ]);
     });
   });
 
   describe('getStudentAssignments', () => {
-    const detail: AssignmentDetail = {
+    const item: AssignmentListItem = {
       id: 'assignment-math',
       classId: 'class-math',
       kind: 'HOMEWORK',
       testType: null,
       title: 'Bài tập về nhà bài 10',
-      instructions: 'Làm trực tiếp trên EduGrade.',
       dueAt: at(3, 23),
       status: 'PUBLISHED',
       maxAttempts: 2,
-      recipients: [{ id: 'recipient-1', enrollmentId: 'enrollment-math' }],
-      questions: [{ id: 'q1', kind: 'ESSAY', prompt: 'Giải', choices: null, maxScore: 10 }],
+      class: {
+        id: 'class-math',
+        name: 'Toán nâng cao 8A2',
+        program: { subject: 'Toán', grade: 8 },
+      },
+      questionCounts: { multipleChoice: 0, essay: 1, total: 1 },
+      maxScore: 10,
+      recipients: [
+        {
+          id: 'recipient-1',
+          enrollmentId: ENROLLMENT.id,
+          studentId: STUDENT_ID,
+          latestSubmission: {
+            id: 'submission-1',
+            attemptNo: 1,
+            submittedAt: at(-1),
+            publishedGrade: null,
+          },
+        },
+      ],
     };
 
-    it('chi doc de bai va bai nop cua bai thuoc lop cua con', async () => {
-      const summary = { title: 'Bài', dueAt: at(3, 23), status: 'PUBLISHED', maxAttempts: 2 };
-      respond = ({ path }) => {
-        if (path === ROUTES.assignments) {
-          return [
-            { ...summary, id: 'assignment-math', classId: 'class-math' },
-            { ...summary, id: 'assignment-english', classId: 'class-english' },
-          ];
-        }
-        if (path === `${ROUTES.assignments}/assignment-math`) return detail;
-        if (path === `${ROUTES.assignments}/assignment-math/submissions`) {
-          return [
-            {
-              id: 'submission-1',
-              recipientId: 'recipient-1',
-              attemptNo: 1,
-              answers: [{ questionId: 'q1', answer: 'x = 2' }],
-              submittedAt: at(-1),
-              grades: [],
-            },
-          ];
-        }
-        return [ENROLLMENT];
-      };
+    it('loc bai theo con o BE, chi goi danh sach va ghi danh', async () => {
+      respond = (request) =>
+        request.path === ROUTES.assignments ? page([item]) : respondEmpty(request);
 
       const assignments = await parentDashboardApi.getStudentAssignments(STUDENT_ID);
 
@@ -453,18 +489,62 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
           id: 'assignment-math',
           className: 'Toán nâng cao 8A2',
           subjectName: 'Toán',
+          teacherName: 'Đặng Hải Yến',
+          questionCounts: { MULTIPLE_CHOICE: 0, ESSAY: 1 },
           submission: { attemptNo: 1, submittedAt: at(-1) },
           grade: null,
         }),
       ]);
       expect(sent.map(({ path }) => path).sort()).toEqual(
-        [
-          ROUTES.enrollments,
-          ROUTES.assignments,
-          `${ROUTES.assignments}/assignment-math`,
-          `${ROUTES.assignments}/assignment-math/submissions`,
-        ].sort(),
+        [ROUTES.enrollments, ROUTES.assignments].sort(),
       );
+      expect(sentTo(ROUTES.assignments)[0]?.query).toEqual({
+        studentId: STUDENT_ID,
+        ...FIRST_PAGE,
+      });
+    });
+  });
+
+  describe('getStudentGrades', () => {
+    function grade(id: string, scoreOutOf10: number): GradeHistoryItem {
+      return {
+        recipientId: `recipient-${id}`,
+        assignment: {
+          id,
+          title: 'Bài',
+          kind: 'TEST',
+          testType: 'FIFTEEN_MINUTES',
+          class: { id: 'class-math', name: 'Toán nâng cao 8A2', program: { subject: 'Toán' } },
+        },
+        submissionId: `submission-${id}`,
+        attemptNo: 1,
+        totalScore: scoreOutOf10,
+        maxScore: 10,
+        scoreOutOf10,
+        feedback: '',
+        publishedAt: new Date().toISOString(),
+      };
+    }
+
+    it('doc het lich su diem de tinh trung binh, diem theo mon lay cua BE', async () => {
+      const subjects = [{ subject: 'Toán', count: 2, averageOutOf10: 7 }];
+      respond = ({ query }) => ({
+        studentId: STUDENT_ID,
+        subjects,
+        history: query.page === '1' ? [grade('a', 8)] : [grade('b', 6)],
+        page: Number(query.page),
+        limit: PAGE_LIMIT,
+        total: 2,
+      });
+
+      await expect(parentDashboardApi.getStudentGrades(STUDENT_ID)).resolves.toEqual({
+        summary: { average: 7, changeFromLastMonth: null },
+        subjects,
+      });
+      expect(sentTo(ROUTES.grades).map(({ query }) => query)).toEqual([
+        { page: '1', limit: String(PAGE_LIMIT) },
+        { page: '2', limit: String(PAGE_LIMIT) },
+      ]);
     });
   });
 
@@ -499,17 +579,13 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       );
       respond = ({ query }) =>
         query.page === '1'
-          ? { items: firstPage, page: 1, limit: PAGE_LIMIT, total: PAGE_LIMIT + 1 }
-          : {
-              items: [bill('order-cuoi', STUDENT_ID)],
-              page: 2,
-              limit: PAGE_LIMIT,
-              total: PAGE_LIMIT + 1,
-            };
+          ? page(firstPage, PAGE_LIMIT + 1)
+          : page([bill('order-cuoi', STUDENT_ID)], PAGE_LIMIT + 1, 2);
 
       const bills = await parentDashboardApi.getStudentBills(STUDENT_ID);
 
       expect(bills.map(({ registrationId }) => registrationId)).toEqual(['order-0', 'order-cuoi']);
+      // /me/bills cua module registration-flow khong nhan `paginated`
       expect(sentTo(ROUTES.bills).map(({ query }) => query)).toEqual([
         { page: '1', limit: String(PAGE_LIMIT) },
         { page: '2', limit: String(PAGE_LIMIT) },
@@ -517,8 +593,6 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     });
 
     it('phu huynh chua co bill nao thi chi goi mot trang', async () => {
-      respond = () => ({ items: [], page: 1, limit: PAGE_LIMIT, total: 0 });
-
       await expect(parentDashboardApi.getStudentBills(STUDENT_ID)).resolves.toEqual([]);
       expect(sentTo(ROUTES.bills)).toHaveLength(1);
     });
@@ -534,6 +608,59 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       await expect(parentDashboardApi.getBill('order-math')).resolves.toEqual(detail);
       expect(sent).toEqual([
         { method: 'get', path: '/registrations/order-math/bill', query: {}, body: undefined },
+      ]);
+    });
+  });
+
+  describe('thong bao', () => {
+    const notification: AppNotification = {
+      id: 'notification-1',
+      type: 'GRADE_PUBLISHED',
+      title: 'Cập nhật học tập',
+      body: 'Giáo viên đã công bố kết quả bài làm.',
+      target: { kind: 'ASSIGNMENT', id: 'assignment-1' },
+      context: { classId: 'class-math', studentIds: [STUDENT_ID] },
+      createdAt: at(0, 9),
+      readAt: null,
+    };
+
+    it('thong bao gan day cua mot con: trang dau, loc theo con', async () => {
+      respond = () => page([notification], 5);
+
+      await expect(parentDashboardApi.getRecentNotifications(STUDENT_ID)).resolves.toEqual([
+        notification,
+      ]);
+      expect(sent).toEqual([
+        {
+          method: 'get',
+          path: ROUTES.notifications,
+          query: { studentId: STUDENT_ID, page: '1', limit: '3' },
+          body: undefined,
+        },
+      ]);
+    });
+
+    it('dem chua doc, danh dau da doc mot thong bao va tat ca', async () => {
+      respond = ({ path }) => {
+        if (path === `${ROUTES.notifications}/unread-count`) return { unreadCount: 4 };
+        if (path === `${ROUTES.notifications}/read-all`) return { updatedCount: 4, unreadCount: 0 };
+        return { ...notification, readAt: at(0, 10) };
+      };
+
+      await expect(parentDashboardApi.getUnreadNotificationCount()).resolves.toEqual({
+        unreadCount: 4,
+      });
+      await expect(
+        parentDashboardApi.markNotificationRead('notification-1'),
+      ).resolves.toMatchObject({ readAt: at(0, 10) });
+      await expect(parentDashboardApi.markAllNotificationsRead()).resolves.toEqual({
+        updatedCount: 4,
+        unreadCount: 0,
+      });
+      expect(sent.map(({ method, path, body }) => [method, path, body])).toEqual([
+        ['get', `${ROUTES.notifications}/unread-count`, undefined],
+        ['patch', `${ROUTES.notifications}/notification-1/read`, undefined],
+        ['post', `${ROUTES.notifications}/read-all`, undefined],
       ]);
     });
   });

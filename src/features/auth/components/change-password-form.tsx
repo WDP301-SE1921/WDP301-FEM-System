@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { StyleSheet, View } from 'react-native';
 
 import { FormError } from '@/components/common/form-error';
-import { FormInput } from '@/components/common/form-input';
+import { FormPasswordInput } from '@/components/common/form-password-input';
 import { Button } from '@/components/ui/button';
 import { Radius, Spacing } from '@/constants/theme';
 
@@ -26,34 +26,31 @@ export function ChangePasswordForm({ onSubmit, isPending, error }: ChangePasswor
 
   return (
     <View style={styles.form}>
-      <FormInput
+      <FormPasswordInput
         control={control}
         name="currentPassword"
         label="Mật khẩu hiện tại"
         leadingIcon="lock-closed-outline"
-        secureTextEntry
         autoComplete="current-password"
         returnKeyType="next"
         submitBehavior="submit"
         onSubmitEditing={() => setFocus('newPassword')}
       />
-      <FormInput
+      <FormPasswordInput
         control={control}
         name="newPassword"
         label="Mật khẩu mới"
         leadingIcon="key-outline"
-        secureTextEntry
         autoComplete="new-password"
         returnKeyType="next"
         submitBehavior="submit"
         onSubmitEditing={() => setFocus('confirmPassword')}
       />
-      <FormInput
+      <FormPasswordInput
         control={control}
         name="confirmPassword"
         label="Nhập lại mật khẩu mới"
         leadingIcon="key-outline"
-        secureTextEntry
         autoComplete="new-password"
         returnKeyType="done"
         onSubmitEditing={submit}

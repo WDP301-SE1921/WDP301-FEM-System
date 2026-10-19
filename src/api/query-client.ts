@@ -33,8 +33,8 @@ export const queryKeys = {
     students: ['parent', 'students'] as const,
     /** Tien to cua moi du lieu hoc tap cua mot con. */
     student: (studentId: string) => ['parent', 'students', studentId] as const,
-    studentDashboard: (studentId: string) =>
-      ['parent', 'students', studentId, 'dashboard'] as const,
+    /** Diem da cong bo va diem trung binh cua mot con. */
+    studentGrades: (studentId: string) => ['parent', 'students', studentId, 'grades'] as const,
     studentSchedule: (studentId: string, range: { from: string; to: string }) =>
       ['parent', 'students', studentId, 'schedule', range] as const,
     studentSession: (studentId: string, sessionId: string) =>
@@ -50,7 +50,15 @@ export const queryKeys = {
       ['parent', 'students', studentId, 'attendance', 'summary'] as const,
     studentAssignments: (studentId: string) =>
       ['parent', 'students', studentId, 'assignments'] as const,
-    unreadNotificationCount: ['parent', 'notifications', 'unread-count'] as const,
+  },
+  /** Hop thu thong bao cua tai khoan dang dang nhap, chung moi con. */
+  notifications: {
+    /** Tien to cua moi key thong bao, dung khi BE bao co thong bao moi hoac da doc. */
+    all: ['notifications'] as const,
+    list: ['notifications', 'list'] as const,
+    /** Vai thong bao moi nhat lien quan toi mot con, cho trang chu. */
+    recent: (studentId: string) => ['notifications', 'recent', studentId] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
   },
   me: {
     all: ['me'] as const,

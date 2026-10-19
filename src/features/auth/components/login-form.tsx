@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormError } from '@/components/common/form-error';
 import { FormInput } from '@/components/common/form-input';
-import { PasswordVisibilityToggle } from '@/components/common/password-visibility-toggle';
+import { FormPasswordInput } from '@/components/common/form-password-input';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -24,7 +23,6 @@ export type LoginFormProps = {
 /** Form dang nhap: validate bang Zod, dang nhap xong tu chuyen sang (tabs). */
 export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const login = useLogin();
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
   const { control, handleSubmit, setFocus, getValues } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -66,22 +64,15 @@ export function LoginForm({ onForgotPassword }: LoginFormProps) {
             </ThemedText>
           </Pressable>
         </View>
-        <FormInput
+        <FormPasswordInput
           control={control}
           name="password"
           accessibilityLabel="Mật khẩu"
           placeholder="Nhập mật khẩu của bạn"
           leadingIcon="lock-closed-outline"
-          secureTextEntry={!isPasswordVisible}
           autoComplete="password"
           returnKeyType="go"
           onSubmitEditing={onSubmit}
-          trailing={
-            <PasswordVisibilityToggle
-              isVisible={isPasswordVisible}
-              onToggle={() => setIsPasswordVisible((isVisible) => !isVisible)}
-            />
-          }
         />
       </View>
 

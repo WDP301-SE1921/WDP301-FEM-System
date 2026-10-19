@@ -2,6 +2,7 @@ import { Redirect, Tabs } from 'expo-router';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { useAuth } from '@/features/auth';
+import { useNotificationRealtime } from '@/features/parent-dashboard';
 import { useTheme } from '@/hooks/use-theme';
 
 type TabConfig = {
@@ -39,6 +40,9 @@ const HIDDEN_ROUTES = ['notifications'] as const;
 export default function TabsLayout() {
   const { isAuthenticated } = useAuth();
   const theme = useTheme();
+  // Layout nay song suot phien dang nhap (cac man mo tu tab nam chong len tren), nen giu ket noi
+  // thong bao realtime o day
+  useNotificationRealtime();
 
   // Chan truy cap khi chua dang nhap
   if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;

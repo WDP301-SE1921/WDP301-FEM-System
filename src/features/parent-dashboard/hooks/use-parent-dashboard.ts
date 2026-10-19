@@ -12,10 +12,10 @@ export function useLinkedStudents() {
   });
 }
 
-export function useStudentDashboard(studentId: string) {
+export function useStudentGrades(studentId: string) {
   return useQuery({
-    queryKey: queryKeys.parent.studentDashboard(studentId),
-    queryFn: () => parentDashboardApi.getStudentDashboard(studentId),
+    queryKey: queryKeys.parent.studentGrades(studentId),
+    queryFn: () => parentDashboardApi.getStudentGrades(studentId),
   });
 }
 
@@ -107,12 +107,5 @@ export function useReceipt(registrationId: string) {
   return useQuery({
     queryKey: queryKeys.registrations.receipt(registrationId),
     queryFn: () => parentDashboardApi.getReceipt(registrationId),
-  });
-}
-
-export function useUnreadNotificationCount() {
-  return useQuery({
-    queryKey: queryKeys.parent.unreadNotificationCount,
-    queryFn: () => parentDashboardApi.getUnreadNotificationCount(),
   });
 }

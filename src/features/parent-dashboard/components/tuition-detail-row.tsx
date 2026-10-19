@@ -20,7 +20,7 @@ export function TuitionDetailRow({ label, value, icon }: TuitionDetailRowProps) 
     <View style={styles.row}>
       <View style={styles.label}>
         {icon ? <Icon name={icon} size={ICON_SIZE} themeColor="textSecondary" /> : null}
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textSecondary" style={styles.labelText}>
           {label}
         </ThemedText>
       </View>
@@ -38,6 +38,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.three,
   },
-  label: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  // Nhan giu be ngang tu nhien; chi khi chu he thong phong to lam nhan dai hon ca hang moi co lai
+  label: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  labelText: { flexShrink: 1 },
   value: { flex: 1, textAlign: 'right', fontVariant: ['tabular-nums'] },
 });

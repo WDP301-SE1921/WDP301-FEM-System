@@ -44,7 +44,7 @@ export function PendingRegistrationCard({ bill, onPress }: PendingRegistrationCa
           học được kích hoạt sau khi trung tâm xác nhận đã thu đủ học phí.
         </ThemedText>
         <View style={styles.row}>
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="small" themeColor="textSecondary" style={styles.amountLabel}>
             Học phí cần đóng
           </ThemedText>
           <ThemedText type="smallBold" style={styles.amount}>
@@ -70,6 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: Spacing.two,
   },
+  amountLabel: { flexShrink: 1 },
   amount: { fontVariant: ['tabular-nums'] },
   link: {
     flexDirection: 'row',

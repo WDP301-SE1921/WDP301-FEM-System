@@ -8,6 +8,8 @@ import { formatWeekdayDate } from '@/utils/format';
 import { ActionChip } from './action-chip';
 import { ToneIcon } from './tone-icon';
 
+const TEXT_MIN_WIDTH = 120;
+
 export type NextFreeDayCardProps = {
   date: Date;
   onView: () => void;
@@ -37,12 +39,17 @@ export function NextFreeDayCard({ date, onView }: NextFreeDayCardProps) {
 }
 
 const styles = StyleSheet.create({
+  // Khong du cho cho chu rong toi thieu TEXT_MIN_WIDTH (man hinh 360dp) thi nut roi xuong hang duoi,
+  // can phai, thay vi ep chu thanh mot cot hep nhieu dong
   card: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
-    gap: Spacing.three,
+    justifyContent: 'flex-end',
+    columnGap: Spacing.three,
+    rowGap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Radius.lg,
   },
-  text: { flex: 1 },
+  text: { flexGrow: 1, flexShrink: 1, flexBasis: TEXT_MIN_WIDTH },
 });

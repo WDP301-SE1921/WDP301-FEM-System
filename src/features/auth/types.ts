@@ -12,10 +12,10 @@ export type RegisterPayload = Omit<RegisterInput, 'confirmPassword' | 'phone'> &
 export type ChangePasswordPayload = Omit<ChangePasswordInput, 'confirmPassword'>;
 
 /**
- * Body PATCH /auth/me (UpdateProfileDto). Gui `phone` rong thi BE xoa so dang luu, nen bo trong thi
- * khong gui.
+ * Body PATCH /auth/me (UpdateProfileDto). Luon gui `phone` vi form dien san so dang luu: chuoi rong thi
+ * BE xoa so dang luu.
  */
-export type UpdateProfilePayload = Omit<AccountProfileInput, 'phone'> & { phone?: string };
+export type UpdateProfilePayload = AccountProfileInput;
 
 /**
  * Response POST /auth/resend-verification. `sent: false` khi BE khong gui duoc email (BE chua cau

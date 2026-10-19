@@ -40,7 +40,11 @@ export function PaymentHistoryCard({ enrollment, onPress }: PaymentHistoryCardPr
           <View style={styles.titleBlock}>
             <View style={styles.meta}>
               <View style={[styles.dot, { backgroundColor: theme[TONES[status.tone].color] }]} />
-              <ThemedText type="small" themeColor="textSecondary" style={styles.figures}>
+              <ThemedText
+                type="small"
+                themeColor="textSecondary"
+                style={[styles.figures, styles.metaText]}
+              >
                 {formatTermPeriod(enrollment.startDate)} · {formatDate(payment.confirmedAt)}
               </ThemedText>
             </View>
@@ -97,6 +101,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   titleBlock: { flex: 1, gap: Spacing.one },
   meta: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  // Man hinh 360dp: ky hoc va ngay thu dai hon cho con lai canh nhan trang thai
+  metaText: { flexShrink: 1 },
   dot: { width: DOT_SIZE, height: DOT_SIZE, borderRadius: Radius.full },
   title: { fontWeight: 700 },
   figures: { fontVariant: ['tabular-nums'] },

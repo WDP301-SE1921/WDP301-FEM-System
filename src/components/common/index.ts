@@ -3,6 +3,7 @@ export * from './empty-state';
 export * from './error-state';
 export * from './form-error';
 export * from './form-input';
+export * from './form-password-input';
 export * from './loading-state';
 export * from './password-visibility-toggle';
 export * from './screen';

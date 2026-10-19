@@ -27,7 +27,7 @@ export function DashboardGreeting({ parentName, onOpenNotifications }: Dashboard
         </ThemedText>
         <View style={styles.date}>
           <Icon name="calendar-clear-outline" size={DATE_ICON_SIZE} themeColor="textSecondary" />
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="small" themeColor="textSecondary" style={styles.dateText}>
             Hôm nay, {formatWeekdayDate(new Date())}
           </ThemedText>
         </View>
@@ -41,4 +41,5 @@ const styles = StyleSheet.create({
   container: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   text: { flex: 1, gap: Spacing.one },
   date: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  dateText: { flexShrink: 1 },
 });

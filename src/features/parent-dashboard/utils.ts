@@ -1,3 +1,5 @@
+import type { Href } from 'expo-router';
+
 import type { IconName } from '@/components/ui/icon';
 import {
   addDays,
@@ -15,6 +17,7 @@ import {
   formatMonthYear,
   formatTime,
   formatWeekdayDate,
+  getShortName,
 } from '@/utils/format';
 
 import {
@@ -40,6 +43,8 @@ import {
   LESSON_SCORE_LABELS,
   LOW_ATTENDANCE_LEVEL,
   MAKEUP_NOTES,
+  NOTIFICATION_TARGET_APPEARANCES,
+  NOTIFICATION_TYPE_APPEARANCES,
   ROADMAP_DONE_LESSONS_SHOWN,
   ROADMAP_UPCOMING_LESSONS_SHOWN,
   SCORE_LEVELS,
@@ -48,12 +53,15 @@ import {
   URGENT_DUE_DAYS,
   WEEKS_AFTER,
   WEEKS_BEFORE,
+  type NotificationAppearance,
   type ScoreLevel,
   type StatusAppearance,
   type Tone,
 } from './constants';
 import type {
   AnswerDraft,
+  AppNotification,
+  AttentionItem,
   AssignmentDetail,
   AssignmentFormat,
   AssignmentGrade,
@@ -78,6 +86,9 @@ import type {
   LessonAssignment,
   LessonKind,
   LessonProgress,
+  LinkedStudent,
+  NotificationDestination,
+  Page,
   PaidEnrollment,
   QuestionKind,
   QuestionReview,
@@ -984,6 +995,113 @@ export function getPaymentHistory(enrollments: readonly TuitionEnrollment[]): Pa
 /** Bill cua don nhan vien da lap nhung trung tam chua xac nhan thu hoc phi. */
 export function getUnpaidBills(bills: readonly TuitionBill[]): TuitionBill[] {
   return bills.filter(({ status }) => status === 'UNPAID');
+}
+
+export type AttentionSources = {
+  bills: readonly TuitionBill[];
+  assignments: readonly StudentAssignment[];
+  now?: Date;
+};
+
+/**
+ * Viec can chu y o trang chu: bill chua thanh toan (dong tai trung tam), roi bai chua nop sap het han
+ * (trong `URGENT_DUE_DAYS` ngay), han gan nhat truoc.
+ */
+export function getAttentionItems({
+  bills,
+  assignments,
+  now = new Date(),
+}: AttentionSources): AttentionItem[] {
+  const tuitionItems: AttentionItem[] = getUnpaidBills(bills).map((bill) => ({
+    id: `bill-${bill.registrationId}`,
+    type: 'TUITION',
+    title: `Học phí lớp ${bill.class.name}`,
+    description: `Chưa thanh toán ${formatAmount(bill.pricing.total, bill.pricing.currency)}, vui lòng đóng tại trung tâm`,
+  }));
+  const assignmentItems: AttentionItem[] = getTabAssignments(assignments, 'TODO', now)
+    .filter(({ dueAt }) => getAssignmentDeadline(dueAt, now).isUrgent)
+    .map((assignment) => ({
+      id: `assignment-${assignment.id}`,
+      type: 'ASSIGNMENT',
+      title: assignment.title,
+      description: formatAssignmentDue(assignment.dueAt),
+    }));
+  return [...tuitionItems, ...assignmentItems];
+}
+
+/** Icon va mau cua thong bao: theo loai thong bao neu can noi bat, khong thi theo ban ghi no tro toi. */
+export function getNotificationAppearance({
+  type,
+  target,
+}: Pick<AppNotification, 'type' | 'target'>): NotificationAppearance {
+  return NOTIFICATION_TYPE_APPEARANCES[type] ?? NOTIFICATION_TARGET_APPEARANCES[target.kind];
+}
+
+/**
+ * Man hinh mo khi bam thong bao. Bai tap va buoi hoc doc theo con nen can id cua con trong thong bao;
+ * thong bao lop chung nhieu con thi mo theo con dau tien. null khi khong co man hinh phu hop.
+ */
+export function getNotificationDestination({
+  target,
+  context,
+}: Pick<AppNotification, 'target' | 'context'>): NotificationDestination | null {
+  const [studentId] = context.studentIds;
+  if (target.kind === 'REGISTRATION') return { kind: 'BILL', registrationId: target.id };
+  if (!studentId) return null;
+  if (target.kind === 'ASSIGNMENT') {
+    return { kind: 'ASSIGNMENT', studentId, assignmentId: target.id };
+  }
+  if (target.kind === 'SESSION') return { kind: 'SESSION', studentId, sessionId: target.id };
+  return null;
+}
+
+/**
+ * Gop cac trang cua hop thu, moi nhat truoc. BE phan trang theo vi tri nen thong bao moi den giua hai
+ * lan tai lam mot thong bao xuat hien o ca hai trang: chi giu lan dau.
+ */
+export function mergeNotificationPages(
+  pages: readonly Pick<Page<AppNotification>, 'items'>[],
+): AppNotification[] {
+  const seenIds = new Set<string>();
+  return pages
+    .flatMap(({ items }) => items)
+    .filter(({ id }) => {
+      if (seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    });
+}
+
+/** Ten ngan cac con lien quan toi thong bao, vd `Minh Anh, Hoàng Long`. null khi khong co con nao. */
+export function getNotificationStudentLabel(
+  { context }: Pick<AppNotification, 'context'>,
+  students: readonly Pick<LinkedStudent, 'id' | 'fullName'>[],
+): string | null {
+  const names = students
+    .filter(({ id }) => context.studentIds.includes(id))
+    .map(({ fullName }) => getShortName(fullName));
+  return names.length > 0 ? names.join(', ') : null;
+}
+
+/** Route cua man hinh dich. */
+export function getNotificationHref(destination: NotificationDestination): Href {
+  switch (destination.kind) {
+    case 'ASSIGNMENT':
+      return {
+        pathname: '/assignments/[assignmentId]',
+        params: { assignmentId: destination.assignmentId, studentId: destination.studentId },
+      };
+    case 'SESSION':
+      return {
+        pathname: '/sessions/[sessionId]',
+        params: { sessionId: destination.sessionId, studentId: destination.studentId },
+      };
+    case 'BILL':
+      return {
+        pathname: '/bills/[registrationId]',
+        params: { registrationId: destination.registrationId },
+      };
+  }
 }
 
 /** Dong phu huynh tren bill, vd `Nguyễn Văn A · a@example.com · 0900000000`. Bo phan de trong. */

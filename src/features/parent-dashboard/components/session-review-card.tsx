@@ -48,7 +48,7 @@ export function SessionReviewCard({ session }: SessionReviewCardProps) {
       {session.status === 'COMPLETED' ? (
         <View style={styles.row}>
           <Icon name="shield-checkmark-outline" size={BLOCK_ICON_SIZE} themeColor="success" />
-          <ThemedText type="small" themeColor="textSecondary">
+          <ThemedText type="small" themeColor="textSecondary" style={styles.rowText}>
             Điểm danh đã được giáo viên xác nhận
           </ThemedText>
         </View>
@@ -70,7 +70,7 @@ function ReviewBlock({ icon, title, tone, children }: ReviewBlockProps) {
     <ThemedView style={styles.block}>
       <View style={styles.row}>
         <Icon name={icon} size={BLOCK_ICON_SIZE} themeColor={color} />
-        <ThemedText type="smallBold" themeColor={color}>
+        <ThemedText type="smallBold" themeColor={color} style={styles.rowText}>
           {title}
         </ThemedText>
       </View>
@@ -98,6 +98,8 @@ function MaterialItem({ material }: { material: SessionMaterial }) {
 const styles = StyleSheet.create({
   block: { gap: Spacing.two, padding: Spacing.three, borderRadius: Radius.control },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  // Cau xac nhan diem danh dai gan het be ngang the tren man hinh 360dp: cho xuong dong
+  rowText: { flexShrink: 1 },
   comment: { fontStyle: 'italic' },
   material: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
   materialText: { flex: 1, gap: Spacing.half },

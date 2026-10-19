@@ -53,7 +53,6 @@ function assignment(id: string, overrides: Partial<StudentAssignment>): StudentA
     id,
     testType: null,
     title: `Bài ${id}`,
-    instructions: 'Làm vào vở và nộp ảnh bài làm.',
     teacherName: 'Đặng Hải Yến',
     dueAt: daysFromToday(3, 23, 59),
     maxAttempts: 1,

@@ -14,6 +14,8 @@ import type {
   DayPeriod,
   LessonKind,
   LessonProgress,
+  NotificationTargetKind,
+  NotificationType,
   PaymentStatus,
   ScheduleSessionType,
   SessionStatus,
@@ -153,7 +155,55 @@ export const SESSION_TYPES: Record<ScheduleSessionType, SessionTypeAppearance> =
     noteIcon: 'megaphone-outline',
     noteTitle: 'Thông báo đổi lịch',
   },
+  CANCELLED: {
+    tone: 'danger',
+    badge: { label: 'Đã huỷ', icon: 'ban' },
+    noteIcon: 'ban',
+    noteTitle: 'Lý do huỷ buổi',
+  },
 };
+
+/** Icon va mau cua mot thong bao trong hop thu. */
+export type NotificationAppearance = { icon: IconName; tone: Tone };
+
+/** Theo loai ban ghi thong bao tro toi; `NOTIFICATION_TYPE_APPEARANCES` ghi de cho loai can noi. */
+export const NOTIFICATION_TARGET_APPEARANCES: Record<
+  NotificationTargetKind,
+  NotificationAppearance
+> = {
+  ASSIGNMENT: { icon: 'create-outline', tone: 'primary' },
+  SUBMISSION: { icon: 'create-outline', tone: 'primary' },
+  SESSION: { icon: 'calendar-outline', tone: 'primary' },
+  CLASS: { icon: 'megaphone-outline', tone: 'accent' },
+  LEAVE: { icon: 'document-text-outline', tone: 'accent' },
+  MAKEUP: { icon: 'swap-horizontal', tone: 'primary' },
+  ENROLLMENT: { icon: 'school-outline', tone: 'primary' },
+  REGISTRATION: { icon: 'wallet-outline', tone: 'accent' },
+  CURRICULUM_UNIT: { icon: 'book-outline', tone: 'neutral' },
+  FEEDBACK: { icon: 'chatbubble-outline', tone: 'neutral' },
+};
+
+export const NOTIFICATION_TYPE_APPEARANCES: Partial<
+  Record<NotificationType, NotificationAppearance>
+> = {
+  GRADE_PUBLISHED: { icon: 'star-outline', tone: 'accent' },
+  ANSWERS_PUBLISHED: { icon: 'checkmark-done-outline', tone: 'primary' },
+  ATTENDANCE_FINALIZED: { icon: 'checkmark-circle-outline', tone: 'success' },
+  SESSION_CANCELLED: { icon: 'ban', tone: 'danger' },
+  SESSION_RESCHEDULED: { icon: 'repeat', tone: 'accent' },
+  MAKEUP_MISSED: { icon: 'alert-circle-outline', tone: 'danger' },
+  LEAVE_REJECTED: { icon: 'close-circle-outline', tone: 'danger' },
+  PAYMENT_CONFIRMED: { icon: 'checkmark-circle-outline', tone: 'success' },
+  BILL_CANCELLED: { icon: 'close-circle-outline', tone: 'neutral' },
+};
+
+/** Nhan o diem trung binh o trang chu, dung chung cho luc dang tai, loi va da co diem. */
+export const SCORE_STAT_LABEL = 'Điểm trung bình';
+
+/** So thong bao moi nhat cua con hien o trang chu. */
+export const RECENT_NOTIFICATION_COUNT = 3;
+/** So thong bao moi lan tai o man thong bao. */
+export const NOTIFICATION_PAGE_SIZE = 20;
 
 export const DAY_PERIOD_LABELS: Record<DayPeriod, string> = {
   MORNING: 'Sáng',

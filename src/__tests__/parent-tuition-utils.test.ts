@@ -37,6 +37,7 @@ const MATH_CLASS: TuitionClass = {
   roomId: null,
   program: { name: 'Toán 8 – Chuyên đề nâng cao', subject: 'Toán', grade: 8 },
   // Thu Hai va thu Nam
+  teacher: null,
   weeklySchedules: [
     { weekday: 1, startTime: '18:00', endTime: '19:30' },
     { weekday: 4, startTime: '18:00', endTime: '19:30' },

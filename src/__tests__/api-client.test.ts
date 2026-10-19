@@ -1,6 +1,6 @@
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
-import { apiClient, setUnauthorizedHandler } from '@/api/client';
+import { apiClient, refreshSession, setUnauthorizedHandler } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import { ErrorMessages } from '@/constants/messages';
 import { StorageKeys } from '@/constants/storage-keys';
@@ -205,14 +205,33 @@ describe('api/client', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
-  it('endpoint chua wire do server gia tra loi, khong ra mang', async () => {
+  it('endpoint chua wire bi server gia chan voi 404, khong ra mang', async () => {
     const error: unknown = await apiClient
-      .get(Endpoints.parent.unreadNotificationCount)
+      .get(`/parent/students/${STUDENT_ID}/dashboard`)
       .catch((reason: unknown) => reason);
 
-    // Server gia tu choi vi thieu Bearer; quan trong la khong co request nao ra mang
-    expect(error).toMatchObject({ status: 401, code: 'AUTH_UNAUTHORIZED' });
+    expect(error).toMatchObject({ status: 404, code: 'HTTP_ERROR' });
     expect(sent).toEqual([]);
+  });
+
+  it('refreshSession gom cac lan refresh dong thoi vao mot request', async () => {
+    mockSecureValues.set(StorageKeys.refreshToken, 'refresh-cu');
+    respond = () => ok({ user: { id: 'user-1' }, tokens: NEW_TOKENS });
+
+    const tokens = await Promise.all([refreshSession(), refreshSession()]);
+
+    expect(tokens).toEqual([NEW_TOKENS.accessToken, NEW_TOKENS.accessToken]);
+    expect(sent.map(({ url }) => url)).toEqual([`${API_URL}/auth/refresh`]);
+  });
+
+  it('refreshSession tra null khi khong refresh duoc, khong tu dang xuat', async () => {
+    const onUnauthorized = jest.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    mockSecureValues.set(StorageKeys.refreshToken, 'refresh-da-thu-hoi');
+    respond = () => fail(401, 'AUTH_INVALID_REFRESH_TOKEN');
+
+    await expect(refreshSession()).resolves.toBeNull();
+    expect(onUnauthorized).not.toHaveBeenCalled();
   });
 
   it('khong ket noi duoc toi BE thi bao loi mang', async () => {

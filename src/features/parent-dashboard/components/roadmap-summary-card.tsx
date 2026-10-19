@@ -100,7 +100,8 @@ function RoadmapCounter({ label, value, background }: RoadmapCounterProps) {
       style={styles.counter}
     >
       <ThemedText type="heading">{value}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+      {/* Chu phong to thi nhan xuong dong thay vi bi cat con "Đang h…" */}
+      <ThemedText type="small" themeColor="textSecondary" style={styles.counterLabel}>
         {label}
       </ThemedText>
     </ThemedView>
@@ -142,4 +143,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.one,
     borderRadius: Radius.lg,
   },
+  counterLabel: { textAlign: 'center' },
 });

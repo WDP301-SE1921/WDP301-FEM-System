@@ -35,7 +35,9 @@ export function ValueProposition() {
         {HIGHLIGHTS.map((item) => (
           <ThemedView key={item.label} type="backgroundElement" style={styles.pill}>
             <Icon name={item.icon} size={HIGHLIGHT_ICON_SIZE} themeColor={item.tone} />
-            <ThemedText type="small">{item.label}</ThemedText>
+            <ThemedText type="small" style={styles.pillText}>
+              {item.label}
+            </ThemedText>
           </ThemedView>
         ))}
       </View>
@@ -55,6 +57,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.two,
   },
   pill: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.one,
@@ -62,4 +65,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     borderRadius: Radius.full,
   },
+  // Chu phong to lam mot nhan dai hon ca hang: xuong dong trong nhan, khong de icon day chu tran ra
+  pillText: { flexShrink: 1 },
 });

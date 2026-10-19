@@ -38,52 +38,27 @@ export function ScheduleHeader({
 
   return (
     <View style={styles.container}>
-      <View style={styles.titleBlock}>
-        <ThemedText type="heading" accessibilityRole="header">
+      <View style={styles.titleRow}>
+        <ThemedText type="heading" accessibilityRole="header" style={styles.title}>
           Lịch học
         </ThemedText>
-        {student && onPressWeek ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Chọn tuần, đang xem tuần ${weekRange}`}
-            hitSlop={WEEK_BUTTON_HIT_SLOP}
-            onPress={onPressWeek}
-            style={({ pressed }) => [pressed && styles.pressed]}
-          >
-            <ThemedView type="primarySoft" style={[styles.pill, styles.weekButton]}>
-              <ThemedText type="smallBold" themeColor="primary">
-                Tuần: {weekRange}
-              </ThemedText>
-              <Icon name="chevron-down" size={CHEVRON_SIZE} themeColor="primary" />
-            </ThemedView>
-          </Pressable>
-        ) : null}
+        {student ? <StudentButton student={student} onPress={onPressStudent} /> : null}
       </View>
 
-      {student ? (
+      {/* Hang rieng duoi tieu de: dat canh nut chon con thi man hinh 360dp khong du cho khoang tuan */}
+      {student && onPressWeek ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
-          onPress={onPressStudent}
-          style={({ pressed }) => [pressed && styles.pressed]}
+          accessibilityLabel={`Chọn tuần, đang xem tuần ${weekRange}`}
+          hitSlop={WEEK_BUTTON_HIT_SLOP}
+          onPress={onPressWeek}
+          style={({ pressed }) => [styles.weekPressable, pressed && styles.pressed]}
         >
-          <ThemedView type="backgroundElement" style={[styles.pill, styles.studentButton]}>
-            <ThemedView type="primary" style={styles.avatar}>
-              <ThemedText type="smallBold" themeColor="primaryText">
-                {getInitials(student.fullName)}
-              </ThemedText>
-            </ThemedView>
-            <View>
-              <View style={styles.pill}>
-                <ThemedText type="smallBold" numberOfLines={1} style={styles.studentName}>
-                  {getShortName(student.fullName)}
-                </ThemedText>
-                <Icon name="chevron-expand" size={CHEVRON_SIZE} themeColor="textSecondary" />
-              </View>
-              <ThemedText type="small" themeColor="primary">
-                Lớp {student.grade}
-              </ThemedText>
-            </View>
+          <ThemedView type="primarySoft" style={[styles.pill, styles.weekButton]}>
+            <ThemedText type="smallBold" themeColor="primary" style={styles.weekText}>
+              Tuần: {weekRange}
+            </ThemedText>
+            <Icon name="chevron-down" size={CHEVRON_SIZE} themeColor="primary" />
           </ThemedView>
         </Pressable>
       ) : null}
@@ -91,16 +66,55 @@ export function ScheduleHeader({
   );
 }
 
+type StudentButtonProps = {
+  student: LinkedStudent;
+  onPress: () => void;
+};
+
+/** Avatar, ten va lop cua con dang xem; bam de mo danh sach chon con. */
+function StudentButton({ student, onPress }: StudentButtonProps) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
+      onPress={onPress}
+      style={({ pressed }) => [pressed && styles.pressed]}
+    >
+      <ThemedView type="backgroundElement" style={[styles.pill, styles.studentButton]}>
+        <ThemedView type="primary" style={styles.avatar}>
+          <ThemedText type="smallBold" themeColor="primaryText">
+            {getInitials(student.fullName)}
+          </ThemedText>
+        </ThemedView>
+        <View>
+          <View style={styles.pill}>
+            <ThemedText type="smallBold" numberOfLines={1} style={styles.studentName}>
+              {getShortName(student.fullName)}
+            </ThemedText>
+            <Icon name="chevron-expand" size={CHEVRON_SIZE} themeColor="textSecondary" />
+          </View>
+          <ThemedText type="small" themeColor="primary">
+            Lớp {student.grade}
+          </ThemedText>
+        </View>
+      </ThemedView>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: {
+  container: { gap: Spacing.one },
+  titleRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.three,
   },
-  titleBlock: { flexShrink: 1, alignItems: 'flex-start', gap: Spacing.one },
+  title: { flexShrink: 1 },
   pressed: { opacity: 0.75 },
   pill: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  weekPressable: { alignSelf: 'flex-start', maxWidth: '100%' },
+  weekText: { flexShrink: 1 },
   weekButton: {
     minHeight: WEEK_BUTTON_HEIGHT,
     paddingHorizontal: Spacing.three,

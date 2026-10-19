@@ -1,18 +1,25 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { queryKeys } from '@/api/query-client';
 import { useAuthStore } from '@/store/auth-store';
 
 import { authApi } from '../api/auth-api';
 import type { AccountProfileInput, ChangePasswordInput, ForgotPasswordInput } from '../schemas';
 
-/** Sua ten hien thi va so dien thoai, xong thi ghi tai khoan moi vao phien da luu. */
+/**
+ * Sua ten hien thi va so dien thoai (de trong thi BE xoa so dang luu), xong thi ghi tai khoan moi vao
+ * phien da luu va cache cua GET /auth/me.
+ */
 export function useUpdateProfile() {
   const setUser = useAuthStore((s) => s.setUser);
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ phone, ...input }: AccountProfileInput) =>
-      authApi.updateProfile(phone ? { ...input, phone } : input),
-    onSuccess: (user) => setUser(user),
+    mutationFn: (input: AccountProfileInput) => authApi.updateProfile(input),
+    onSuccess: async (user) => {
+      queryClient.setQueryData(queryKeys.auth.me, user);
+      await setUser(user);
+    },
   });
 }
 

@@ -23,7 +23,7 @@ export function ToneBadge({ label, tone, icon }: ToneBadgeProps) {
   return (
     <ThemedView type={soft} style={styles.badge}>
       {icon ? <Icon name={icon} size={ICON_SIZE} themeColor={color} /> : null}
-      <ThemedText type="smallBold" themeColor={color} numberOfLines={1}>
+      <ThemedText type="smallBold" themeColor={color} numberOfLines={1} style={styles.label}>
         {label}
       </ThemedText>
     </ThemedView>
@@ -39,4 +39,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.half,
     borderRadius: Radius.full,
   },
+  // Nhan dai hon cho trong (ten cac con, loai bai kiem tra canh nhan han nop) thi cat bot chu, khong
+  // de icon day nhan tran ra ngoai hang
+  label: { flexShrink: 1 },
 });

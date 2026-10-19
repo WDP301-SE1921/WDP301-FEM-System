@@ -40,7 +40,7 @@ src/
 │       ├── schedule.tsx      # Lich hoc (phu huynh: lich tuan, cac mon, lo trinh bai hoc va diem danh cua con)
 │       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con)
 │       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
-│       ├── notifications.tsx # Thong bao (chua lam). Khong co nut tren thanh tab, mo tu trang chu
+│       ├── notifications.tsx # Hop thu thong bao cua phu huynh. Khong co nut tren thanh tab, mo tu trang chu
 │       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, sua thong tin, doi mat khau, ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
@@ -66,7 +66,7 @@ src/
 │
 ├── constants/                # theme.ts (token), config.ts (env), messages.ts, storage-keys.ts, images.ts
 ├── hooks/                    # Hook dung chung toan app
-├── lib/                      # Ha tang: storage, logger
+├── lib/                      # Ha tang: storage, logger, realtime (Socket.IO)
 ├── providers/                # app-providers.tsx, noi duy nhat khai bao provider toan cuc
 ├── store/                    # State toan cuc (Zustand)
 ├── types/                    # Kieu dung chung (response API, User cua phien dang nhap...)
@@ -112,6 +112,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | Khung man hinh (safe area, scroll, ban phim)  | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`; tu nang noi dung khoi ban phim) | `components/common`  |
 | Trang thai dang tai / loi / rong              | `LoadingState`, `ErrorState`, `EmptyState`                                                | `components/common`  |
 | O nhap noi voi react-hook-form                | `FormInput`                                                                               | `components/common`  |
+| O mat khau noi voi react-hook-form            | `FormPasswordInput` (kem san nut con mat hien / an mat khau)                              | `components/common`  |
 | Loi chung cua form (loi tu server)            | `FormError`                                                                               | `components/common`  |
 | Nut hien / an mat khau (dat o `trailing`)     | `PasswordVisibilityToggle`                                                                | `components/common`  |
 | Sheet truot tu duoi len (chon con, chon tuan) | `BottomSheet`                                                                             | `components/common`  |
@@ -130,6 +131,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | Thong bao theo `error.code` cua BE            | `ApiErrorMessages`, `getApiErrorMessage()`                                                | `constants`, `utils` |
 | Luu token / du lieu thuong                    | `secureStorage`, `storage`                                                                | `lib/storage`        |
 | Ghi log                                       | `logger`                                                                                  | `lib/logger`         |
+| Ket noi realtime (Socket.IO) tu doi token     | `createRealtimeChannel`                                                                   | `lib/realtime`       |
 | Duong dan API, query key                      | `Endpoints`, `queryKeys`                                                                  | `api/`               |
 
 ## Chon cong cu cho tung loai state
@@ -169,6 +171,16 @@ Gap 401
 
 Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong nam trong AsyncStorage. Tren web SecureStore khong ton tai nen `src/lib/storage.ts` tu dong fallback ve AsyncStorage.
 
+```
+Thong bao realtime (phu huynh da dang nhap, giu o (tabs)/_layout.tsx)
+  └─ Socket.IO toi <goc server>/notifications, gui access token qua `auth`
+       ├─ notification.created       -> tai lai thong bao + du lieu hoc tap dang hien
+       ├─ notifications.read-changed -> tai lai thong bao
+       ├─ ket noi lai / app tro lai  -> tai lai thong bao
+       └─ BE tu choi token / dong socket khi token het han
+            └─ refreshSession() (chung lan refresh voi REST) roi ket noi lai; that bai thi dung
+```
+
 BE chi cho phu huynh tao va sua ho so con khi email da xac minh. `user` trong store la ban chup luc dang nhap: man `verify-email` doc lai `GET /auth/me` roi ghi vao store qua `setUser`, va man `add-child` thay form bang loi nhac khi `needsEmailVerification(user)`.
 
 ## Them mot feature moi
@@ -187,7 +199,7 @@ Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-
 
 | Bien                  | Bat buoc | Y nghia                                                                                                                                                            |
 | --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `EXPO_PUBLIC_ENV`     | Khong    | `development` (mac dinh), `staging`. `production` bi chan vi con man hinh dung mock                                                                                |
+| `EXPO_PUBLIC_ENV`     | Khong    | `development` (mac dinh), `staging`, `production`. Tu ngay 2026-10-20 `production` khong con bi chan vi khong man hinh nao dung mock                               |
 | `EXPO_PUBLIC_API_URL` | Co       | Dia chi BE kem prefix, vd `http://192.168.1.10:3000/api/v1`. Dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost` |
 
 > `EXPO_PUBLIC_*` bi **inline thang vao file bundle** va ai cung doc duoc.
@@ -195,15 +207,15 @@ Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-
 
 ## BE that va Mock API
 
-Mot phan endpoint da noi BE that, phan con lai chay bang mock. Ca hai nam o tang HTTP, feature khong biet request cua minh di dau:
+Endpoint da wire goi BE that, endpoint chua wire chay bang mock. Tu ngay 2026-10-19 moi endpoint app goi deu da wire nen chua co route mock nao, nhung co che duoi day van giu de chan request chua wire va cho endpoint moi. Ca hai nam o tang HTTP, feature khong biet request cua minh di dau:
 
 - `src/api/wired-routes.ts` liet ke cac endpoint da noi BE that (`WIRED_ROUTES`). Adapter cua `apiClient` va `refreshClient` (`createApiAdapter`) chi cho request khop danh sach nay ra mang, toi `EXPO_PUBLIC_API_URL`. Khong co co bat/tat.
-- Moi request khac do `src/api/mocks/` (server gia) tra loi. Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. `config.ts` bao loi neu `EXPO_PUBLIC_ENV=production`.
+- Moi request khac do `src/api/mocks/` (server gia) tra loi. Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. Them lai route mock cho man hinh dung toi nguoi dung that thi can chan lai build `production` (`config.ts` da bo chan ngay 2026-10-20).
 - Mock tra dung envelope, HTTP status va `error.code` cua BE (lay tu DTO hoac `EDUGRADE_BACKEND_FLOW.md`), va gia lap `ValidationPipe` (thua hoac thieu field thi 400). Nho vay `features/<ten>/api/`, interceptor va `normalizeError` chay y nhu voi BE that.
-- Dang nhap da noi BE that nen token la JWT cua BE. `mocks/mock-guard.ts` chi doc `sub` va `role` trong payload de gia lap guard; mock khong con tai khoan mau. Ho so con cung do BE quan ly: route mock nhan `studentId` khong co trong du lieu mau thi coi la con that va tra du lieu rong, nen cac man hinh con dung mock hien trang thai rong voi tai khoan that. Du lieu mau trong `mocks/mock-*.ts` chi con test goi toi.
+- Dang nhap da noi BE that nen token la JWT cua BE va mock khong co tai khoan mau. Route mock moi gia lap guard bang `sub` va `role` trong payload (`MockRequest.accessToken`), va coi `studentId` khong co trong du lieu mau la con that: tra du lieu rong, de man hinh dung mock hien trang thai rong voi tai khoan that. Du lieu mau chi de test.
 - Them endpoint moi thi them route mock trong cung task: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
 - BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi them endpoint do vao `WIRED_ROUTES`, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature. `src/__tests__/wired-routes.test.ts` bao loi neu mot endpoint vua wire vua con route mock.
-- BE tra du lieu khac dang man hinh can (vd buoi hoc va bai tap chung cho moi con cua phu huynh, khong kem id cua con) thi ghep trong `features/<ten>/api/`: ham cua `<ten>Api` goi cac route that roi dua qua ham thuan trong `api/parent-data-mappers.ts` (co test rieng). Hook va component van nhan kieu cua man hinh, khong biet du lieu ghep tu may route. Field BE chua co thi de null va UI an di, khong dien gia tri gia.
+- BE tra du lieu khac dang man hinh can (vd lo trinh can ca hoc phan lan buoi hoc, ten giao vien cua bai tap nam trong ghi danh) thi ghep trong `features/<ten>/api/`: ham cua `<ten>Api` goi cac route that roi dua qua ham thuan trong `api/parent-data-mappers.ts` (co test rieng). Hook va component van nhan kieu cua man hinh, khong biet du lieu ghep tu may route. Field BE chua co thi de null va UI an di, khong dien gia tri gia.
 
 ## Cau hinh theo moi truong
 

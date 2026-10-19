@@ -1,12 +1,15 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { ParentDashboard } from '@/features/parent-dashboard/components/parent-dashboard';
 import type {
+  AppNotification,
   LinkedStudent,
   ScheduleSession,
-  StudentDashboard,
+  StudentAssignment,
+  StudentGrades,
+  TuitionBill,
 } from '@/features/parent-dashboard/types';
 import { AppError } from '@/types/api';
 import { toDateKey } from '@/utils/date';
@@ -14,10 +17,14 @@ import { toDateKey } from '@/utils/date';
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
     getStudents: jest.fn(),
-    getStudentDashboard: jest.fn(),
     getStudentSchedule: jest.fn(),
     getAttendanceSummary: jest.fn(),
+    getStudentGrades: jest.fn(),
+    getStudentAssignments: jest.fn(),
+    getStudentBills: jest.fn(),
+    getRecentNotifications: jest.fn(),
     getUnreadNotificationCount: jest.fn(),
+    markNotificationRead: jest.fn(),
   },
 }));
 
@@ -51,7 +58,6 @@ const HOANG_LONG: LinkedStudent = {
   subjectNames: ['Tiếng Anh'],
 };
 
-/** Buoi hom nay lay tu lich hoc cua BE: chua co phong va ten giao vien. */
 const MINH_ANH_TODAY: ScheduleSession[] = [
   {
     id: 'session-1',
@@ -59,40 +65,55 @@ const MINH_ANH_TODAY: ScheduleSession[] = [
     subjectName: 'Toán',
     startsAt: hoursFromNow(2),
     endsAt: hoursFromNow(3),
-    room: null,
-    teacherName: null,
+    room: 'Phòng A101',
+    teacherName: 'Đặng Hải Yến',
     type: 'REGULAR',
     topic: 'Phương trình bậc nhất',
     note: null,
   },
 ];
 
-const MINH_ANH_DASHBOARD: StudentDashboard = {
-  scoreSummary: { average: 8.2, changeFromLastMonth: 0.4 },
-  attentionItems: [
-    { id: 'attention-1', type: 'TUITION', title: 'Học phí tháng 10', description: 'Chưa đóng' },
-    {
-      id: 'attention-2',
-      type: 'ASSIGNMENT',
-      title: 'Bài tập Toán Đại số',
-      description: 'Hạn nộp: 23:59, 20/10',
-    },
-  ],
-  recentNotifications: [
-    {
-      id: 'notification-1',
-      type: 'ATTENDANCE',
-      title: 'Đã điểm danh buổi học Toán',
-      message: 'Minh Anh đã có mặt đúng giờ.',
-      createdAt: hoursFromNow(-2),
-    },
-  ],
+const MINH_ANH_GRADES: StudentGrades = {
+  summary: { average: 8.2, changeFromLastMonth: 0.4 },
+  subjects: [{ subject: 'Toán', count: 3, averageOutOf10: 8.2 }],
+};
+const NO_GRADES: StudentGrades = { summary: null, subjects: [] };
+
+const UNPAID_BILL: TuitionBill = {
+  registrationId: 'order-1',
+  status: 'UNPAID',
+  issuedAt: hoursFromNow(-24),
+  student: { id: MINH_ANH.id, fullName: MINH_ANH.fullName, grade: 8 },
+  class: { id: 'class-math', name: 'Toán nâng cao 8A2', subject: 'Toán', grade: 8, schedules: [] },
+  term: { packageMonths: 3, startDate: '2026-10-06', endDate: '2027-01-06' },
+  pricing: { monthlyFee: '800000.00', packageMonths: 3, total: '2400000.00', currency: 'VND' },
+  payment: null,
 };
 
-const EMPTY_DASHBOARD: StudentDashboard = {
-  scoreSummary: null,
-  attentionItems: [],
-  recentNotifications: [],
+/** Bai chua nop, het han trong ngay mai nen la viec can chu y. */
+const DUE_SOON: StudentAssignment = {
+  id: 'assignment-1',
+  testType: null,
+  title: 'Bài tập Toán Đại số',
+  subjectName: 'Toán',
+  className: 'Toán nâng cao 8A2',
+  teacherName: 'Đặng Hải Yến',
+  dueAt: hoursFromNow(24),
+  maxAttempts: 1,
+  questionCounts: { MULTIPLE_CHOICE: 0, ESSAY: 1 },
+  submission: null,
+  grade: null,
+};
+
+const GRADE_NOTIFICATION: AppNotification = {
+  id: 'notification-1',
+  type: 'GRADE_PUBLISHED',
+  title: 'Cập nhật học tập',
+  body: 'Bài tập Toán Đại số: Giáo viên đã công bố kết quả bài làm.',
+  target: { kind: 'ASSIGNMENT', id: 'assignment-1' },
+  context: { classId: 'class-math', studentIds: [MINH_ANH.id] },
+  createdAt: hoursFromNow(-2),
+  readAt: null,
 };
 
 const MINH_ANH_BUTTON = 'Nguyễn Minh Anh, lớp 8';
@@ -104,25 +125,28 @@ const SHEET_SUBTITLE = 'Chuyển hồ sơ để theo dõi tình hình học tậ
  */
 const SHEET_ADD_CHILD_BUTTON_NAME = /.Thêm học sinh$/;
 
-function mockTwoChildren() {
-  api.getStudents.mockResolvedValue([MINH_ANH, HOANG_LONG]);
-  api.getStudentDashboard.mockImplementation(async (studentId) =>
-    studentId === MINH_ANH.id ? MINH_ANH_DASHBOARD : EMPTY_DASHBOARD,
+/** Minh Anh co diem, bill chua dong, bai sap het han va thong bao; Hoang Long chua co gi. */
+function mockStudentData() {
+  const isMinhAnh = (studentId: string) => studentId === MINH_ANH.id;
+  api.getStudentSchedule.mockImplementation(async (studentId) =>
+    isMinhAnh(studentId) ? MINH_ANH_TODAY : [],
   );
-}
-
-/** Ty le di hoc lay tu diem danh cua BE, khong nam trong tong quan mock. */
-function mockAttendance() {
   api.getAttendanceSummary.mockImplementation(async (studentId) =>
-    studentId === MINH_ANH.id
+    isMinhAnh(studentId)
       ? { attendedSessions: 16, totalSessions: 17 }
       : { attendedSessions: 0, totalSessions: 0 },
   );
-}
-
-function mockTodaySessions(sessions: ScheduleSession[] = MINH_ANH_TODAY) {
-  api.getStudentSchedule.mockImplementation(async (studentId) =>
-    studentId === MINH_ANH.id ? sessions : [],
+  api.getStudentGrades.mockImplementation(async (studentId) =>
+    isMinhAnh(studentId) ? MINH_ANH_GRADES : NO_GRADES,
+  );
+  api.getStudentBills.mockImplementation(async (studentId) =>
+    isMinhAnh(studentId) ? [UNPAID_BILL] : [],
+  );
+  api.getStudentAssignments.mockImplementation(async (studentId) =>
+    isMinhAnh(studentId) ? [DUE_SOON] : [],
+  );
+  api.getRecentNotifications.mockImplementation(async (studentId) =>
+    isMinhAnh(studentId) ? [GRADE_NOTIFICATION] : [],
   );
 }
 
@@ -130,11 +154,15 @@ async function renderDashboard() {
   const handlers = {
     onAddChild: jest.fn(),
     onOpenNotifications: jest.fn(),
+    onOpenNotification: jest.fn(),
     onOpenAssignments: jest.fn(),
   };
   // gcTime vo han de React Query khong hen gio don cache sau khi test ket thuc
   const queryClient = new QueryClient({
-    defaultOptions: { queries: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { gcTime: Infinity },
+    },
   });
   await render(
     <QueryClientProvider client={queryClient}>
@@ -144,37 +172,51 @@ async function renderDashboard() {
   return { ...handlers, user: userEvent.setup() };
 }
 
+/**
+ * Phan phu (diem, viec can chu y, thong bao) tu tai sau phan chinh: doi tai xong de lan cap nhat cuoi
+ * khong roi ra ngoai test.
+ */
+async function waitForSecondarySections() {
+  await waitFor(() => expect(screen.queryByText(/^Đang tải/)).not.toBeOnTheScreen());
+}
+
 async function waitForMinhAnhDashboard() {
   expect(
-    await screen.findByText('Toán nâng cao 8A2', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    await screen.findByText('Phòng A101', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
   ).toBeOnTheScreen();
+  // Minh Anh luon co bai sap het han nen the "Cần chú ý" luon hien khi tai xong
+  expect(await screen.findByText('Cần chú ý')).toBeOnTheScreen();
+  await waitForSecondarySections();
 }
 
 describe('features/parent-dashboard/ParentDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    api.getStudents.mockResolvedValue([MINH_ANH, HOANG_LONG]);
     api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 0 });
-    mockTodaySessions();
-    mockAttendance();
+    api.markNotificationRead.mockResolvedValue({ ...GRADE_NOTIFICATION, readAt: hoursFromNow(0) });
+    mockStudentData();
   });
 
   it('xem con dau tien, bam con khac thi tai tong quan cua con do', async () => {
-    mockTwoChildren();
     const { user } = await renderDashboard();
 
     await waitForMinhAnhDashboard();
     expect(screen.getByText('Chào Hà 👋')).toBeOnTheScreen();
-    // Buoi hom nay lay tu lich hoc cua BE, chua co ten giao vien nen chi hien mon
     expect(api.getStudentSchedule).toHaveBeenCalledWith(MINH_ANH.id, {
       from: toDateKey(new Date()),
       to: toDateKey(new Date()),
     });
-    expect(screen.getByText('Môn Toán')).toBeOnTheScreen();
+    expect(screen.getByText('Đặng Hải Yến')).toBeOnTheScreen();
     expect(screen.getByText('94%')).toBeOnTheScreen();
     expect(screen.getByText('Đã học 16/17 buổi')).toBeOnTheScreen();
-    expect(api.getAttendanceSummary).toHaveBeenCalledWith(MINH_ANH.id);
-    expect(screen.getByText('Tốt')).toBeOnTheScreen();
-    expect(screen.getByText('Học phí tháng 10')).toBeOnTheScreen();
+    // Phan phu tu tai sau phan chinh
+    expect(await screen.findByText('8.2')).toBeOnTheScreen();
+    expect(screen.getByText('+0.4 so với tháng trước')).toBeOnTheScreen();
+    // Viec can chu y ghep tu bill chua thanh toan va bai sap het han
+    expect(await screen.findByText('Học phí lớp Toán nâng cao 8A2')).toBeOnTheScreen();
+    expect(screen.getByText('Bài tập Toán Đại số')).toBeOnTheScreen();
+    expect(await screen.findByText(GRADE_NOTIFICATION.body)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: MINH_ANH_BUTTON })).toBeSelected();
 
     await user.press(screen.getByRole('button', { name: HOANG_LONG_BUTTON }));
@@ -184,15 +226,15 @@ describe('features/parent-dashboard/ParentDashboard', () => {
       from: toDateKey(new Date()),
       to: toDateKey(new Date()),
     });
-    expect(screen.getByText('Chưa có điểm')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có điểm')).toBeOnTheScreen();
     expect(screen.getByText('Chưa có buổi học nào')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có thông báo mới.')).toBeOnTheScreen();
     expect(screen.queryByText('Cần chú ý')).not.toBeOnTheScreen();
-    expect(api.getStudentDashboard).toHaveBeenLastCalledWith(HOANG_LONG.id);
+    expect(api.getRecentNotifications).toHaveBeenLastCalledWith(HOANG_LONG.id);
     expect(screen.getByRole('button', { name: HOANG_LONG_BUTTON })).toBeSelected();
   });
 
   it('mo sheet tu avatar tren cung, chon con khac thi dong sheet va doi tong quan', async () => {
-    mockTwoChildren();
     const { user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
@@ -211,10 +253,10 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     expect(
       screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Hoàng Long' }),
     ).toBeOnTheScreen();
+    await waitForSecondarySections();
   });
 
   it('them con tu thanh chon con va tu sheet, sheet dong truoc khi roi trang', async () => {
-    mockTwoChildren();
     const { onAddChild, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
@@ -231,7 +273,6 @@ describe('features/parent-dashboard/ParentDashboard', () => {
   });
 
   it('chuong bao so chua doc; cac nut tren the mo trang thong bao va bai tap', async () => {
-    mockTwoChildren();
     api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 2 });
     const { onOpenNotifications, onOpenAssignments, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
@@ -243,17 +284,30 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     await user.press(
       screen.getByRole('button', { name: 'Chuẩn bị bài cho buổi Toán nâng cao 8A2' }),
     );
-    await user.press(screen.getByRole('button', { name: 'Xem bài: Bài tập Toán Đại số' }));
+    await user.press(await screen.findByRole('button', { name: 'Xem bài: Bài tập Toán Đại số' }));
     expect(onOpenAssignments).toHaveBeenCalledTimes(2);
 
     // Hoc phi dong tai trung tam nen khong co nut thanh toan
     expect(screen.queryByRole('button', { name: /Học phí/ })).not.toBeOnTheScreen();
   });
 
+  it('bam thong bao moi: danh dau da doc va mo bai tap cua con', async () => {
+    const { onOpenNotification, user } = await renderDashboard();
+    await waitForMinhAnhDashboard();
+
+    await user.press(await screen.findByRole('button', { name: /^Chưa đọc\. Cập nhật học tập/ }));
+
+    expect(api.markNotificationRead).toHaveBeenCalledWith('notification-1');
+    expect(onOpenNotification).toHaveBeenCalledWith({
+      kind: 'ASSIGNMENT',
+      studentId: MINH_ANH.id,
+      assignmentId: 'assignment-1',
+    });
+  });
+
   it('khong co nut chuan bi bai khi buoi hoc da bat dau', async () => {
     api.getStudents.mockResolvedValue([MINH_ANH]);
-    api.getStudentDashboard.mockResolvedValue(MINH_ANH_DASHBOARD);
-    mockTodaySessions(
+    api.getStudentSchedule.mockResolvedValue(
       MINH_ANH_TODAY.map((session) => ({ ...session, startsAt: hoursFromNow(-1) })),
     );
     await renderDashboard();
@@ -263,11 +317,68 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     expect(screen.queryByRole('button', { name: /Chuẩn bị bài/ })).not.toBeOnTheScreen();
   });
 
+  it('buoi hom nay bi huy: bao huy kem ly do, khong co nut chuan bi bai', async () => {
+    api.getStudents.mockResolvedValue([MINH_ANH]);
+    api.getStudentSchedule.mockResolvedValue(
+      MINH_ANH_TODAY.map((session) => ({ ...session, type: 'CANCELLED', note: 'Giáo viên ốm' })),
+    );
+    await renderDashboard();
+    await waitForMinhAnhDashboard();
+
+    expect(screen.getByText('Đã huỷ')).toBeOnTheScreen();
+    expect(screen.getByText('Lý do huỷ buổi: Giáo viên ốm')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: /Chuẩn bị bài/ })).not.toBeOnTheScreen();
+  });
+
+  it('diem, hoc phi hay thong bao tai loi thi chi phan do bao loi, cac phan khac van hien', async () => {
+    const serverError = new AppError('Lỗi máy chủ', 500);
+    api.getStudents.mockResolvedValue([MINH_ANH]);
+    api.getStudentGrades.mockRejectedValueOnce(serverError).mockResolvedValueOnce(MINH_ANH_GRADES);
+    api.getRecentNotifications
+      .mockRejectedValueOnce(serverError)
+      .mockResolvedValueOnce([GRADE_NOTIFICATION]);
+    api.getStudentBills.mockRejectedValue(serverError);
+    const { user } = await renderDashboard();
+    await waitForMinhAnhDashboard();
+
+    expect(await screen.findByText('Không tải được điểm.')).toBeOnTheScreen();
+    expect(await screen.findByText('Không tải được thông báo.')).toBeOnTheScreen();
+    // Bill loi nhung bai sap het han van hien trong "Cần chú ý"
+    expect(await screen.findByText('Không tải được học phí.')).toBeOnTheScreen();
+    expect(screen.getByText('Bài tập Toán Đại số')).toBeOnTheScreen();
+    expect(screen.getByText('Đã học 16/17 buổi')).toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: 'Thử lại' })).not.toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Thử lại: Không tải được điểm.' }));
+    expect(await screen.findByText('8.2')).toBeOnTheScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Thử lại: Không tải được thông báo.' }));
+    expect(await screen.findByText(GRADE_NOTIFICATION.body)).toBeOnTheScreen();
+    expect(screen.getByText('Không tải được học phí.')).toBeOnTheScreen();
+  });
+
+  it('buoi hom nay tai loi thi ca khoi tong quan bao loi, thu lai thi tai lai', async () => {
+    api.getStudents.mockResolvedValue([MINH_ANH]);
+    api.getStudentSchedule
+      .mockRejectedValueOnce(new AppError('Không kết nối được tới máy chủ.'))
+      .mockResolvedValueOnce(MINH_ANH_TODAY);
+    const { user } = await renderDashboard();
+
+    const retry = await screen.findByRole(
+      'button',
+      { name: 'Thử lại' },
+      { timeout: FIRST_RENDER_TIMEOUT_MS },
+    );
+    // Phan chinh loi thi chua hien, cung chua tai, cac phan phu
+    expect(api.getStudentGrades).not.toHaveBeenCalled();
+    await user.press(retry);
+
+    await waitForMinhAnhDashboard();
+    expect(screen.getByText('8.2')).toBeOnTheScreen();
+  });
+
   it('con chua co mon dang hoc thi chi cach dang ky tai trung tam kem email phu huynh', async () => {
     api.getStudents.mockResolvedValue([MINH_ANH, { ...HOANG_LONG, subjectNames: [] }]);
-    api.getStudentDashboard.mockImplementation(async (studentId) =>
-      studentId === MINH_ANH.id ? MINH_ANH_DASHBOARD : EMPTY_DASHBOARD,
-    );
     const { user } = await renderDashboard();
     await waitForMinhAnhDashboard();
     expect(screen.queryByText('Chưa có môn đang học')).not.toBeOnTheScreen();
@@ -277,6 +388,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     expect(await screen.findByText('Chưa có môn đang học')).toBeOnTheScreen();
     expect(screen.getByText(/^Để đăng ký môn cho Hoàng Long, đến trung tâm/)).toBeOnTheScreen();
     expect(screen.getByText('phuhuynh@example.com')).toBeOnTheScreen();
+    await waitForSecondarySections();
   });
 
   it('chua co con: man hinh rong kem nut them con, dem thong bao loi khong chan trang', async () => {
@@ -285,7 +397,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     const { onAddChild, user } = await renderDashboard();
 
     expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
-    expect(api.getStudentDashboard).not.toHaveBeenCalled();
+    expect(api.getStudentGrades).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Thông báo' })).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /Chọn học sinh/ })).not.toBeOnTheScreen();
 

@@ -43,7 +43,7 @@ export function ActionChip({ label, variant = 'solid', trailingIcon, ...rest }: 
       ]}
       {...rest}
     >
-      <ThemedText type="smallBold" themeColor={colors.text} numberOfLines={1}>
+      <ThemedText type="smallBold" themeColor={colors.text} numberOfLines={1} style={styles.label}>
         {label}
       </ThemedText>
       {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} themeColor={colors.text} /> : null}
@@ -60,5 +60,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     borderRadius: Radius.full,
   },
+  // O hep (vd nut "Thử lại" trong o so lieu nua be ngang) va chu phong to: cat chu, khong tran o
+  label: { flexShrink: 1 },
   pressed: { opacity: 0.75 },
 });

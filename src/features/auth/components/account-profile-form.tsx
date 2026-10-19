@@ -17,7 +17,7 @@ export type AccountProfileFormProps = {
   error: unknown;
 };
 
-/** Ten hien thi va so dien thoai moi. Viec goi API do container quyet dinh qua `onSubmit`. */
+/** Ten hien thi va so dien thoai lien he. Viec goi API do container quyet dinh qua `onSubmit`. */
 export function AccountProfileForm({
   defaultValues,
   onSubmit,
@@ -46,8 +46,8 @@ export function AccountProfileForm({
       <FormInput
         control={control}
         name="phone"
-        label="Số điện thoại mới (không bắt buộc)"
-        placeholder="Bỏ trống để giữ số đã lưu"
+        label="Số điện thoại (không bắt buộc)"
+        placeholder="0901 234 567"
         leadingIcon="call-outline"
         autoComplete="tel"
         keyboardType="phone-pad"

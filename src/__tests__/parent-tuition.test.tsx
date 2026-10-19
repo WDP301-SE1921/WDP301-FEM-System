@@ -56,6 +56,7 @@ function classroom(name: string, subject: string, slotsPerWeek: number): Tuition
     name,
     roomId: null,
     program: { name: `Chương trình ${subject}`, subject, grade: 8 },
+    teacher: null,
     weeklySchedules: Array.from({ length: slotsPerWeek }, (_, index) => ({
       weekday: index + 1,
       startTime: '18:00',

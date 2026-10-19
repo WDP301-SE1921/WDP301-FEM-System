@@ -4,13 +4,13 @@ import { Icon, type IconName } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing, type ThemeColor } from '@/constants/theme';
 
+import { SCORE_STAT_LABEL as LABEL } from '../constants';
 import type { ScoreSummary, ScoreTrend } from '../types';
 import { formatScore, formatScoreChange, getScoreLevel, getScoreTrend } from '../utils';
 
 import { StatCard } from './stat-card';
 import { ToneBadge } from './tone-badge';
 
-const LABEL = 'Điểm trung bình';
 const STAR_ICON_SIZE = 20;
 const TREND_ICON_SIZE = 16;
 

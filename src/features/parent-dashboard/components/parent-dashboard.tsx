@@ -8,6 +8,7 @@ import { Spacing } from '@/constants/theme';
 import { getShortName } from '@/utils/format';
 
 import { useLinkedStudents } from '../hooks/use-parent-dashboard';
+import type { NotificationDestination } from '../types';
 
 import { ChildPickerSheet } from './child-picker-sheet';
 import { ChildSwitcher } from './child-switcher';
@@ -24,6 +25,8 @@ export type ParentDashboardProps = {
   /** Cac nut dan ra ngoai trang chu; route quyet dinh dieu huong toi dau. */
   onAddChild: () => void;
   onOpenNotifications: () => void;
+  /** Mo man hinh cua ban ghi mot thong bao tro toi (bai tap, buoi hoc, bill). */
+  onOpenNotification: (destination: NotificationDestination) => void;
   onOpenAssignments: () => void;
 };
 
@@ -33,6 +36,7 @@ export function ParentDashboard({
   parentEmail,
   onAddChild,
   onOpenNotifications,
+  onOpenNotification,
   onOpenAssignments,
 }: ParentDashboardProps) {
   const students = useLinkedStudents();
@@ -88,6 +92,7 @@ export function ParentDashboard({
           studentId={selected.id}
           onOpenAssignments={onOpenAssignments}
           onOpenNotifications={onOpenNotifications}
+          onOpenNotification={onOpenNotification}
         />
       </>
     );

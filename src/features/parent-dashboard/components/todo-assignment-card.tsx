@@ -17,7 +17,10 @@ export type TodoAssignmentCardProps = {
   onOpen: () => void;
 };
 
-/** Bai con chua nop: con bao nhieu ngay, de bai, han nop va so cau. Bai sap het han duoc lam noi. */
+/**
+ * Bai con chua nop: con bao nhieu ngay, ten bai, han nop va so cau. De bai chi co o man chi tiet (danh
+ * sach bai tap cua BE khong tra de bai). Bai sap het han duoc lam noi.
+ */
 export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardProps) {
   const deadline = getAssignmentDeadline(assignment.dueAt);
 
@@ -29,9 +32,6 @@ export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardPro
       />
       <ThemedText type="default" accessibilityRole="header" style={styles.title}>
         {assignment.title}
-      </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {assignment.instructions}
       </ThemedText>
       <AssignmentInfoRow
         icon="calendar-outline"

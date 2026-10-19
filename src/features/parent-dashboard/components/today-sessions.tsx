@@ -6,8 +6,8 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatTime, getInitials } from '@/utils/format';
 
-import { SESSION_STATUSES } from '../constants';
-import type { ClassSession } from '../types';
+import { SESSION_STATUSES, SESSION_TYPES, type StatusAppearance } from '../constants';
+import type { ScheduleSession } from '../types';
 import { getSessionStatus } from '../utils';
 
 import { ActionChip } from './action-chip';
@@ -17,9 +17,10 @@ import { ToneBadge } from './tone-badge';
 const TITLE = 'Buổi học hôm nay';
 const DETAIL_ICON_SIZE = 18;
 const TEACHER_AVATAR_SIZE = 36;
+const TEACHER_INFO_MIN_WIDTH = 120;
 
 export type TodaySessionsProps = {
-  sessions: ClassSession[];
+  sessions: ScheduleSession[];
   /** Mo bai tap cua con de chuan bi truoc buoi hoc sap dien ra. */
   onPrepare: () => void;
 };
@@ -45,22 +46,30 @@ export function TodaySessions({ sessions, onPrepare }: TodaySessionsProps) {
   );
 }
 
+/** Buoi bi huy bao huy thay cho trang thai theo gio. */
+function getTodayStatus(session: ScheduleSession): StatusAppearance {
+  const { badge, tone } = SESSION_TYPES[session.type];
+  if (session.type === 'CANCELLED' && badge) return { label: badge.label, tone, icon: badge.icon };
+  return SESSION_STATUSES[getSessionStatus(session)];
+}
+
 function TodaySessionCard({
   session,
   onPrepare,
 }: {
-  session: ClassSession;
+  session: ScheduleSession;
   onPrepare: () => void;
 }) {
-  const statusKey = getSessionStatus(session);
-  const status = SESSION_STATUSES[statusKey];
+  const isCancelled = session.type === 'CANCELLED';
+  const status = getTodayStatus(session);
+  const canPrepare = !isCancelled && getSessionStatus(session) === 'UPCOMING';
 
   return (
     <SectionCard
       title={TITLE}
       icon="calendar-outline"
-      highlightTone="accent"
-      trailing={<ToneBadge label={status.label} tone={status.tone} />}
+      highlightTone={isCancelled ? 'danger' : 'accent'}
+      trailing={<ToneBadge label={status.label} tone={status.tone} icon={status.icon} />}
     >
       <View style={styles.details}>
         <ThemedText type="heading">{session.className}</ThemedText>
@@ -74,13 +83,20 @@ function TodaySessionCard({
           {session.room ? (
             <View style={styles.metaItem}>
               <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor="primary" />
-              <ThemedText type="small" themeColor="textSecondary">
+              <ThemedText type="small" themeColor="textSecondary" style={styles.metaText}>
                 {session.room}
               </ThemedText>
             </View>
           ) : null}
         </View>
       </View>
+
+      {/* Chi buoi bi huy co ghi chu: ly do huy cua trung tam */}
+      {session.note ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {SESSION_TYPES[session.type].noteTitle}: {session.note}
+        </ThemedText>
+      ) : null}
 
       <ThemedView style={styles.teacher}>
         <ThemedView type="primary" style={styles.teacherAvatar}>
@@ -103,8 +119,8 @@ function TodaySessionCard({
             </ThemedText>
           ) : null}
         </View>
-        {/* Buoi da bat dau hoac da xong thi khong con gi de chuan bi */}
-        {statusKey === 'UPCOMING' ? (
+        {/* Buoi bi huy, da bat dau hoac da xong thi khong con gi de chuan bi */}
+        {canPrepare ? (
           <ActionChip
             label="Chuẩn bị bài"
             trailingIcon="arrow-forward"
@@ -120,10 +136,15 @@ function TodaySessionCard({
 const styles = StyleSheet.create({
   details: { gap: Spacing.two },
   meta: { flexDirection: 'row', flexWrap: 'wrap', columnGap: Spacing.three, rowGap: Spacing.one },
-  metaItem: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  metaItem: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  metaText: { flexShrink: 1 },
+  // Khong du cho cho ten giao vien rong toi thieu TEACHER_INFO_MIN_WIDTH (man hinh 360dp) thi nut
+  // "Chuẩn bị bài" roi xuong hang duoi, can phai, thay vi cat ten giao vien con vai chu
   teacher: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: Spacing.two,
     padding: Spacing.two,
     borderRadius: Radius.control,
@@ -135,5 +156,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  teacherInfo: { flex: 1 },
+  teacherInfo: { flexGrow: 1, flexShrink: 1, flexBasis: TEACHER_INFO_MIN_WIDTH },
 });

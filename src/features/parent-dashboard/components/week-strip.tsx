@@ -65,7 +65,14 @@ function DayCell({ day, isSelected, isToday, onPress }: DayCellProps) {
       <ThemedText type="small" themeColor={getWeekdayColor(day, isSelected)}>
         {formatShortWeekday(day.date)}
       </ThemedText>
-      <ThemedText type="heading" themeColor={getDateColor(isSelected, isToday)}>
+      {/* O ngay chi rong khoang 39dp tren man hinh 320dp: chu phong to thi thu nho so ngay, khong
+          de "30" vo thanh hai dong */}
+      <ThemedText
+        type="heading"
+        themeColor={getDateColor(isSelected, isToday)}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
         {day.date.getDate()}
       </ThemedText>
       <View style={[styles.dot, dotColor && { backgroundColor: theme[dotColor] }]} />

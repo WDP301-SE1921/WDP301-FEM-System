@@ -1,6 +1,7 @@
 /**
  * Tap trung duong dan API. Khong hardcode chuoi URL trong component.
- * Moi duong dan o day hoac da noi BE that (`./wired-routes.ts`), hoac co route trong `./mocks/`.
+ * Moi duong dan o day da noi BE that (`./wired-routes.ts`); endpoint chua wire thi co route trong
+ * `./mocks/`.
  */
 export const Endpoints = {
   /** Module `auth` cua BE (nhanh `dev`), da noi BE that. */
@@ -20,10 +21,20 @@ export const Endpoints = {
     /** POST: gui email chua lien ket dat lai mat khau (trang web `/reset-password`). */
     forgotPassword: '/auth/forgot-password',
   },
-  /** BE chua co, duong dan TAM va con chay bang mock (xem dau file `./mocks/parent.ts`). */
-  parent: {
-    studentDashboard: (studentId: string) => `/parent/students/${studentId}/dashboard`,
-    unreadNotificationCount: '/parent/notifications/unread-count',
+  /**
+   * Module `notifications` cua BE (nhanh `dev`): hop thu thong bao cua tai khoan dang dang nhap. Da
+   * noi BE that. Thong bao moi den qua Socket.IO (`Config.serverOrigin`, xem
+   * `features/parent-dashboard/api/notification-realtime.ts`), khong qua cac duong dan nay.
+   */
+  notifications: {
+    /** Query `page`, `limit`, `unreadOnly?`, `type?`, `studentId?`; tra `{ items, page, limit, total }`. */
+    list: '/notifications',
+    /** So thong bao chua doc cua ca hop thu, khong theo bo loc. */
+    unreadCount: '/notifications/unread-count',
+    /** PATCH: danh dau da doc mot thong bao. */
+    read: (notificationId: string) => `/notifications/${notificationId}/read`,
+    /** POST: danh dau da doc moi thong bao. */
+    readAll: '/notifications/read-all',
   },
   /** Module `registration-flow` cua BE (nhanh `dev`): danh sach phong hoc. Da noi BE that. */
   rooms: '/rooms',
@@ -54,19 +65,33 @@ export const Endpoints = {
    */
   academic: {
     /**
-     * Buoi hoc da sinh (ClassSession) cua mot con, kem lop, bai hoc va cho cua con trong buoi. Query
-     * `studentId`, `fromDate`, `toDate` dang `YYYY-MM-DD`, `page`, `limit`, `classId?`.
+     * Buoi hoc da sinh (ClassSession) cua mot con, ca buoi bi huy, kem lop, giao vien, phong, bai hoc
+     * va cho cua con trong buoi. Query `studentId`, `fromDate`, `toDate` dang `YYYY-MM-DD`, `page`,
+     * `limit`, `paginated`, `classId?`.
      */
     scheduledSessions: '/academic/scheduled-sessions',
-    /** Mot buoi kem giao vien, ghi chu va diem danh cua con. Query `studentId` bat buoc. */
+    /** Mot buoi kem giao vien, phong, ghi chu va diem danh cua con. Query `studentId` bat buoc. */
     scheduledSession: (sessionId: string) => `/academic/scheduled-sessions/${sessionId}`,
-    /** Ty le di hoc va cac buoi da chot diem danh cua mot con. Query `fromDate?`, `toDate?`. */
+    /**
+     * Ty le di hoc va cac buoi da chot diem danh cua mot con, kem lop, don nghi va lich hoc bu cua
+     * buoi. Query `fromDate?`, `toDate?`.
+     */
     studentAttendance: (studentId: string) => `/academic/me/students/${studentId}/attendance`,
-    /** Lich hoc bu (MakeupBooking) cua cac con, moi xep truoc. Query `page`, `limit`. */
+    /** Diem da cong bo cua mot con va diem trung binh theo mon. Query `page`, `limit`. */
+    studentGrades: (studentId: string) => `/academic/me/students/${studentId}/grades`,
+    /** Hoc phan da duyet (kem bai hoc) cua lop con dang hoc. Query `page`, `limit`. */
+    studentCurriculum: (studentId: string) => `/academic/me/students/${studentId}/curriculum`,
+    /**
+     * Lich hoc bu (MakeupBooking) cua cac con, moi xep truoc. App khong con goi: lich su diem danh da
+     * kem lich hoc bu. Van de trong `WIRED_ROUTES` vi da wire.
+     */
     makeups: '/academic/makeups',
     /** Don xin nghi va don bao luu cua cac con. Query `studentId`, `kind`, `status`, khoang ngay. */
     leaves: '/academic/leaves',
-    /** Bai tap (khong phai `DRAFT`) giao cho cac con, chi co thong tin chung. Query `page`, `limit`. */
+    /**
+     * Bai tap (khong phai `DRAFT`) giao cho cac con kem lop, so cau, lan nop gan nhat va diem da cong
+     * bo. Query `studentId`, `page`, `limit`, `paginated`.
+     */
     assignments: '/academic/assignments',
     /** De bai kem cau hoi; dap an dung chi co sau khi giao vien cong bo dap an. */
     assignment: (assignmentId: string) => `/academic/assignments/${assignmentId}`,

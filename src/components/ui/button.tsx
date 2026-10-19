@@ -79,7 +79,7 @@ export function Button({
       ) : (
         <>
           {icon ? <Icon name={icon} size={ICON_SIZE} color={textColor} /> : null}
-          <ThemedText type="default" style={{ color: textColor }}>
+          <ThemedText type="default" style={[styles.title, { color: textColor }]}>
             {title}
           </ThemedText>
           {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} color={textColor} /> : null}
@@ -97,6 +97,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     borderRadius: Radius.md,
   },
+  // Nut hep (trong the, man hinh 360dp, chu he thong phong to) thi chu xuong dong thay vi day icon
+  // va chu tran ra ngoai nut
+  title: { flexShrink: 1, textAlign: 'center' },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.5 },
 });

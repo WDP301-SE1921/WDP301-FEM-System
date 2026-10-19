@@ -61,7 +61,12 @@ export function AttendanceRecordCard({ record, onPress }: AttendanceRecordCardPr
         <View style={styles.detailRow}>
           <View style={styles.detail}>
             <Icon name="time-outline" size={DETAIL_ICON_SIZE} themeColor="textSecondary" />
-            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            <ThemedText
+              type="small"
+              themeColor="textSecondary"
+              numberOfLines={1}
+              style={styles.detailText}
+            >
               {formatTime(record.startsAt)} – {formatTime(record.endsAt)}
             </ThemedText>
           </View>
@@ -104,6 +109,7 @@ const styles = StyleSheet.create({
   title: { fontWeight: 700 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   detail: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  detailText: { flexShrink: 1 },
   note: {
     flexDirection: 'row',
     alignItems: 'flex-start',

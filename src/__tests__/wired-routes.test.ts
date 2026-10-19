@@ -13,6 +13,7 @@ jest.mock('@/lib/logger', () => ({
 const STUDENT_ID = 'cmg2x1abc0001student';
 const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
 const SESSION_ID = 'cmg2x1abc0005session';
+const NOTIFICATION_ID = 'cmg2x1abc0006notification';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -38,19 +39,27 @@ describe('api/wired-routes', () => {
       ['get', Endpoints.academic.scheduledSessions],
       ['get', Endpoints.academic.scheduledSession(SESSION_ID)],
       ['get', Endpoints.academic.studentAttendance(STUDENT_ID)],
+      ['get', Endpoints.academic.studentGrades(STUDENT_ID)],
+      ['get', Endpoints.academic.studentCurriculum(STUDENT_ID)],
       ['get', Endpoints.academic.makeups],
       ['get', Endpoints.academic.leaves],
       ['get', Endpoints.academic.assignments],
       ['get', Endpoints.academic.assignment(ASSIGNMENT_ID)],
       ['get', Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID)],
       ['post', Endpoints.academic.submissions],
+      ['get', Endpoints.notifications.list],
+      ['get', Endpoints.notifications.unreadCount],
+      ['patch', Endpoints.notifications.read(NOTIFICATION_ID)],
+      ['post', Endpoints.notifications.readAll],
     ])('%s %s ra BE that', (method, url) => {
       expect(isWiredRequest(method, url)).toBe(true);
     });
 
     it.each([
-      ['BE chua co route nay', 'get', Endpoints.parent.studentDashboard(STUDENT_ID)],
-      ['BE chua co route nay', 'get', Endpoints.parent.unreadNotificationCount],
+      ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/dashboard`],
+      ['route TAM da bo', 'get', '/parent/notifications/unread-count'],
+      ['sai method', 'get', Endpoints.notifications.readAll],
+      ['sai method', 'post', Endpoints.notifications.read(NOTIFICATION_ID)],
       ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/attendance`],
       ['dat lai mat khau lam tren web', 'post', '/auth/reset-password'],
       ['route cua quan ly', 'post', `${Endpoints.academic.scheduledSession(SESSION_ID)}/cancel`],
@@ -110,7 +119,7 @@ describe('api/wired-routes', () => {
 
     it('endpoint chua wire do server gia tra loi, khong lay adapter mang', async () => {
       const { adapter, mockAdapter, resolveNetworkAdapter } = setup();
-      const config = request('get', Endpoints.parent.studentDashboard(STUDENT_ID));
+      const config = request('get', '/users');
 
       await expect(adapter(config)).resolves.toMatchObject({ data: 'mock' });
       expect(mockAdapter).toHaveBeenCalledWith(config);

@@ -1,27 +1,27 @@
 import {
   findRoomName,
   getCurrentClass,
-  getStudentClassIds,
   getTermRange,
-  isAttendedSession,
   isEnrollmentSession,
   toAttendanceRecords,
   toEnrollmentLessons,
+  toScoreSummary,
   toSessionDetail,
   toStudentAssignment,
   toStudentEnrollments,
   toStudentSchedule,
 } from '@/features/parent-dashboard/api/parent-data-mappers';
 import type {
-  AssignmentDetail,
+  AssignmentListItem,
+  AssignmentListRecipient,
   AttendanceHistoryItem,
+  CurriculumUnit,
+  GradeHistoryItem,
   LeaveRequest,
-  MakeupBooking,
   Room,
   ScheduledSession,
   ScheduledSessionDetail,
   SessionParticipation,
-  SubmissionRecord,
   TuitionClass,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
@@ -36,6 +36,8 @@ function dateColumn(key: string): string {
   return `${key}T00:00:00.000Z`;
 }
 
+const TEACHER = { id: 'teacher-1', displayName: 'Đặng Hải Yến' };
+
 const MATH_CLASS: TuitionClass = {
   id: 'class-math',
   name: 'Toán nâng cao 8A2',
@@ -45,14 +47,21 @@ const MATH_CLASS: TuitionClass = {
     { weekday: 2, startTime: '18:00', endTime: '19:30' },
     { weekday: 5, startTime: '18:00', endTime: '19:30' },
   ],
+  teacher: TEACHER,
 };
-const MATH_CLASS_B: TuitionClass = { ...MATH_CLASS, id: 'class-math-b', name: 'Toán nâng cao 8B1' };
+const MATH_CLASS_B: TuitionClass = {
+  ...MATH_CLASS,
+  id: 'class-math-b',
+  name: 'Toán nâng cao 8B1',
+  teacher: { id: 'teacher-2', displayName: 'Lê Minh Quân' },
+};
 const ENGLISH_CLASS: TuitionClass = {
   id: 'class-english',
   name: 'Tiếng Anh 6A1',
   roomId: 'room-b201',
   program: { name: 'Tiếng Anh 6 – Giao tiếp', subject: 'Tiếng Anh', grade: 6 },
   weeklySchedules: [{ weekday: 3, startTime: '17:45', endTime: '19:15' }],
+  teacher: null,
 };
 
 function enrollment(overrides: Partial<TuitionEnrollment> = {}): TuitionEnrollment {
@@ -80,7 +89,10 @@ function session(id: string, startsAt: string, overrides: Partial<ScheduledSessi
     startsAt,
     endsAt: new Date(start.getTime() + 90 * 60 * 1000).toISOString(),
     status: 'SCHEDULED',
+    cancelReason: null,
     class: { name: MATH_CLASS.name, program: { grade: 8, subject: 'Toán' } },
+    teacher: TEACHER,
+    room: null,
     lesson: { id: `lesson-${id}`, title: `Bài của buổi ${id}`, kind: 'LESSON' },
     participations: [],
     ...overrides,
@@ -93,7 +105,6 @@ function participation(overrides: Partial<SessionParticipation> = {}): SessionPa
     enrollmentId: 'enrollment-math',
     kind: 'REGULAR',
     attendance: 'UNMARKED',
-    cancelled: false,
     ...overrides,
   };
 }
@@ -165,39 +176,20 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
     });
 
     it('co cho cua con trong buoi thi theo ghi danh cua cho do, ke ca buoi hoc bu o lop khac', () => {
-      const moved = session('da-chuyen', at(10, 6), {
-        participations: [participation({ cancelled: true })],
-      });
-
       expect(isEnrollmentSession(MAKEUP_SESSION, enrollment())).toBe(true);
       expect(isEnrollmentSession(MAKEUP_SESSION, enrollment({ id: 'enrollment-khac' }))).toBe(
         false,
       );
-      expect(isEnrollmentSession(moved, enrollment())).toBe(false);
-    });
-  });
-
-  describe('isAttendedSession', () => {
-    it('buoi chua co danh sach hoac con con cho thi con hoc; moi cho deu da huy thi khong', () => {
-      expect(isAttendedSession(session('chua-co', at(10, 6)))).toBe(true);
-      expect(isAttendedSession(MAKEUP_SESSION)).toBe(true);
-      expect(
-        isAttendedSession(
-          session('huy', at(10, 6), { participations: [participation({ cancelled: true })] }),
-        ),
-      ).toBe(false);
     });
   });
 
   describe('toStudentSchedule', () => {
-    it('giu thu tu cua BE, danh dau buoi hoc bu va bo buoi ma cho cua con da bi huy', () => {
+    it('giu thu tu cua BE, lay giao vien va phong cua buoi, danh dau buoi hoc bu', () => {
       const sessions = [
-        session('math-1', at(10, 6)),
-        session('da-chuyen-lop', at(10, 7), {
-          participations: [participation({ cancelled: true })],
-        }),
+        session('math-1', at(10, 6), { room: ROOMS[0] ?? null }),
         session('math-2', at(10, 9), {
           lesson: { id: 'lesson-test', title: 'Kiểm tra tháng 10', kind: 'MONTHLY_TEST' },
+          teacher: { id: 'teacher-3', displayName: null },
         }),
         MAKEUP_SESSION,
       ];
@@ -209,15 +201,30 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
           subjectName: 'Toán',
           startsAt: at(10, 6),
           endsAt: at(10, 6, 19, 30),
-          room: null,
-          teacherName: null,
+          room: 'Phòng A101',
+          teacherName: 'Đặng Hải Yến',
           type: 'REGULAR',
           topic: 'Bài của buổi math-1',
           note: null,
         },
-        expect.objectContaining({ id: 'math-2', topic: 'Kiểm tra tháng 10', type: 'REGULAR' }),
+        expect.objectContaining({
+          id: 'math-2',
+          topic: 'Kiểm tra tháng 10',
+          type: 'REGULAR',
+          teacherName: null,
+        }),
         expect.objectContaining({ id: 'bu-8b1', className: 'Toán nâng cao 8B1', type: 'MAKEUP' }),
       ]);
+    });
+
+    it('buoi trung tam da huy van hien, kem ly do huy; buoi hoc bu bi huy cung la buoi huy', () => {
+      const [cancelled, cancelledMakeup] = toStudentSchedule([
+        session('huy', at(10, 13), { status: 'CANCELLED', cancelReason: 'Giáo viên ốm' }),
+        { ...MAKEUP_SESSION, status: 'CANCELLED', cancelReason: 'Mất điện' },
+      ]);
+
+      expect(cancelled).toMatchObject({ id: 'huy', type: 'CANCELLED', note: 'Giáo viên ốm' });
+      expect(cancelledMakeup).toMatchObject({ type: 'CANCELLED', note: 'Mất điện' });
     });
   });
 
@@ -233,20 +240,20 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
     const detail: ScheduledSessionDetail = {
       id: 'math-1',
       classId: MATH_CLASS.id,
-      roomId: 'room-a101',
       startsAt: at(10, 6),
       endsAt: at(10, 6, 19, 30),
       status: 'COMPLETED',
       summary: 'Cả lớp làm tốt phần luyện tập.',
       cancelReason: null,
-      class: { name: MATH_CLASS.name, roomId: 'room-b201', program: { subject: 'Toán' } },
-      teacher: { id: 'teacher-1', displayName: 'Đặng Hải Yến' },
+      class: { name: MATH_CLASS.name, program: { subject: 'Toán' } },
+      teacher: TEACHER,
+      room: { id: 'room-a101', name: 'Phòng A101' },
       lesson: { id: 'lesson-1', title: 'Phương trình bậc nhất', kind: 'LESSON' },
       participation: participation({ attendance: 'PRESENT' }),
     };
 
     it('lay giao vien, phong cua buoi, ghi chu cua giao vien va ket qua diem danh cua con', () => {
-      expect(toSessionDetail(detail, ROOMS)).toEqual({
+      expect(toSessionDetail(detail)).toEqual({
         id: 'math-1',
         className: 'Toán nâng cao 8A2',
         subjectName: 'Toán',
@@ -266,30 +273,32 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       });
     });
 
-    it('buoi chua co phong thi lay phong cua lop; chua co danh sach diem danh thi chua co ket qua', () => {
+    it('buoi chua xep phong, chua co danh sach diem danh, giao vien khong ghi chu', () => {
       expect(
-        toSessionDetail({ ...detail, roomId: null, participation: null, summary: '' }, ROOMS),
-      ).toMatchObject({ room: 'Phòng B201', attendance: null, teacherComment: null });
+        toSessionDetail({ ...detail, room: null, participation: null, summary: '' }),
+      ).toMatchObject({ room: null, attendance: null, teacherComment: null });
     });
 
     it('buoi hoc bu va buoi da huy', () => {
       expect(
-        toSessionDetail(
-          { ...detail, participation: participation({ kind: 'MAKEUP', attendance: 'PRESENT' }) },
-          ROOMS,
-        ),
+        toSessionDetail({
+          ...detail,
+          participation: participation({ kind: 'MAKEUP', attendance: 'PRESENT' }),
+        }),
       ).toMatchObject({ type: 'MAKEUP', attendance: 'PRESENT' });
       expect(
-        toSessionDetail(
-          {
-            ...detail,
-            status: 'CANCELLED',
-            cancelReason: 'Giáo viên ốm',
-            participation: participation({ cancelled: true }),
-          },
-          ROOMS,
-        ),
-      ).toMatchObject({ status: 'CANCELLED', note: 'Giáo viên ốm', attendance: null });
+        toSessionDetail({
+          ...detail,
+          status: 'CANCELLED',
+          cancelReason: 'Giáo viên ốm',
+          participation: null,
+        }),
+      ).toMatchObject({
+        type: 'CANCELLED',
+        status: 'CANCELLED',
+        note: 'Giáo viên ốm',
+        attendance: null,
+      });
     });
   });
 
@@ -338,17 +347,21 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
     const upcomingSessions = [
       session('da-qua', at(10, 20, 8)),
       ENGLISH_SESSION,
+      session('bi-huy', at(10, 22), { status: 'CANCELLED', cancelReason: 'Nghỉ lễ' }),
       session('tiep-theo', at(10, 23)),
       session('sau-do', at(10, 27)),
     ];
+    const sources = { pauses: [], rooms: ROOMS, subjectGrades: [], now };
 
-    it('mon dang hoc: lop, lich co dinh, so buoi theo lich va buoi tiep theo', () => {
+    it('mon dang hoc: lop, giao vien, lich co dinh, so buoi theo lich va buoi tiep theo chua huy', () => {
       const [course] = toStudentEnrollments({
+        ...sources,
         enrollments: [enrollment()],
-        pauses: [],
         upcomingSessions,
-        rooms: ROOMS,
-        now,
+        subjectGrades: [
+          { subject: 'Tiếng Anh', count: 1, averageOutOf10: 6 },
+          { subject: 'Toán', count: 3, averageOutOf10: 8.33 },
+        ],
       });
 
       expect(course).toEqual({
@@ -358,13 +371,13 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
         programName: 'Toán 8 – Chuyên đề nâng cao',
         subjectName: 'Toán',
         className: 'Toán nâng cao 8A2',
-        teacherName: null,
+        teacherName: 'Đặng Hải Yến',
         room: null,
         weeklySlots: MATH_CLASS.weeklySchedules,
         // Thu Ba va thu Sau tu 05/10: 06, 09, 13, 16 truoc ngay 20/10
         completedSessions: 4,
         totalSessions: 26,
-        averageScore: null,
+        averageScore: 8.33,
         nextSession: { id: 'tiep-theo', startsAt: at(10, 23) },
         endDate: '2027-01-05',
       });
@@ -382,11 +395,10 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
         status: 'APPROVED',
       };
       const courses = toStudentEnrollments({
+        ...sources,
         enrollments: [enrollment(), enrollment({ id: 'enrollment-other' })],
         pauses: [pause],
         upcomingSessions: [],
-        rooms: [],
-        now,
       });
 
       expect(courses.map((course) => course.pause)).toEqual([
@@ -398,10 +410,9 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
     it('ghi danh het han hoac da ket thuc thi la ENDED, khong co buoi tiep theo va bao luu', () => {
       const afterTerm = new Date(at(1, 10, 12, 0, 2027));
       const [expired, ended] = toStudentEnrollments({
+        ...sources,
         enrollments: [enrollment(), enrollment({ id: 'enrollment-ended', status: 'ENDED' })],
-        pauses: [],
         upcomingSessions: [session('con-lich', at(1, 12, 18, 0, 2027))],
-        rooms: [],
         now: afterTerm,
       });
 
@@ -409,8 +420,9 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       expect(ended).toMatchObject({ status: 'ENDED', nextSession: null });
     });
 
-    it('chuyen lop thi hien lop va phong cua lop con dang hoc', () => {
+    it('chuyen lop thi hien lop, giao vien va phong cua lop con dang hoc', () => {
       const [course] = toStudentEnrollments({
+        ...sources,
         enrollments: [
           enrollment({
             placements: [
@@ -423,22 +435,22 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
             ],
           }),
         ],
-        pauses: [],
         upcomingSessions: [],
-        rooms: ROOMS,
-        now,
       });
 
-      expect(course).toMatchObject({ className: 'Tiếng Anh 6A1', room: 'Phòng B201' });
+      expect(course).toMatchObject({
+        className: 'Tiếng Anh 6A1',
+        room: 'Phòng B201',
+        teacherName: null,
+        averageScore: null,
+      });
     });
 
     it('buoi hoc bu o lop khac cung la buoi tiep theo cua mon', () => {
       const [course] = toStudentEnrollments({
+        ...sources,
         enrollments: [enrollment()],
-        pauses: [],
         upcomingSessions: [{ ...MAKEUP_SESSION, startsAt: at(10, 21, 9) }, ...upcomingSessions],
-        rooms: [],
-        now,
       });
 
       expect(course?.nextSession).toEqual({ id: 'bu-8b1', startsAt: at(10, 21, 9) });
@@ -446,20 +458,53 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
   });
 
   describe('toEnrollmentLessons', () => {
-    it('moi buoi trong ky la mot bai theo gio hoc, bai kiem tra thang la ASSESSMENT', () => {
-      const sessions = [
-        session('buoi-3', at(10, 13), {
-          lesson: { id: 'lesson-test', title: 'Kiểm tra tháng 10', kind: 'MONTHLY_TEST' },
-        }),
-        ENGLISH_SESSION,
-        session('buoi-1', at(10, 6), { status: 'COMPLETED' }),
-        session('buoi-2', at(10, 9)),
-        session('ngoai-ky', at(10, 2)),
-        // Buoi hoc bu day lai bai cua buoi vang, khong them bai moi
-        MAKEUP_SESSION,
-      ];
+    const now = new Date(at(10, 20, 12));
+    const sessions = [
+      session('buoi-3', at(10, 13), {
+        lesson: { id: 'lesson-test', title: 'Kiểm tra tháng 10', kind: 'MONTHLY_TEST' },
+      }),
+      ENGLISH_SESSION,
+      session('buoi-1', at(10, 6), {
+        status: 'COMPLETED',
+        lesson: { id: 'lesson-1', title: 'Bài của buổi buoi-1', kind: 'LESSON' },
+      }),
+      session('buoi-2', at(10, 9), {
+        lesson: { id: 'lesson-2', title: 'Bài của buổi buoi-2', kind: 'LESSON' },
+      }),
+      session('ngoai-ky', at(10, 2)),
+      // Buoi hoc bu day lai bai cua buoi vang, khong them bai moi
+      MAKEUP_SESSION,
+      // Buoi bi huy khong day bai nao
+      session('bi-huy', at(10, 16), { status: 'CANCELLED', cancelReason: 'Nghỉ lễ' }),
+    ];
 
-      expect(toEnrollmentLessons(sessions, enrollment())).toEqual([
+    function unit(overrides: Partial<CurriculumUnit> = {}): CurriculumUnit {
+      return {
+        id: 'unit-10',
+        title: 'Tháng 10',
+        programId: 'program-math-8',
+        fromDate: dateColumn('2026-10-01'),
+        toDate: dateColumn('2026-10-31'),
+        version: 1,
+        program: { subject: 'Toán', grade: 8 },
+        classes: [{ id: MATH_CLASS.id, name: MATH_CLASS.name }],
+        lessons: [
+          { id: 'lesson-2', title: 'Hằng đẳng thức', sequence: 2, kind: 'LESSON', monthKey: null },
+          { id: 'lesson-1', title: 'Đơn thức', sequence: 1, kind: 'LESSON', monthKey: null },
+          {
+            id: 'lesson-test',
+            title: 'Kiểm tra tháng 10',
+            sequence: 3,
+            kind: 'MONTHLY_TEST',
+            monthKey: '2026-10',
+          },
+        ],
+        ...overrides,
+      };
+    }
+
+    it('lop chua co hoc phan: moi buoi trong ky la mot bai theo gio hoc', () => {
+      expect(toEnrollmentLessons({ enrollment: enrollment(), sessions, units: [], now })).toEqual([
         {
           id: 'buoi-1',
           sequence: 1,
@@ -473,104 +518,150 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
         expect.objectContaining({ id: 'buoi-3', sequence: 3, kind: 'ASSESSMENT' }),
       ]);
     });
+
+    it('co hoc phan: bai theo thu tu hoc phan, kem buoi day bai, ca bai chua xep buoi', () => {
+      const units = [
+        unit(),
+        unit({
+          id: 'unit-11',
+          title: 'Tháng 11',
+          fromDate: dateColumn('2026-11-01'),
+          toDate: dateColumn('2026-11-30'),
+          lessons: [
+            { id: 'lesson-4', title: 'Phân thức', sequence: 1, kind: 'LESSON', monthKey: null },
+          ],
+        }),
+        // Hoc phan cua lop khac cung chuong trinh
+        unit({ id: 'unit-khac', classes: [{ id: 'class-khac', name: 'Toán 8C' }] }),
+      ];
+
+      const lessons = toEnrollmentLessons({ enrollment: enrollment(), sessions, units, now });
+
+      expect(lessons).toEqual([
+        {
+          id: 'lesson-1',
+          sequence: 1,
+          title: 'Đơn thức',
+          description: null,
+          kind: 'LESSON',
+          session: { id: 'buoi-1', startsAt: at(10, 6), status: 'COMPLETED' },
+          assignment: null,
+        },
+        expect.objectContaining({ id: 'lesson-2', sequence: 2, session: expect.anything() }),
+        expect.objectContaining({ id: 'lesson-test', sequence: 3, kind: 'ASSESSMENT' }),
+        expect.objectContaining({ id: 'lesson-4', sequence: 4, session: null }),
+      ]);
+    });
+
+    it('bai trung giua hai phien ban hoc phan chi hien mot lan', () => {
+      const lessons = toEnrollmentLessons({
+        enrollment: enrollment(),
+        sessions: [],
+        units: [unit(), unit({ id: 'unit-10-v2', version: 2 })],
+        now,
+      });
+
+      expect(lessons.map(({ id }) => id)).toEqual(['lesson-1', 'lesson-2', 'lesson-test']);
+    });
   });
 
   describe('toStudentAssignment', () => {
-    const detail: AssignmentDetail = {
-      id: 'assignment-1',
-      classId: MATH_CLASS.id,
-      kind: 'TEST',
-      testType: 'FIFTEEN_MINUTES',
-      title: 'Bài tập về nhà bài 10',
-      instructions: 'Làm trực tiếp trên EduGrade.',
-      dueAt: at(10, 25, 23, 59),
-      status: 'PUBLISHED',
-      maxAttempts: 2,
-      recipients: [
-        { id: 'recipient-sibling', enrollmentId: 'enrollment-sibling' },
-        { id: 'recipient-1', enrollmentId: 'enrollment-math' },
-      ],
-      questions: [
-        {
-          id: 'q1',
-          kind: 'MULTIPLE_CHOICE',
-          prompt: '1 + 1 = ?',
-          choices: ['1', '2'],
-          maxScore: 4,
-        },
-        { id: 'q2', kind: 'ESSAY', prompt: 'Giải phương trình', choices: null, maxScore: 6 },
-      ],
-    };
-
-    function submission(
-      attemptNo: number,
-      overrides: Partial<SubmissionRecord> = {},
-    ): SubmissionRecord {
+    function recipient(overrides: Partial<AssignmentListRecipient> = {}): AssignmentListRecipient {
       return {
-        id: `submission-${attemptNo}`,
-        recipientId: 'recipient-1',
-        attemptNo,
-        answers: [],
-        submittedAt: at(10, 20 + attemptNo),
-        grades: [],
+        id: 'recipient-1',
+        enrollmentId: 'enrollment-math',
+        studentId: 'student-1',
+        latestSubmission: null,
         ...overrides,
       };
     }
 
-    it('chua nop: lay lop va mon tu ghi danh cua con, dem cau theo loai', () => {
-      expect(toStudentAssignment({ detail, submissions: [], enrollments: [enrollment()] })).toEqual(
-        {
-          id: 'assignment-1',
-          testType: 'FIFTEEN_MINUTES',
-          title: 'Bài tập về nhà bài 10',
-          instructions: 'Làm trực tiếp trên EduGrade.',
-          subjectName: 'Toán',
-          className: 'Toán nâng cao 8A2',
-          teacherName: null,
-          dueAt: detail.dueAt,
-          maxAttempts: 2,
-          questionCounts: { MULTIPLE_CHOICE: 1, ESSAY: 1 },
-          submission: null,
-          grade: null,
-        },
-      );
+    function item(overrides: Partial<AssignmentListItem> = {}): AssignmentListItem {
+      return {
+        id: 'assignment-1',
+        classId: MATH_CLASS.id,
+        kind: 'TEST',
+        testType: 'FIFTEEN_MINUTES',
+        title: 'Bài tập về nhà bài 10',
+        dueAt: at(10, 25, 23, 59),
+        status: 'PUBLISHED',
+        maxAttempts: 2,
+        class: { id: MATH_CLASS.id, name: MATH_CLASS.name, program: { subject: 'Toán', grade: 8 } },
+        questionCounts: { multipleChoice: 1, essay: 1, total: 2 },
+        maxScore: 10,
+        recipients: [recipient()],
+        ...overrides,
+      };
+    }
+
+    it('chua nop: lay lop, mon tu bai, giao vien tu ghi danh cua con, so cau theo loai', () => {
+      expect(
+        toStudentAssignment({ item: item(), studentId: 'student-1', enrollments: [enrollment()] }),
+      ).toEqual({
+        id: 'assignment-1',
+        testType: 'FIFTEEN_MINUTES',
+        title: 'Bài tập về nhà bài 10',
+        subjectName: 'Toán',
+        className: 'Toán nâng cao 8A2',
+        teacherName: 'Đặng Hải Yến',
+        dueAt: at(10, 25, 23, 59),
+        maxAttempts: 2,
+        questionCounts: { MULTIPLE_CHOICE: 1, ESSAY: 1 },
+        submission: null,
+        grade: null,
+      });
     });
 
     it('lay lan nop moi nhat cua con va diem da cong bo cua lan do', () => {
-      const submissions = [
-        submission(1, {
-          grades: [
-            { id: 'g1', scores: [], totalScore: 5, feedback: 'Cũ', publishedAt: at(10, 22) },
-          ],
-        }),
-        submission(2, {
-          grades: [
-            { id: 'g2', scores: [], totalScore: 8.5, feedback: '', publishedAt: at(10, 24) },
-          ],
-        }),
-        submission(3, { recipientId: 'recipient-sibling' }),
-      ];
+      const assignment = item({
+        recipients: [
+          recipient({ id: 'recipient-sibling', studentId: 'student-2' }),
+          recipient({
+            latestSubmission: {
+              id: 'submission-2',
+              attemptNo: 2,
+              submittedAt: at(10, 22),
+              publishedGrade: { totalScore: 8.5, feedback: '', publishedAt: at(10, 24) },
+            },
+          }),
+        ],
+      });
 
       expect(
-        toStudentAssignment({ detail, submissions, enrollments: [enrollment()] }),
+        toStudentAssignment({ item: assignment, studentId: 'student-1', enrollments: [] }),
       ).toMatchObject({
+        teacherName: null,
         submission: { attemptNo: 2, submittedAt: at(10, 22) },
         grade: { totalScore: 8.5, maxScore: 10, feedback: null, publishedAt: at(10, 24) },
       });
     });
 
     it('da nop nhung chua cong bo diem thi chua co diem', () => {
+      const assignment = item({
+        recipients: [
+          recipient({
+            latestSubmission: {
+              id: 'submission-1',
+              attemptNo: 1,
+              submittedAt: at(10, 21),
+              publishedGrade: null,
+            },
+          }),
+        ],
+      });
+
       expect(
-        toStudentAssignment({ detail, submissions: [submission(1)], enrollments: [enrollment()] }),
+        toStudentAssignment({ item: assignment, studentId: 'student-1', enrollments: [] }),
       ).toMatchObject({ submission: { attemptNo: 1 }, grade: null });
     });
 
     it('bai khong giao cho con nay thi tra null', () => {
-      const other = enrollment({ id: 'enrollment-khac' });
-      expect(toStudentAssignment({ detail, submissions: [], enrollments: [other] })).toBeNull();
+      expect(
+        toStudentAssignment({ item: item(), studentId: 'student-khac', enrollments: [] }),
+      ).toBeNull();
     });
 
-    it('bai cua lop con da hoc truoc khi chuyen lop thi lay ten lop do', () => {
+    it('bai cua lop con da hoc truoc khi chuyen lop thi lay giao vien lop do', () => {
       const transferred = enrollment({
         class: MATH_CLASS_B,
         placements: [
@@ -584,8 +675,8 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       });
 
       expect(
-        toStudentAssignment({ detail, submissions: [], enrollments: [transferred] }),
-      ).toMatchObject({ className: 'Toán nâng cao 8A2' });
+        toStudentAssignment({ item: item(), studentId: 'student-1', enrollments: [transferred] }),
+      ).toMatchObject({ className: 'Toán nâng cao 8A2', teacherName: 'Đặng Hải Yến' });
     });
   });
 
@@ -604,41 +695,27 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
           startsAt,
           endsAt: new Date(new Date(startsAt).getTime() + 90 * 60 * 1000).toISOString(),
         },
+        class: { name: MATH_CLASS.name, program: { subject: 'Toán' } },
+        approvedLeave: null,
+        latestMakeup: null,
         ...overrides,
       };
     }
 
-    function leave(overrides: Partial<LeaveRequest>): LeaveRequest {
-      return {
-        id: 'leave-1',
-        enrollmentId: 'enrollment-math',
-        kind: 'SINGLE_ABSENCE',
-        sessionId: null,
-        fromDate: dateColumn('2026-10-09'),
-        toDate: dateColumn('2026-10-09'),
-        reason: 'Con bị sốt',
-        status: 'APPROVED',
-        ...overrides,
-      };
-    }
+    const makeup = {
+      id: 'makeup-1',
+      status: 'BOOKED' as const,
+      replacement: {
+        sessionId: 'bu',
+        session: { id: 'bu', startsAt: at(10, 12, 9), endsAt: at(10, 12, 10, 30) },
+      },
+    };
+    const leave = { id: 'leave-1', kind: 'SINGLE_ABSENCE' as const, reason: 'Con bị sốt' };
 
-    function makeup(overrides: Partial<MakeupBooking>): MakeupBooking {
-      return {
-        id: 'makeup-1',
-        status: 'BOOKED',
-        original: { sessionId: 'vang', enrollmentId: 'enrollment-math' },
-        replacement: { session: { id: 'bu', startsAt: at(10, 12, 9) } },
-        ...overrides,
-      };
-    }
-
-    it('lay lop, mon theo ghi danh; buoi co mat khong kem don nghi hay hoc bu', () => {
-      const records = toAttendanceRecords({
-        history: [historyItem('co-mat', at(10, 6))],
-        enrollments: [enrollment()],
-        makeups: [makeup({ original: { sessionId: 'co-mat', enrollmentId: 'enrollment-math' } })],
-        leaves: [leave({ sessionId: 'co-mat' })],
-      });
+    it('lay lop, mon cua buoi; buoi co mat khong kem don nghi hay hoc bu', () => {
+      const records = toAttendanceRecords([
+        historyItem('co-mat', at(10, 6), { approvedLeave: leave, latestMakeup: makeup }),
+      ]);
 
       expect(records).toEqual([
         {
@@ -654,25 +731,14 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       ]);
     });
 
-    it('buoi vang kem ly do nghi va lich hoc bu moi nhat chua huy', () => {
-      const [record] = toAttendanceRecords({
-        history: [historyItem('vang', at(10, 9), { effectiveStatus: 'ABSENT' })],
-        enrollments: [enrollment()],
-        makeups: [
-          makeup({ id: 'moi-huy', status: 'CANCELLED' }),
-          makeup({ id: 'dang-xep' }),
-          makeup({ id: 'cu', status: 'MISSED' }),
-          makeup({
-            id: 'cua-anh-chi-em',
-            original: { sessionId: 'vang', enrollmentId: 'enrollment-sibling' },
-          }),
-        ],
-        leaves: [
-          leave({ sessionId: 'buoi-khac', reason: 'Không phải buổi này' }),
-          leave({ sessionId: 'vang', status: 'REJECTED', reason: 'Bị từ chối' }),
-          leave({ sessionId: 'vang' }),
-        ],
-      });
+    it('buoi vang kem ly do nghi va lich hoc bu chua huy moi nhat cua BE', () => {
+      const [record] = toAttendanceRecords([
+        historyItem('vang', at(10, 9), {
+          effectiveStatus: 'ABSENT',
+          approvedLeave: leave,
+          latestMakeup: makeup,
+        }),
+      ]);
 
       expect(record).toMatchObject({
         status: 'ABSENT',
@@ -681,80 +747,66 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       });
     });
 
-    it('buoi nghi trong thoi gian tam nghi lay ly do cua don tam nghi', () => {
-      const [record] = toAttendanceRecords({
-        history: [historyItem('tam-nghi', at(10, 20), { effectiveStatus: 'EXCUSED' })],
-        enrollments: [enrollment()],
-        makeups: [],
-        leaves: [
-          leave({
-            kind: 'PERIOD_PAUSE',
-            fromDate: dateColumn('2026-10-15'),
-            toDate: dateColumn('2026-10-20'),
-            reason: 'Con ôn thi học kỳ',
-          }),
-        ],
-      });
-
-      expect(record).toMatchObject({ status: 'EXCUSED', leaveReason: 'Con ôn thi học kỳ' });
-    });
-
-    it('buoi cua lop cu sau khi chuyen lop lay ten lop do; ghi danh la thi bo qua', () => {
-      const transferred = enrollment({
-        class: MATH_CLASS_B,
-        placements: [
-          {
-            classId: MATH_CLASS.id,
-            effectiveFrom: at(10, 5, 0),
-            effectiveTo: at(11, 2, 0),
-            class: MATH_CLASS,
-          },
-        ],
-      });
-
-      const records = toAttendanceRecords({
-        history: [
-          historyItem('lop-cu', at(10, 6), { effectiveStatus: 'MADE_UP' }),
-          historyItem('la', at(10, 9), { enrollmentId: 'enrollment-khac' }),
-        ],
-        enrollments: [transferred],
-        makeups: [
-          makeup({
-            status: 'COMPLETED',
-            original: { sessionId: 'lop-cu', enrollmentId: 'enrollment-math' },
-          }),
-        ],
-        leaves: [],
-      });
-
-      expect(records).toEqual([
-        expect.objectContaining({
-          className: 'Toán nâng cao 8A2',
-          status: 'MADE_UP',
-          makeup: { status: 'COMPLETED', startsAt: at(10, 12, 9) },
+    it('buoi da hoc bu va buoi nghi trong thoi gian tam nghi', () => {
+      const [madeUp, excused] = toAttendanceRecords([
+        historyItem('da-bu', at(10, 6), {
+          effectiveStatus: 'MADE_UP',
+          latestMakeup: { ...makeup, status: 'COMPLETED' },
+        }),
+        historyItem('tam-nghi', at(10, 20), {
+          effectiveStatus: 'EXCUSED',
+          approvedLeave: { id: 'pause-1', kind: 'PERIOD_PAUSE', reason: 'Con ôn thi học kỳ' },
         }),
       ]);
+
+      expect(madeUp).toMatchObject({ makeup: { status: 'COMPLETED' }, leaveReason: null });
+      expect(excused).toMatchObject({ status: 'EXCUSED', leaveReason: 'Con ôn thi học kỳ' });
     });
   });
 
-  describe('getStudentClassIds', () => {
-    it('gom lop luc dang ky va cac lop da xep, moi lop mot lan', () => {
-      const classIds = getStudentClassIds([
-        enrollment(),
-        enrollment({
-          class: ENGLISH_CLASS,
-          placements: [
-            {
-              classId: MATH_CLASS.id,
-              effectiveFrom: at(10, 5, 0),
-              effectiveTo: null,
-              class: MATH_CLASS,
-            },
-          ],
-        }),
-      ]);
+  describe('toScoreSummary', () => {
+    const now = new Date(at(10, 20, 12));
 
-      expect([...classIds].sort()).toEqual(['class-english', 'class-math']);
+    function grade(scoreOutOf10: number | null, publishedAt: string | null): GradeHistoryItem {
+      return {
+        recipientId: 'recipient-1',
+        assignment: {
+          id: `assignment-${publishedAt}`,
+          title: 'Bài',
+          kind: 'HOMEWORK',
+          testType: null,
+          class: { id: MATH_CLASS.id, name: MATH_CLASS.name, program: { subject: 'Toán' } },
+        },
+        submissionId: 'submission-1',
+        attemptNo: 1,
+        totalScore: scoreOutOf10 ?? 0,
+        maxScore: scoreOutOf10 === null ? 0 : 10,
+        scoreOutOf10,
+        feedback: '',
+        publishedAt,
+      };
+    }
+
+    it('chua co diem thi null', () => {
+      expect(toScoreSummary([], now)).toBeNull();
+      expect(toScoreSummary([grade(null, at(10, 2))], now)).toBeNull();
+    });
+
+    it('trung binh moi bai va chenh lech so voi trung binh toi het thang truoc', () => {
+      const summary = toScoreSummary(
+        [grade(9, at(10, 15)), grade(6, at(9, 28)), grade(8, at(9, 10)), grade(null, at(10, 1))],
+        now,
+      );
+
+      expect(summary?.average).toBeCloseTo(23 / 3);
+      expect(summary?.changeFromLastMonth).toBeCloseTo(23 / 3 - 7);
+    });
+
+    it('thang truoc chua co diem thi khong co chenh lech', () => {
+      expect(toScoreSummary([grade(9, at(10, 15))], now)).toEqual({
+        average: 9,
+        changeFromLastMonth: null,
+      });
     });
   });
 });

@@ -44,10 +44,11 @@ export function ScheduleViewSwitch({ value, onChange }: ScheduleViewSwitchProps)
               style={styles.optionContent}
             >
               <Icon name={icon} size={ICON_SIZE} themeColor={color} />
+              {/* Man hinh 320dp hoac chu phong to: "Điểm danh" xuong hai dong thay vi bi cat */}
               <ThemedText
                 type={isSelected ? 'smallBold' : 'small'}
                 themeColor={color}
-                numberOfLines={1}
+                numberOfLines={2}
                 style={styles.label}
               >
                 {label}
@@ -80,5 +81,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.half,
     borderRadius: Radius.full,
   },
-  label: { maxWidth: '100%' },
+  label: { maxWidth: '100%', textAlign: 'center' },
 });

@@ -7,6 +7,7 @@ const STUDENT_ID_PARAM = ':studentId';
 const REGISTRATION_ID_PARAM = ':registrationId';
 const ASSIGNMENT_ID_PARAM = ':assignmentId';
 const SESSION_ID_PARAM = ':sessionId';
+const NOTIFICATION_ID_PARAM = ':notificationId';
 
 /**
  * Cac endpoint da noi toi BE that (wire). Chi request khop danh sach nay moi ra mang; moi request
@@ -36,12 +37,18 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'get', url: Endpoints.academic.scheduledSessions },
   { method: 'get', url: Endpoints.academic.scheduledSession(SESSION_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.studentAttendance(STUDENT_ID_PARAM) },
+  { method: 'get', url: Endpoints.academic.studentGrades(STUDENT_ID_PARAM) },
+  { method: 'get', url: Endpoints.academic.studentCurriculum(STUDENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.makeups },
   { method: 'get', url: Endpoints.academic.leaves },
   { method: 'get', url: Endpoints.academic.assignments },
   { method: 'get', url: Endpoints.academic.assignment(ASSIGNMENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID_PARAM) },
   { method: 'post', url: Endpoints.academic.submissions },
+  { method: 'get', url: Endpoints.notifications.list },
+  { method: 'get', url: Endpoints.notifications.unreadCount },
+  { method: 'patch', url: Endpoints.notifications.read(NOTIFICATION_ID_PARAM) },
+  { method: 'post', url: Endpoints.notifications.readAll },
 ];
 
 export function isWiredRequest(method: string | undefined, url: string | undefined): boolean {

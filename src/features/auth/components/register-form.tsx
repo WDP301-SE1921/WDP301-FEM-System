@@ -4,6 +4,7 @@ import { StyleSheet, View } from 'react-native';
 
 import { FormError } from '@/components/common/form-error';
 import { FormInput } from '@/components/common/form-input';
+import { FormPasswordInput } from '@/components/common/form-password-input';
 import { Button } from '@/components/ui/button';
 import { Spacing } from '@/constants/theme';
 
@@ -47,18 +48,16 @@ export function RegisterForm() {
         autoComplete="tel"
         keyboardType="phone-pad"
       />
-      <FormInput
+      <FormPasswordInput
         control={control}
         name="password"
         label="Mật khẩu"
-        secureTextEntry
         autoComplete="new-password"
       />
-      <FormInput
+      <FormPasswordInput
         control={control}
         name="confirmPassword"
         label="Xác nhận mật khẩu"
-        secureTextEntry
         autoComplete="new-password"
       />
 

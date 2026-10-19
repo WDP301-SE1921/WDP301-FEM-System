@@ -36,7 +36,7 @@ export function LoginHeader({ onBack }: LoginHeaderProps) {
 
       <ThemedView type="backgroundElement" style={styles.roleTag}>
         <View style={[styles.dot, { backgroundColor: theme.primary }]} />
-        <ThemedText type="smallBold" themeColor="primary">
+        <ThemedText type="smallBold" themeColor="primary" numberOfLines={1} style={styles.roleText}>
           Phụ huynh & Giáo viên
         </ThemedText>
       </ThemedView>
@@ -57,7 +57,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pressed: { opacity: 0.75 },
+  // Man hinh 320dp hoac chu he thong phong to: nhan co lai giua hai nut thay vi day nut ra ngoai
   roleTag: {
+    flexShrink: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
@@ -65,6 +67,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     borderRadius: Radius.full,
   },
+  roleText: { flexShrink: 1 },
   dot: { width: DOT_SIZE, height: DOT_SIZE, borderRadius: Radius.full },
   spacer: { width: TOUCH_TARGET_SIZE },
 });

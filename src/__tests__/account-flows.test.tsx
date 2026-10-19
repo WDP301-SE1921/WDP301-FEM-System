@@ -10,7 +10,12 @@ import { AppError } from '@/types/api';
 import type { User } from '@/types/auth';
 
 jest.mock('@/features/auth/api/auth-api', () => ({
-  authApi: { updateProfile: jest.fn(), changePassword: jest.fn(), forgotPassword: jest.fn() },
+  authApi: {
+    me: jest.fn(),
+    updateProfile: jest.fn(),
+    changePassword: jest.fn(),
+    forgotPassword: jest.fn(),
+  },
 }));
 // Store doc SecureStore va apiClient; test chi can biet tai khoan moi co duoc ghi vao phien khong
 const mockSetUser = jest.fn();
@@ -41,7 +46,10 @@ const PARENT: User = {
 async function renderWithQuery(element: ReactElement) {
   // gcTime vo han de React Query khong hen gio don cache, giu Jest khong thoat sau khi test xong
   const queryClient = new QueryClient({
-    defaultOptions: { mutations: { retry: false, gcTime: Infinity } },
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity },
+      mutations: { retry: false, gcTime: Infinity },
+    },
   });
   await render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>);
   return userEvent.setup();
@@ -128,49 +136,84 @@ describe('features/auth/ChangePasswordFlow', () => {
     expect(await screen.findByText('Mật khẩu hiện tại không đúng.')).toBeOnTheScreen();
     expect(screen.getByLabelText('Mật khẩu hiện tại')).toBeOnTheScreen();
   });
+
+  it('moi o mat khau co nut con mat rieng', async () => {
+    const user = await renderWithQuery(<ChangePasswordFlow onDone={jest.fn()} />);
+    const current = await screen.findByLabelText(
+      'Mật khẩu hiện tại',
+      {},
+      { timeout: FIRST_RENDER_TIMEOUT_MS },
+    );
+    const fields = [current, screen.getByLabelText('Mật khẩu mới')];
+    const toggles = screen.getAllByRole('button', { name: 'Hiện mật khẩu' });
+    expect(toggles).toHaveLength(3);
+
+    await user.press(toggles[1]!);
+
+    expect(fields[0]).toHaveProp('secureTextEntry', true);
+    expect(fields[1]).toHaveProp('secureTextEntry', false);
+    expect(screen.getByLabelText('Nhập lại mật khẩu mới')).toHaveProp('secureTextEntry', true);
+  });
 });
 
 describe('features/auth/AccountProfileFlow', () => {
-  it('dien san ten; bo trong so dien thoai thi khong gui de BE giu so cu', async () => {
-    const updated = { ...PARENT, displayName: 'Phạm Thu Hằng' };
+  /** Tai khoan BE dang luu: phien tren may co the chua co `phone` (dang nhap tu ban BE cu). */
+  const STORED = { ...PARENT, phone: '0901 234 567' };
+
+  async function findPhoneInput() {
+    return screen.findByLabelText(
+      'Số điện thoại (không bắt buộc)',
+      {},
+      { timeout: FIRST_RENDER_TIMEOUT_MS },
+    );
+  }
+
+  it('dien san ten va so dien thoai doc lai tu BE; doi ten thi gui kem so dang luu', async () => {
+    api.me.mockResolvedValue(STORED);
+    const updated = { ...STORED, displayName: 'Phạm Thu Hằng' };
     api.updateProfile.mockResolvedValue(updated);
     const onDone = jest.fn();
     const user = await renderWithQuery(<AccountProfileFlow user={PARENT} onDone={onDone} />);
 
-    const name = await screen.findByLabelText(
-      'Họ và tên',
-      {},
-      { timeout: FIRST_RENDER_TIMEOUT_MS },
-    );
+    expect(await findPhoneInput()).toHaveDisplayValue('0901 234 567');
+    const name = screen.getByLabelText('Họ và tên');
     expect(name).toHaveDisplayValue('Phạm Thu Hà');
     await user.clear(name);
     await user.type(name, 'Phạm Thu Hằng');
     await user.press(screen.getByRole('button', { name: 'Lưu thay đổi' }));
 
     await waitFor(() => expect(onDone).toHaveBeenCalledTimes(1));
-    expect(api.updateProfile).toHaveBeenCalledWith({ displayName: 'Phạm Thu Hằng' });
-    expect(mockSetUser).toHaveBeenCalledWith(updated);
+    expect(api.updateProfile).toHaveBeenCalledWith({
+      displayName: 'Phạm Thu Hằng',
+      phone: '0901 234 567',
+    });
+    expect(mockSetUser).toHaveBeenLastCalledWith(updated);
   });
 
-  it('nhap so dien thoai moi thi gui kem', async () => {
-    api.updateProfile.mockResolvedValue(PARENT);
+  it('xoa trong so dien thoai thi gui chuoi rong de BE xoa so dang luu', async () => {
+    api.me.mockResolvedValue(STORED);
+    api.updateProfile.mockResolvedValue({ ...STORED, phone: null });
     const user = await renderWithQuery(<AccountProfileFlow user={PARENT} onDone={jest.fn()} />);
 
-    await user.type(
-      await screen.findByLabelText(
-        'Số điện thoại mới (không bắt buộc)',
-        {},
-        { timeout: FIRST_RENDER_TIMEOUT_MS },
-      ),
-      '0901 234 567',
-    );
+    await user.clear(await findPhoneInput());
     await user.press(screen.getByRole('button', { name: 'Lưu thay đổi' }));
 
     await waitFor(() =>
-      expect(api.updateProfile).toHaveBeenCalledWith({
-        displayName: 'Phạm Thu Hà',
-        phone: '0901 234 567',
-      }),
+      expect(api.updateProfile).toHaveBeenCalledWith({ displayName: 'Phạm Thu Hà', phone: '' }),
     );
+  });
+
+  it('chua doc duoc tai khoan tu BE thi chua cho sua, bam thu lai thi doc lai', async () => {
+    api.me
+      .mockRejectedValueOnce(new AppError('Không kết nối được tới máy chủ.'))
+      .mockResolvedValueOnce({ ...STORED, phone: null });
+    const user = await renderWithQuery(<AccountProfileFlow user={PARENT} onDone={jest.fn()} />);
+
+    await user.press(
+      await screen.findByRole('button', { name: 'Thử lại' }, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    );
+
+    expect(await findPhoneInput()).toHaveDisplayValue('');
+    expect(api.me).toHaveBeenCalledTimes(2);
   });
 });

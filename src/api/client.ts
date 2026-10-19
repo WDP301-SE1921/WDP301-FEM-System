@@ -79,6 +79,18 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
+/**
+ * Doi cap token moi, gom moi noi can refresh cung luc (request 401, ket noi realtime bi tu choi) vao
+ * mot lan goi: BE xoay vong refresh token, hai lan refresh song song bang cung token se lam BE thu hoi
+ * phien. Tra access token moi, null khi khong refresh duoc. Khong tu dang xuat: noi goi tu quyet.
+ */
+export function refreshSession(): Promise<string | null> {
+  refreshPromise ??= refreshAccessToken().finally(() => {
+    refreshPromise = null;
+  });
+  return refreshPromise;
+}
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error: AxiosError<Partial<ApiErrorBody>>) => {
@@ -88,12 +100,7 @@ apiClient.interceptors.response.use(
     if (status === 401 && original && !original._retry) {
       original._retry = true;
 
-      // Gom nhieu request 401 dong thoi vao 1 lan refresh
-      refreshPromise ??= refreshAccessToken().finally(() => {
-        refreshPromise = null;
-      });
-
-      const newToken = await refreshPromise;
+      const newToken = await refreshSession();
       if (newToken) {
         original.headers = { ...original.headers, Authorization: `Bearer ${newToken}` };
         return apiClient(original);
