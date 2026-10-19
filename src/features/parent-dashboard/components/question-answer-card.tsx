@@ -52,7 +52,7 @@ export function QuestionAnswerCard({
       ) : (
         <Input
           label={`Bài làm câu ${position}`}
-          placeholder="Nhập bài làm của con"
+          placeholder="Nhập bài làm của học sinh"
           multiline
           maxLength={ESSAY_MAX_LENGTH}
           value={value}

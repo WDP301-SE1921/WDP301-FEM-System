@@ -28,7 +28,7 @@ export function ChildrenSection({ onAddChild, onEditChild }: ChildrenSectionProp
     if (children.data.length === 0) {
       return (
         <ThemedText type="small" themeColor="textSecondary">
-          Chưa có hồ sơ nào. Thêm con vào tài khoản để theo dõi việc học của con.
+          Chưa có hồ sơ nào. Thêm học sinh vào tài khoản để theo dõi việc học.
         </ThemedText>
       );
     }
@@ -40,15 +40,15 @@ export function ChildrenSection({ onAddChild, onEditChild }: ChildrenSectionProp
   return (
     <View style={styles.section}>
       <ThemedText type="default" accessibilityRole="header" style={styles.title}>
-        Hồ sơ của con
+        Hồ sơ học sinh
       </ThemedText>
       {renderBody()}
       {children.isSuccess ? (
         <Button
-          title="Thêm con"
+          title="Thêm học sinh"
           variant="ghost"
           icon="person-add-outline"
-          accessibilityLabel="Thêm con"
+          accessibilityLabel="Thêm học sinh"
           onPress={onAddChild}
           style={styles.addButton}
         />

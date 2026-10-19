@@ -4,19 +4,22 @@ import { StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
-import { ASSIGNMENT_FORMATS } from '../constants';
+import { ASSIGNMENT_FORMATS, TEST_TYPE_LABELS } from '../constants';
 import type { StudentAssignment } from '../types';
 import { getAssignmentFormat } from '../utils';
 
 import { ToneBadge } from './tone-badge';
 
 export type AssignmentCardHeaderProps = {
-  assignment: Pick<StudentAssignment, 'questionCounts' | 'className'>;
+  assignment: Pick<StudentAssignment, 'questionCounts' | 'className' | 'testType'>;
   /** Noi dung o goc phai, vd nhan han nop. */
   trailing?: ReactNode;
 };
 
-/** Dong dau the bai tap: hinh thuc bai (trac nghiem, tu luan), lop va nhan o goc phai. */
+/**
+ * Dong dau the bai tap: loai bai kiem tra (neu la bai kiem tra), hinh thuc bai (trac nghiem, tu luan),
+ * lop va nhan o goc phai.
+ */
 export function AssignmentCardHeader({ assignment, trailing }: AssignmentCardHeaderProps) {
   const format = ASSIGNMENT_FORMATS[getAssignmentFormat(assignment.questionCounts)];
 
@@ -24,6 +27,9 @@ export function AssignmentCardHeader({ assignment, trailing }: AssignmentCardHea
     <View style={styles.row}>
       {/* Man hinh hep thi ten lop xuong dong thay vi bi cat */}
       <View style={styles.meta}>
+        {assignment.testType ? (
+          <ToneBadge label={TEST_TYPE_LABELS[assignment.testType]} tone="accent" icon="ribbon" />
+        ) : null}
         <ToneBadge label={format.label} tone={format.tone} />
         <ThemedText type="small" themeColor="textSecondary">
           {assignment.className}

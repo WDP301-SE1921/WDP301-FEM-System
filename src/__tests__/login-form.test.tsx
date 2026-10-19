@@ -1,7 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 import type { PropsWithChildren } from 'react';
-import { Alert } from 'react-native';
 
 import { authApi } from '@/features/auth/api/auth-api';
 import { LoginForm } from '@/features/auth/components/login-form';
@@ -24,13 +23,13 @@ const mockLogin = jest.mocked(authApi.login);
 const SUBMIT_BUTTON_NAME = /^Đăng nhập/;
 const CREDENTIALS = { email: 'phuhuynh@example.com', password: 'Matkhau123' };
 
-async function renderForm() {
+async function renderForm(onForgotPassword = jest.fn()) {
   // gcTime vo han: khong de lai timer don cache sau khi test xong
   const queryClient = new QueryClient({ defaultOptions: { mutations: { gcTime: Infinity } } });
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  await render(<LoginForm />, { wrapper });
+  await render(<LoginForm onForgotPassword={onForgotPassword} />, { wrapper });
   return userEvent.setup();
 }
 
@@ -84,13 +83,14 @@ describe('features/auth/LoginForm', () => {
     expect(password).toHaveProp('secureTextEntry', true);
   });
 
-  it('quen mat khau thi huong dan lien he trung tam', async () => {
-    const alert = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-    const user = await renderForm();
+  it('quen mat khau thi mo man quen mat khau kem email da nhap', async () => {
+    const onForgotPassword = jest.fn();
+    const user = await renderForm(onForgotPassword);
 
+    await user.type(screen.getByLabelText('Email'), `  ${CREDENTIALS.email} `);
     await user.press(screen.getByRole('button', { name: 'Quên mật khẩu?' }));
 
-    expect(alert).toHaveBeenCalledWith('Quên mật khẩu?', expect.stringContaining('trung tâm'));
-    alert.mockRestore();
+    expect(onForgotPassword).toHaveBeenCalledWith(CREDENTIALS.email);
+    expect(mockLogin).not.toHaveBeenCalled();
   });
 });

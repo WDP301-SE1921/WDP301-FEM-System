@@ -16,6 +16,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     getStudents: jest.fn(),
     getStudentDashboard: jest.fn(),
     getStudentSchedule: jest.fn(),
+    getAttendanceSummary: jest.fn(),
     getUnreadNotificationCount: jest.fn(),
   },
 }));
@@ -67,7 +68,6 @@ const MINH_ANH_TODAY: ScheduleSession[] = [
 ];
 
 const MINH_ANH_DASHBOARD: StudentDashboard = {
-  attendance: { attendedSessions: 16, totalSessions: 17 },
   scoreSummary: { average: 8.2, changeFromLastMonth: 0.4 },
   attentionItems: [
     { id: 'attention-1', type: 'TUITION', title: 'Học phí tháng 10', description: 'Chưa đóng' },
@@ -90,7 +90,6 @@ const MINH_ANH_DASHBOARD: StudentDashboard = {
 };
 
 const EMPTY_DASHBOARD: StudentDashboard = {
-  attendance: { attendedSessions: 0, totalSessions: 0 },
   scoreSummary: null,
   attentionItems: [],
   recentNotifications: [],
@@ -101,14 +100,23 @@ const HOANG_LONG_BUTTON = 'Nguyễn Hoàng Long, lớp 6';
 const SHEET_SUBTITLE = 'Chuyển hồ sơ để theo dõi tình hình học tập';
 /**
  * Nut them con trong sheet: icon trong Button la Text chua glyph nen ten co ky tu dung truoc chu,
- * phan biet voi o "Thêm con" cua thanh chon con.
+ * phan biet voi o "Thêm học sinh" cua thanh chon con.
  */
-const SHEET_ADD_CHILD_BUTTON_NAME = /.Thêm con$/;
+const SHEET_ADD_CHILD_BUTTON_NAME = /.Thêm học sinh$/;
 
 function mockTwoChildren() {
   api.getStudents.mockResolvedValue([MINH_ANH, HOANG_LONG]);
   api.getStudentDashboard.mockImplementation(async (studentId) =>
     studentId === MINH_ANH.id ? MINH_ANH_DASHBOARD : EMPTY_DASHBOARD,
+  );
+}
+
+/** Ty le di hoc lay tu diem danh cua BE, khong nam trong tong quan mock. */
+function mockAttendance() {
+  api.getAttendanceSummary.mockImplementation(async (studentId) =>
+    studentId === MINH_ANH.id
+      ? { attendedSessions: 16, totalSessions: 17 }
+      : { attendedSessions: 0, totalSessions: 0 },
   );
 }
 
@@ -147,6 +155,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     jest.clearAllMocks();
     api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 0 });
     mockTodaySessions();
+    mockAttendance();
   });
 
   it('xem con dau tien, bam con khac thi tai tong quan cua con do', async () => {
@@ -162,18 +171,21 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     });
     expect(screen.getByText('Môn Toán')).toBeOnTheScreen();
     expect(screen.getByText('94%')).toBeOnTheScreen();
+    expect(screen.getByText('Đã học 16/17 buổi')).toBeOnTheScreen();
+    expect(api.getAttendanceSummary).toHaveBeenCalledWith(MINH_ANH.id);
     expect(screen.getByText('Tốt')).toBeOnTheScreen();
     expect(screen.getByText('Học phí tháng 10')).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: MINH_ANH_BUTTON })).toBeSelected();
 
     await user.press(screen.getByRole('button', { name: HOANG_LONG_BUTTON }));
 
-    expect(await screen.findByText('Hôm nay con không có buổi học nào.')).toBeOnTheScreen();
+    expect(await screen.findByText('Hôm nay học sinh không có buổi học nào.')).toBeOnTheScreen();
     expect(api.getStudentSchedule).toHaveBeenLastCalledWith(HOANG_LONG.id, {
       from: toDateKey(new Date()),
       to: toDateKey(new Date()),
     });
     expect(screen.getByText('Chưa có điểm')).toBeOnTheScreen();
+    expect(screen.getByText('Chưa có buổi học nào')).toBeOnTheScreen();
     expect(screen.queryByText('Cần chú ý')).not.toBeOnTheScreen();
     expect(api.getStudentDashboard).toHaveBeenLastCalledWith(HOANG_LONG.id);
     expect(screen.getByRole('button', { name: HOANG_LONG_BUTTON })).toBeSelected();
@@ -184,7 +196,9 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     const { user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
 
     expect(screen.getByText(SHEET_SUBTITLE)).toBeOnTheScreen();
     expect(screen.getByRole('radio', { name: 'Nguyễn Minh Anh, khối 8' })).toBeChecked();
@@ -192,10 +206,10 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
-    expect(await screen.findByText('Hôm nay con không có buổi học nào.')).toBeOnTheScreen();
+    expect(await screen.findByText('Hôm nay học sinh không có buổi học nào.')).toBeOnTheScreen();
     expect(screen.queryByText(SHEET_SUBTITLE)).not.toBeOnTheScreen();
     expect(
-      screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Hoàng Long' }),
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Hoàng Long' }),
     ).toBeOnTheScreen();
   });
 
@@ -204,10 +218,12 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     const { onAddChild, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('button', { name: SHEET_ADD_CHILD_BUTTON_NAME }));
 
     expect(onAddChild).toHaveBeenCalledTimes(2);
@@ -268,12 +284,12 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     api.getUnreadNotificationCount.mockRejectedValue(new AppError('Lỗi máy chủ', 500));
     const { onAddChild, user } = await renderDashboard();
 
-    expect(await screen.findByText('Chưa có hồ sơ của con')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
     expect(api.getStudentDashboard).not.toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Thông báo' })).toBeOnTheScreen();
-    expect(screen.queryByRole('button', { name: /Chọn con/ })).not.toBeOnTheScreen();
+    expect(screen.queryByRole('button', { name: /Chọn học sinh/ })).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);
   });
 
@@ -285,7 +301,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
     await user.press(await screen.findByRole('button', { name: 'Thử lại' }));
 
-    expect(await screen.findByText('Chưa có hồ sơ của con')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
     expect(api.getStudents).toHaveBeenCalledTimes(2);
   });
 });

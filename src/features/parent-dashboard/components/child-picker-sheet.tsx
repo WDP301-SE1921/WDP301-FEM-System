@@ -29,7 +29,7 @@ export function ChildPickerSheet({
   return (
     <BottomSheet
       isVisible={isVisible}
-      title="Chọn con"
+      title="Chọn học sinh"
       subtitle="Chuyển hồ sơ để theo dõi tình hình học tập"
       onClose={onClose}
     >
@@ -49,7 +49,7 @@ export function ChildPickerSheet({
       </ScrollView>
 
       <Button
-        title="Thêm con"
+        title="Thêm học sinh"
         variant="ghost"
         icon="person-add-outline"
         onPress={onAddChild}

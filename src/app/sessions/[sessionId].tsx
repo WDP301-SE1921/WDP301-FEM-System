@@ -7,15 +7,13 @@ import { ParentSessionDetail } from '@/features/parent-dashboard';
 
 type SessionDetailParams = {
   sessionId: string;
-  /** Id buoi chi co nghia trong lich cua mot con, nen luon di kem id cua con. */
+  /** BE chi cho phu huynh doc mot buoi theo con, nen luon di kem id cua con. */
   studentId: string;
-  /** Gio bat dau cua buoi: BE chi cho phu huynh doc buoi theo ngay, khong doc theo id. */
-  startsAt: string;
 };
 
 export default function SessionDetailScreen() {
   const { isAuthenticated, user } = useAuth();
-  const { sessionId, studentId, startsAt } = useLocalSearchParams<SessionDetailParams>();
+  const { sessionId, studentId } = useLocalSearchParams<SessionDetailParams>();
 
   // Nam ngoai (tabs) nen tu chan nguoi chua dang nhap
   if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
@@ -24,12 +22,12 @@ export default function SessionDetailScreen() {
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/schedule'));
 
   // Chua chot giao vien, quan ly co dung app mobile hay khong: chi phu huynh xem duoc
-  if (user?.role !== 'PARENT' || !studentId || !startsAt) {
+  if (user?.role !== 'PARENT' || !studentId) {
     return (
       <Screen>
         <EmptyState
           title="Không mở được buổi học"
-          description="Vào Lịch học và chọn lại buổi học của con."
+          description="Vào Lịch học và chọn lại buổi học của học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />
@@ -39,12 +37,7 @@ export default function SessionDetailScreen() {
 
   return (
     <Screen>
-      <ParentSessionDetail
-        studentId={studentId}
-        sessionId={sessionId}
-        startsAt={startsAt}
-        onBack={goBack}
-      />
+      <ParentSessionDetail studentId={studentId} sessionId={sessionId} onBack={goBack} />
     </Screen>
   );
 }

@@ -12,6 +12,7 @@ jest.mock('@/lib/logger', () => ({
 
 const STUDENT_ID = 'cmg2x1abc0001student';
 const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
+const SESSION_ID = 'cmg2x1abc0005session';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -21,8 +22,11 @@ describe('api/wired-routes', () => {
       ['post', Endpoints.auth.refresh],
       ['post', Endpoints.auth.logout],
       ['get', Endpoints.auth.me],
+      ['patch', Endpoints.auth.me],
       ['post', Endpoints.auth.verifyEmail],
       ['post', Endpoints.auth.resendVerification],
+      ['post', Endpoints.auth.changePassword],
+      ['post', Endpoints.auth.forgotPassword],
       ['get', Endpoints.me.students],
       ['post', Endpoints.me.students],
       ['patch', Endpoints.me.student(STUDENT_ID)],
@@ -30,7 +34,11 @@ describe('api/wired-routes', () => {
       ['get', Endpoints.me.bills],
       ['get', Endpoints.registrations.receipt('cmg2x1abc0003order')],
       ['get', Endpoints.registrations.bill('cmg2x1abc0003order')],
+      ['get', Endpoints.rooms],
       ['get', Endpoints.academic.scheduledSessions],
+      ['get', Endpoints.academic.scheduledSession(SESSION_ID)],
+      ['get', Endpoints.academic.studentAttendance(STUDENT_ID)],
+      ['get', Endpoints.academic.makeups],
       ['get', Endpoints.academic.leaves],
       ['get', Endpoints.academic.assignments],
       ['get', Endpoints.academic.assignment(ASSIGNMENT_ID)],
@@ -42,7 +50,10 @@ describe('api/wired-routes', () => {
 
     it.each([
       ['BE chua co route nay', 'get', Endpoints.parent.studentDashboard(STUDENT_ID)],
-      ['BE chua co route nay', 'get', Endpoints.parent.studentAttendance(STUDENT_ID)],
+      ['BE chua co route nay', 'get', Endpoints.parent.unreadNotificationCount],
+      ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/attendance`],
+      ['dat lai mat khau lam tren web', 'post', '/auth/reset-password'],
+      ['route cua quan ly', 'post', `${Endpoints.academic.scheduledSession(SESSION_ID)}/cancel`],
       ['route TAM da bo', 'get', `${Endpoints.me.student(STUDENT_ID)}/registrations`],
       ['route cua nhan vien', 'post', '/registrations/cmg2x1abc0003order/confirm-payment'],
       ['sai method', 'post', Endpoints.academic.assignments],

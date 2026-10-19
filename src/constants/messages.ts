@@ -25,15 +25,16 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   /** Ma xac minh email sai, da dung hoac qua 24 gio. */
   AUTH_INVALID_EMAIL_TOKEN:
     'Mã xác minh không đúng hoặc đã hết hạn. Hãy gửi lại mã để nhận mã mới.',
+  AUTH_CURRENT_PASSWORD_INVALID: 'Mật khẩu hiện tại không đúng.',
   /** Module `registration-flow` cua BE. */
-  PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ của con.',
-  STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ của con.',
+  PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ học sinh.',
+  STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ học sinh.',
   RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
   BILL_NOT_FOUND: 'Không tìm thấy bill học phí.',
-  STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi con đang có môn học tại trung tâm.',
+  STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi học sinh đang có môn học tại trung tâm.',
   /** Nop bai (module `academic` cua BE). */
   SUBMISSION_CLOSED: 'Bài tập đã hết hạn nộp.',
-  ATTEMPTS_EXHAUSTED: 'Con đã dùng hết số lần nộp bài.',
+  ATTEMPTS_EXHAUSTED: 'Học sinh đã dùng hết số lần nộp bài.',
   INVALID_ANSWERS: 'Cần trả lời đủ tất cả câu hỏi trước khi nộp.',
   INVALID_CHOICE: 'Có câu trả lời không nằm trong các lựa chọn của đề.',
 };

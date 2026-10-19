@@ -1,9 +1,12 @@
-import axios, { type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
+import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import type {
   AssignmentDetail,
+  AttendanceReport,
+  MakeupBooking,
   ScheduledSession,
+  ScheduledSessionDetail,
   TuitionBill,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
@@ -39,6 +42,14 @@ const API_URL = 'http://localhost:3000/api/v1';
 const STUDENT_ID = 'cmg2x1abc0001student';
 const PAGE_LIMIT = 100;
 
+/** `respond` tra gia tri nay thi BE tra loi voi envelope loi. */
+class BeError {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+  ) {}
+}
+
 let sent: SentRequest[] = [];
 let respond: (request: SentRequest) => unknown = () => [];
 
@@ -54,8 +65,22 @@ function networkAdapter(config: InternalAxiosRequestConfig): Promise<AxiosRespon
   };
   sent.push(request);
 
+  const reply = respond(request);
+  if (reply instanceof BeError) {
+    const response: AxiosResponse = {
+      data: { success: false, error: { code: reply.code, message: 'BE error', requestId: 'r1' } },
+      status: reply.status,
+      statusText: '',
+      headers: {},
+      config,
+    };
+    return Promise.reject(
+      new AxiosError('Request failed', AxiosError.ERR_BAD_REQUEST, config, undefined, response),
+    );
+  }
+
   return Promise.resolve({
-    data: { success: true, data: respond(request) },
+    data: { success: true, data: reply },
     status: 200,
     statusText: '',
     headers: {},
@@ -89,6 +114,7 @@ const ENROLLMENT: TuitionEnrollment = {
   class: {
     id: 'class-math',
     name: 'Toán nâng cao 8A2',
+    roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
   },
@@ -96,25 +122,36 @@ const ENROLLMENT: TuitionEnrollment = {
   registrationOrder: { payment: null },
 };
 
-function session(id: string, daysFromToday: number, classId = 'class-math'): ScheduledSession {
+function session(
+  id: string,
+  daysFromToday: number,
+  overrides: Partial<ScheduledSession> = {},
+): ScheduledSession {
   return {
     id,
-    classId,
+    classId: 'class-math',
     startsAt: at(daysFromToday),
     endsAt: at(daysFromToday, 20),
     status: 'SCHEDULED',
     class: { name: 'Lớp', program: { grade: 8, subject: 'Toán' } },
     lesson: { id: `lesson-${id}`, title: `Bài ${id}`, kind: 'LESSON' },
+    participations: [],
+    ...overrides,
   };
 }
 
 const ROUTES = {
   enrollments: `/me/students/${STUDENT_ID}/enrollments`,
   sessions: '/academic/scheduled-sessions',
+  attendance: `/academic/me/students/${STUDENT_ID}/attendance`,
+  makeups: '/academic/makeups',
   leaves: '/academic/leaves',
+  rooms: '/rooms',
   assignments: '/academic/assignments',
   bills: '/me/bills',
 };
+
+const ROOMS = [{ id: 'room-a101', name: 'Phòng A101' }];
 
 beforeEach(() => {
   sent = [];
@@ -126,23 +163,40 @@ afterEach(() => jest.restoreAllMocks());
 
 describe('features/parent-dashboard/api/parentDashboardApi', () => {
   describe('getStudentSchedule', () => {
-    it('hoi buoi hoc theo khoang ngay va chi tra buoi cua con dang xem', async () => {
-      const sessions = [session('math', 1), session('cua-anh-chi-em', 1, 'class-english')];
+    it('hoi buoi hoc cua con dang xem theo khoang ngay, bo buoi ma con da mat cho', async () => {
+      const sessions = [
+        session('math', 1),
+        session('da-chuyen-lop', 2, {
+          participations: [
+            {
+              enrollmentId: ENROLLMENT.id,
+              kind: 'REGULAR',
+              attendance: 'UNMARKED',
+              cancelled: true,
+            },
+          ],
+        }),
+      ];
       respond = ({ path }) => (path === ROUTES.sessions ? sessions : [ENROLLMENT]);
       const range = { from: toDateKey(new Date()), to: toDateKey(addDays(new Date(), 6)) };
 
       const schedule = await parentDashboardApi.getStudentSchedule(STUDENT_ID, range);
 
       expect(schedule.map(({ id }) => id)).toEqual(['math']);
-      expect(sentTo(ROUTES.sessions)).toEqual([
+      expect(sent).toEqual([
         {
           method: 'get',
           path: ROUTES.sessions,
-          query: { fromDate: range.from, toDate: range.to, page: '1', limit: String(PAGE_LIMIT) },
+          query: {
+            studentId: STUDENT_ID,
+            fromDate: range.from,
+            toDate: range.to,
+            page: '1',
+            limit: String(PAGE_LIMIT),
+          },
           body: undefined,
         },
       ]);
-      expect(sentTo(ROUTES.enrollments)).toHaveLength(1);
     });
 
     it('BE tra du mot trang thi doc tiep trang sau cho toi trang chua day', async () => {
@@ -164,44 +218,81 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
   });
 
   describe('getSessionDetail', () => {
-    it('tim buoi trong lich cua ngay hoc; khong thay thi tra null', async () => {
-      respond = ({ path }) => (path === ROUTES.sessions ? [session('math', 3)] : [ENROLLMENT]);
-      const day = toDateKey(addDays(new Date(), 3));
+    const detail: ScheduledSessionDetail = {
+      id: 'math',
+      classId: 'class-math',
+      roomId: 'room-a101',
+      startsAt: at(-1),
+      endsAt: at(-1, 20),
+      status: 'COMPLETED',
+      summary: null,
+      cancelReason: null,
+      class: { name: 'Toán nâng cao 8A2', roomId: null, program: { subject: 'Toán' } },
+      teacher: { id: 'teacher-1', displayName: 'Đặng Hải Yến' },
+      lesson: { id: 'lesson-1', title: 'Phương trình', kind: 'LESSON' },
+      participation: {
+        enrollmentId: ENROLLMENT.id,
+        kind: 'REGULAR',
+        attendance: 'PRESENT',
+        cancelled: false,
+      },
+    };
+    const ref = { studentId: STUDENT_ID, sessionId: 'math' };
 
-      const found = await parentDashboardApi.getSessionDetail({
-        studentId: STUDENT_ID,
-        sessionId: 'math',
-        startsAt: at(3),
+    it('doc mot buoi theo con va ten phong', async () => {
+      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : detail);
+
+      await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toMatchObject({
+        id: 'math',
+        room: 'Phòng A101',
+        teacherName: 'Đặng Hải Yến',
+        attendance: 'PRESENT',
       });
-      const missing = await parentDashboardApi.getSessionDetail({
-        studentId: STUDENT_ID,
-        sessionId: 'buoi-da-huy',
-        startsAt: at(3),
+      expect(sentTo(`${ROUTES.sessions}/math`)[0]?.query).toEqual({ studentId: STUDENT_ID });
+    });
+
+    it('buoi khong (con) thuoc lich cua con thi tra null', async () => {
+      respond = ({ path }) =>
+        path === ROUTES.rooms ? ROOMS : new BeError(404, 'SESSION_NOT_FOUND');
+      await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toBeNull();
+
+      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : new BeError(403, 'FORBIDDEN'));
+      await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toBeNull();
+    });
+
+    it('khong tai duoc phong thi an phong; loi khac cua buoi thi bao loi', async () => {
+      respond = ({ path }) => (path === ROUTES.rooms ? new BeError(500, 'INTERNAL_ERROR') : detail);
+      await expect(parentDashboardApi.getSessionDetail(ref)).resolves.toMatchObject({
+        room: null,
       });
 
-      expect(found).toMatchObject({ id: 'math', status: 'SCHEDULED', attendance: null });
-      expect(missing).toBeNull();
-      expect(sentTo(ROUTES.sessions)[0]?.query).toMatchObject({ fromDate: day, toDate: day });
+      respond = ({ path }) => (path === ROUTES.rooms ? ROOMS : new BeError(500, 'INTERNAL_ERROR'));
+      await expect(parentDashboardApi.getSessionDetail(ref)).rejects.toMatchObject({
+        status: 500,
+      });
     });
   });
 
   describe('getStudentEnrollments', () => {
-    it('ghep ghi danh voi don bao luu hom nay va buoi sap toi trong 30 ngay', async () => {
+    it('ghep ghi danh voi don bao luu hom nay, buoi sap toi trong 30 ngay va phong', async () => {
       respond = ({ path }) => {
         if (path === ROUTES.sessions) return [session('tiep-theo', 2)];
+        if (path === ROUTES.rooms) return ROOMS;
         if (path === ROUTES.leaves) {
           return [
             {
               id: 'leave-1',
               enrollmentId: 'enrollment-khac',
               kind: 'PERIOD_PAUSE',
+              sessionId: null,
               fromDate: dateColumn(-1),
               toDate: dateColumn(5),
+              reason: 'Ôn thi',
               status: 'APPROVED',
             },
           ];
         }
-        return [ENROLLMENT];
+        return [{ ...ENROLLMENT, class: { ...ENROLLMENT.class, roomId: 'room-a101' } }];
       };
       const today = toDateKey(new Date());
 
@@ -212,6 +303,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         status: 'ACTIVE',
         pause: null,
         className: 'Toán nâng cao 8A2',
+        room: 'Phòng A101',
         nextSession: { id: 'tiep-theo', startsAt: at(2) },
       });
       expect(sentTo(ROUTES.leaves)[0]?.query).toEqual({
@@ -224,6 +316,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         limit: String(PAGE_LIMIT),
       });
       expect(sentTo(ROUTES.sessions)[0]?.query).toMatchObject({
+        studentId: STUDENT_ID,
         fromDate: today,
         toDate: toDateKey(addDays(new Date(), 30)),
       });
@@ -242,6 +335,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         ['sau', 2],
       ]);
       expect(sentTo(ROUTES.sessions)[0]?.query).toMatchObject({
+        studentId: STUDENT_ID,
         fromDate: toDateKey(addDays(new Date(), -30)),
         toDate: toDateKey(addDays(new Date(), 59)),
       });
@@ -255,10 +349,69 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     });
   });
 
+  describe('diem danh', () => {
+    const report: AttendanceReport = {
+      counts: { present: 6, absent: 2, madeUp: 2, excused: 1 },
+      history: [
+        {
+          enrollmentId: ENROLLMENT.id,
+          effectiveStatus: 'ABSENT',
+          session: { id: 'vang', classId: 'class-math', startsAt: at(-3), endsAt: at(-3, 20) },
+        },
+      ],
+    };
+    const booking: MakeupBooking = {
+      id: 'makeup-1',
+      status: 'BOOKED',
+      original: { sessionId: 'vang', enrollmentId: ENROLLMENT.id },
+      replacement: { session: { id: 'bu', startsAt: at(2, 9) } },
+    };
+
+    it('ty le di hoc tinh tu so buoi cua BE, chi goi mot route', async () => {
+      respond = () => report;
+
+      await expect(parentDashboardApi.getAttendanceSummary(STUDENT_ID)).resolves.toEqual({
+        attendedSessions: 8,
+        totalSessions: 10,
+      });
+      expect(sent.map(({ path }) => path)).toEqual([ROUTES.attendance]);
+    });
+
+    it('lich su ghep ghi danh, lich hoc bu va don nghi da duyet cua con', async () => {
+      respond = ({ path }) => {
+        if (path === ROUTES.attendance) return report;
+        if (path === ROUTES.makeups) return [booking];
+        if (path === ROUTES.leaves) return [];
+        return [ENROLLMENT];
+      };
+
+      const records = await parentDashboardApi.getStudentAttendance(STUDENT_ID);
+
+      expect(records).toEqual([
+        expect.objectContaining({
+          sessionId: 'vang',
+          className: 'Toán nâng cao 8A2',
+          status: 'ABSENT',
+          makeup: { status: 'BOOKED', startsAt: at(2, 9) },
+        }),
+      ]);
+      expect(sentTo(ROUTES.attendance)[0]?.query).toEqual({});
+      expect(sentTo(ROUTES.leaves)[0]?.query).toEqual({
+        studentId: STUDENT_ID,
+        status: 'APPROVED',
+        page: '1',
+        limit: String(PAGE_LIMIT),
+      });
+      expect(sentTo(ROUTES.makeups)[0]?.query).toEqual({ page: '1', limit: String(PAGE_LIMIT) });
+    });
+  });
+
   describe('getStudentAssignments', () => {
     const detail: AssignmentDetail = {
       id: 'assignment-math',
       classId: 'class-math',
+      kind: 'HOMEWORK',
+      testType: null,
       title: 'Bài tập về nhà bài 10',
       instructions: 'Làm trực tiếp trên EduGrade.',
       dueAt: at(3, 23),

@@ -26,7 +26,7 @@ export default function BillDetailScreen() {
       <Screen>
         <EmptyState
           title="Không mở được bill học phí"
-          description="Vào Học phí và chọn lại bill của con."
+          description="Vào Học phí và chọn lại bill của học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />

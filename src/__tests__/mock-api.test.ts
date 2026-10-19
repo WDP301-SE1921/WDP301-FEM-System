@@ -2,10 +2,8 @@ import axios from 'axios';
 
 import { Endpoints } from '@/api/endpoints';
 import { createMockAdapter } from '@/api/mocks/mock-adapter';
-import type { MockAttendanceRecord } from '@/api/mocks/mock-attendance';
 import { SAMPLE_PARENT } from '@/api/mocks/mock-students';
 import { parentRoutes } from '@/api/mocks/parent';
-import { addDays, startOfDay, toDateKey } from '@/utils/date';
 
 // Test nay khong can log
 jest.mock('@/lib/logger', () => ({
@@ -106,7 +104,8 @@ describe('api/mocks', () => {
         withBearer(accessToken),
       );
 
-      expect(data.data.attendance).toEqual({ attendedSessions: 16, totalSessions: 17 });
+      expect(data.data.scoreSummary).toEqual({ average: 8.2, changeFromLastMonth: 0.4 });
+      expect(data.data).not.toHaveProperty('attendance');
     });
 
     it('url thua doan khong khop route mock thi tra 404', async () => {
@@ -127,121 +126,26 @@ describe('api/mocks', () => {
       expect(error).toMatchObject({ status: 404, body: { error: { code: 'RESOURCE_NOT_FOUND' } } });
     });
 
-    it('con that cua BE chua co du lieu o cac route con mock: tong quan va diem danh rong', async () => {
-      const bearer = withBearer(OTHER_PARENT.accessToken);
-
+    it('con that cua BE chua co du lieu o route con mock: tong quan rong', async () => {
       const dashboard = await client.get(
         Endpoints.parent.studentDashboard(REAL_STUDENT_ID),
-        bearer,
+        withBearer(OTHER_PARENT.accessToken),
       );
       expect(dashboard.data.data).toEqual({
-        attendance: { attendedSessions: 0, totalSessions: 0 },
         scoreSummary: null,
         attentionItems: [],
         recentNotifications: [],
       });
+    });
 
-      const attendance = await client.get(
-        Endpoints.parent.studentAttendance(REAL_STUDENT_ID),
-        bearer,
+    it('diem danh da noi BE that nen server gia khong con route', async () => {
+      const url = `/parent/students/${DEMO_STUDENT_ID}/attendance`;
+      const { status, body } = await captureError(
+        client.get(url, withBearer(DEMO_PARENT.accessToken)),
       );
-      expect(attendance.data.data).toEqual([]);
-    });
-  });
 
-  describe('GET /parent/students/:studentId/attendance', () => {
-    const today = startOfDay(new Date());
-    const OTHER_STUDENT_ID = 'mock-student-2';
-
-    async function getAttendance(accessToken: string, studentId: string) {
-      const { data } = await client.get<{ data: MockAttendanceRecord[] }>(
-        Endpoints.parent.studentAttendance(studentId),
-        withBearer(accessToken),
-      );
-      return data.data;
-    }
-
-    function findRecord<T>(items: T[], predicate: (item: T) => boolean): T {
-      const found = items.find(predicate);
-      if (!found) throw new Error('Du lieu mau thieu buoi can kiem tra');
-      return found;
-    }
-
-    function isOnDay(daysFromToday: number) {
-      return ({ startsAt }: { startsAt: string }) =>
-        toDateKey(new Date(startsAt)) === toDateKey(addDays(today, daysFromToday));
-    }
-
-    it('chi tra buoi da ket thuc, moi nhat truoc, khop so buoi cua trang chu', async () => {
-      const { accessToken } = DEMO_PARENT;
-      const records = await getAttendance(accessToken, DEMO_STUDENT_ID);
-      const startTimes = records.map(({ startsAt }) => startsAt);
-
-      expect(startTimes).toEqual([...startTimes].sort().reverse());
-      expect(records.every(({ endsAt }) => new Date(endsAt) <= new Date())).toBe(true);
-
-      // Buoi Toan toi nay chi duoc tinh khi da ket thuc, trang chu mock thi khong doi theo gio
-      const beforeToday = records.filter(({ startsAt }) => new Date(startsAt) < today);
-      expect(beforeToday).toHaveLength(17);
-      expect(beforeToday.filter(({ attendance }) => attendance === 'PRESENT')).toHaveLength(16);
-    });
-
-    it('buoi nghi co phep kem ly do va buoi hoc bu da xep vao hai ngay toi', async () => {
-      const { accessToken } = DEMO_PARENT;
-      const records = await getAttendance(accessToken, DEMO_STUDENT_ID);
-      const excused = findRecord(records, isOnDay(-3));
-
-      expect(excused).toMatchObject({
-        kind: 'REGULAR',
-        attendance: 'EXCUSED',
-        leaveReason: expect.any(String),
-        makeup: { status: 'BOOKED' },
-        originalSession: null,
-      });
-      expect(toDateKey(new Date(excused.makeup?.startsAt ?? ''))).toBe(
-        toDateKey(addDays(today, 2)),
-      );
-    });
-
-    it('hoc bu da xong: buoi vang ghi COMPLETED, buoi hoc bu tro ve buoi vang', async () => {
-      const { accessToken } = DEMO_PARENT;
-      const [records, dashboard] = await Promise.all([
-        getAttendance(accessToken, OTHER_STUDENT_ID),
-        client.get(Endpoints.parent.studentDashboard(OTHER_STUDENT_ID), withBearer(accessToken)),
-      ]);
-      const excused = findRecord(records, isOnDay(-20));
-      const makeup = findRecord(records, isOnDay(-18));
-
-      expect(excused).toMatchObject({
-        attendance: 'EXCUSED',
-        makeup: { status: 'COMPLETED', startsAt: makeup.startsAt },
-      });
-      expect(makeup).toMatchObject({
-        kind: 'MAKEUP',
-        attendance: 'PRESENT',
-        makeup: null,
-        originalSession: { startsAt: excused.startsAt },
-      });
-      expect(findRecord(records, isOnDay(-6))).toMatchObject({
-        attendance: 'ABSENT',
-        leaveReason: null,
-        makeup: null,
-      });
-      expect(dashboard.data.data.attendance).toEqual({
-        attendedSessions: records.filter(({ attendance }) => attendance === 'PRESENT').length,
-        totalSessions: records.length,
-      });
-    });
-
-    it('con cua phu huynh khac tra 404, thieu Bearer tra 401', async () => {
-      const url = Endpoints.parent.studentAttendance(DEMO_STUDENT_ID);
-      expect(await captureError(client.get(url))).toMatchObject({ status: 401 });
-
-      const { accessToken } = OTHER_PARENT;
-      expect(await captureError(client.get(url, withBearer(accessToken)))).toMatchObject({
-        status: 404,
-        body: { error: { code: 'RESOURCE_NOT_FOUND' } },
-      });
+      expect(status).toBe(404);
+      expect(body).toMatchObject({ error: { code: 'HTTP_ERROR' } });
     });
   });
 });

@@ -54,6 +54,13 @@ export function useStudentAttendance(studentId: string) {
   });
 }
 
+export function useAttendanceSummary(studentId: string) {
+  return useQuery({
+    queryKey: queryKeys.parent.studentAttendanceSummary(studentId),
+    queryFn: () => parentDashboardApi.getAttendanceSummary(studentId),
+  });
+}
+
 export function useStudentAssignments(studentId: string) {
   return useQuery({
     queryKey: queryKeys.parent.studentAssignments(studentId),

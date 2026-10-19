@@ -51,8 +51,8 @@ export function QuestionReviewCard({
 
       {!question.choices && hasSubmission ? (
         <AnswerBlock
-          label="Câu trả lời của con"
-          text={review.answer === '' ? 'Con để trống câu này.' : review.answer}
+          label="Câu trả lời của học sinh"
+          text={review.answer === '' ? 'Học sinh để trống câu này.' : review.answer}
           background="background"
         />
       ) : null}

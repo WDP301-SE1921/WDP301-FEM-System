@@ -25,7 +25,7 @@ export default function EditChildScreen() {
       <Screen>
         <EmptyState
           title="Không mở được hồ sơ"
-          description="Chỉ tài khoản phụ huynh có hồ sơ của con."
+          description="Chỉ tài khoản phụ huynh có hồ sơ học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />

@@ -19,13 +19,8 @@ export type ParentSessionDetailProps = SessionRef & {
 };
 
 /** Chi tiet mot buoi hoc cua con: trang thai, thong tin buoi, diem danh, nhan xet va tai lieu. */
-export function ParentSessionDetail({
-  studentId,
-  sessionId,
-  startsAt,
-  onBack,
-}: ParentSessionDetailProps) {
-  const detail = useSessionDetail({ studentId, sessionId, startsAt });
+export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSessionDetailProps) {
+  const detail = useSessionDetail({ studentId, sessionId });
   // Chi de hien ten va khoi cua con; mo tu lich hoc thi danh sach con da co san trong cache
   const students = useLinkedStudents();
   const student = students.data?.find((item) => item.id === studentId);
@@ -41,12 +36,12 @@ export function ParentSessionDetail({
       return (
         <EmptyState
           title="Không tìm thấy buổi học"
-          description="Buổi học có thể đã bị huỷ hoặc đổi sang ngày khác. Vào Lịch học để xem lịch mới nhất của con."
+          description="Buổi học này không còn trong lịch của học sinh, có thể học sinh đã chuyển lớp. Vào Lịch học để xem lịch mới nhất."
         />
       );
     }
 
-    // BE chua tra nhan xet va tai lieu cho phu huynh: khong co thi an han muc nay
+    // BE chua tra tai lieu cua buoi, nhan xet chi co khi giao vien ghi luc chot diem danh
     const hasReview = Boolean(session.teacherComment) || session.materials.length > 0;
     return (
       <>

@@ -50,9 +50,9 @@ export function ParentAssignments({ onAddChild, onOpenAssignment }: ParentAssign
     if (!selected) {
       return (
         <EmptyState
-          title="Chưa có hồ sơ của con"
-          description="Thêm con vào tài khoản để xem bài tập và điểm của con."
-          actionLabel="Thêm con"
+          title="Chưa có hồ sơ học sinh"
+          description="Thêm học sinh vào tài khoản để xem bài tập và điểm."
+          actionLabel="Thêm học sinh"
           onAction={onAddChild}
         />
       );

@@ -13,7 +13,7 @@ const CHECK_SIZE = 20;
 const CHECK_ICON_SIZE = 12;
 const CHECK_BORDER_WIDTH = 2;
 
-/** Kich thuoc ngoai cung ke ca vien, de nut dat canh avatar (vd "Thêm con") bang kich thuoc. */
+/** Kich thuoc ngoai cung ke ca vien, de nut dat canh avatar (vd "Thêm học sinh") bang kich thuoc. */
 export const STUDENT_AVATAR_OUTER_SIZE = AVATAR_SIZE + 2 * (RING_WIDTH + RING_GAP);
 
 type Appearance = { ring: ThemeColor; avatar: ThemeColor; initials: ThemeColor };

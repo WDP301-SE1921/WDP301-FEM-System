@@ -31,6 +31,8 @@ function RootNavigator() {
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="verify-email" />
       <Stack.Screen name="add-child" />
+      <Stack.Screen name="edit-account" />
+      <Stack.Screen name="change-password" />
       <Stack.Screen name="children/[studentId]" />
       <Stack.Screen name="assignments/[assignmentId]" />
       <Stack.Screen name="sessions/[sessionId]" />

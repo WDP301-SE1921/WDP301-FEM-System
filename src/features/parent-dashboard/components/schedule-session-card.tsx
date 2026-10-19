@@ -86,7 +86,7 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
             <ThemedView style={[styles.row, styles.room]}>
               <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor={tone.color} />
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                Phòng {session.room}
+                {session.room}
               </ThemedText>
             </ThemedView>
           ) : null}

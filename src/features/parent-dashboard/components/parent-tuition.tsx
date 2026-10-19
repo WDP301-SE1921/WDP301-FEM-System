@@ -50,9 +50,9 @@ export function ParentTuition({ onAddChild, onOpenReceipt, onOpenBill }: ParentT
     if (!selected) {
       return (
         <EmptyState
-          title="Chưa có hồ sơ của con"
-          description="Thêm con vào tài khoản để xem gói học và học phí của con."
-          actionLabel="Thêm con"
+          title="Chưa có hồ sơ học sinh"
+          description="Thêm học sinh vào tài khoản để xem gói học và học phí."
+          actionLabel="Thêm học sinh"
           onAction={onAddChild}
         />
       );

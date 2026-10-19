@@ -50,7 +50,7 @@ function enrollment(
     subjectName: 'Toán',
     className: 'Toán nâng cao 8A2',
     teacherName: 'Đặng Hải Yến',
-    room: 'P.203',
+    room: 'Phòng P.203',
     weeklySlots: [],
     completedSessions: 9,
     totalSessions: 24,
@@ -172,7 +172,6 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session-next-math',
-      startsAt: NEXT_MATH_STARTS_AT,
     });
   });
 
@@ -186,7 +185,9 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(screen.getByText('20/09/2026')).toBeOnTheScreen();
     expect(screen.getByText('18/11/2026')).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(await screen.findByText('Tiếng Anh 6A1')).toBeOnTheScreen();

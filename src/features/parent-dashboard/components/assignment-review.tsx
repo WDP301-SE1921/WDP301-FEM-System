@@ -49,7 +49,7 @@ export function AssignmentReview({
     return (
       <SectionCard title="Đã hết hạn nộp bài" icon="lock-closed-outline" tone="danger">
         <ThemedText type="small" themeColor="textSecondary">
-          Con chưa nộp bài này và không nộp được nữa. Liên hệ giáo viên nếu cần nộp bổ sung.
+          Học sinh chưa nộp bài này và không nộp được nữa. Liên hệ giáo viên nếu cần nộp bổ sung.
         </ThemedText>
       </SectionCard>
     );
@@ -65,7 +65,7 @@ export function AssignmentReview({
       ) : null}
 
       <ThemedText type="default" accessibilityRole="header" style={styles.sectionTitle}>
-        {submission ? 'Bài làm của con' : 'Đề bài'}
+        {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
       {questions.map((question, index) => (
         <QuestionReviewCard
@@ -80,7 +80,7 @@ export function AssignmentReview({
       {submission && remainingAttempts > 0 ? (
         <>
           <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Con còn {remainingAttempts} lần nộp lại trước hạn nộp.
+            Học sinh còn {remainingAttempts} lần nộp lại trước hạn nộp.
           </ThemedText>
           <Button
             title="Làm lại và nộp lại"

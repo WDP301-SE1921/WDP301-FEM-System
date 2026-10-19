@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { Screen } from '@/components/common/screen';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
-import { AccountSummary, useAuth, useLogout } from '@/features/auth';
+import { AccountActions, AccountSummary, useAuth, useLogout } from '@/features/auth';
 import { ChildrenSection } from '@/features/children';
 
 export default function ProfileScreen() {
@@ -19,12 +19,18 @@ export default function ProfileScreen() {
 
       {/* Chi phu huynh co ho so con; role khac chua chot co dung app mobile hay khong */}
       {user?.role === 'PARENT' ? (
-        <ChildrenSection
-          onAddChild={() => router.push('/add-child')}
-          onEditChild={(studentId) =>
-            router.push({ pathname: '/children/[studentId]', params: { studentId } })
-          }
-        />
+        <>
+          <AccountActions
+            onEditProfile={() => router.push('/edit-account')}
+            onChangePassword={() => router.push('/change-password')}
+          />
+          <ChildrenSection
+            onAddChild={() => router.push('/add-child')}
+            onEditChild={(studentId) =>
+              router.push({ pathname: '/children/[studentId]', params: { studentId } })
+            }
+          />
+        </>
       ) : null}
 
       <Button

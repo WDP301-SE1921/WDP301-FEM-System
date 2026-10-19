@@ -15,7 +15,11 @@ export default function LoginScreen() {
 
       <View style={styles.main}>
         <LoginIntro />
-        <LoginForm />
+        <LoginForm
+          onForgotPassword={(email) =>
+            router.push({ pathname: '/(auth)/forgot-password', params: { email } })
+          }
+        />
       </View>
 
       <LoginFooter onRegister={() => router.push('/(auth)/register')} />

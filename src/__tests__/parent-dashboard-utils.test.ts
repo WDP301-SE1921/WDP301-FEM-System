@@ -16,7 +16,6 @@ import {
   filterEnrollments,
   findNearestDueAssignment,
   findNextFreeDay,
-  formatAbsenceCaption,
   formatAssignmentDue,
   formatAssignmentSubmitted,
   formatAttendanceBreakdown,
@@ -583,12 +582,9 @@ describe('features/parent-dashboard/utils', () => {
         subjectName: 'Toán',
         startsAt: at(10, 12),
         endsAt: at(10, 12, 19),
-        room: 'P.203',
-        kind: 'REGULAR',
-        attendance: 'PRESENT',
+        status: 'PRESENT',
         leaveReason: null,
         makeup: null,
-        originalSession: null,
         ...overrides,
       };
     }
@@ -596,48 +592,46 @@ describe('features/parent-dashboard/utils', () => {
     const PRESENT = record('present', { startsAt: at(10, 16) });
     const MADE_UP = record('made-up', {
       subjectName: 'Vật lý',
-      attendance: 'EXCUSED',
+      status: 'MADE_UP',
       leaveReason: 'Con bị ốm',
       makeup: { status: 'COMPLETED', startsAt: at(10, 14, 17) },
     });
-    const MAKEUP = record('makeup', {
-      subjectName: 'Vật lý',
-      startsAt: at(10, 14, 17),
-      kind: 'MAKEUP',
-      originalSession: { startsAt: at(10, 12) },
+    const EXCUSED = record('excused', {
+      startsAt: at(10, 2),
+      status: 'EXCUSED',
+      leaveReason: 'Tạm nghỉ ôn thi',
     });
-    const ABSENT = record('absent', { startsAt: at(9, 26), attendance: 'ABSENT' });
-    const UNMARKED = record('unmarked', { startsAt: at(9, 30), attendance: 'UNMARKED' });
-    const ALL_RECORDS = [PRESENT, MAKEUP, MADE_UP, UNMARKED, ABSENT];
+    const ABSENT = record('absent', { startsAt: at(9, 26), status: 'ABSENT' });
+    const ALL_RECORDS = [PRESENT, MADE_UP, EXCUSED, ABSENT];
 
     it('sortAttendanceRecords moi nhat truoc, khong sua mang goc', () => {
-      const input = [ABSENT, PRESENT, UNMARKED, MADE_UP];
+      const input = [ABSENT, PRESENT, EXCUSED, MADE_UP];
 
       expect(sortAttendanceRecords(input).map(({ sessionId }) => sessionId)).toEqual([
         'present',
         'made-up',
-        'unmarked',
+        'excused',
         'absent',
       ]);
       expect(input[0]).toBe(ABSENT);
     });
 
-    it('countAttendance tach hoc bu khoi buoi co dinh, nghi co phep tinh trong so vang', () => {
+    it('countAttendance dem theo 4 trang thai cua SRS', () => {
       expect(countAttendance(ALL_RECORDS)).toEqual({
         present: 1,
         madeUp: 1,
-        absent: 2,
+        absent: 1,
         excused: 1,
-        unmarked: 1,
       });
     });
 
-    it('ty le di hoc tinh ca buoi hoc bu, bo buoi chua diem danh', () => {
-      const summary = toAttendanceSummary(countAttendance(ALL_RECORDS));
+    it('ty le di hoc = (co mat + hoc bu) / buoi phai hoc, nghi co phep khong tinh', () => {
+      // Vi du cua BE: 6 co mat, 2 hoc bu, 2 vang, 1 nghi co phep -> 8/10
+      const summary = toAttendanceSummary({ present: 6, madeUp: 2, absent: 2, excused: 1 });
 
-      expect(summary).toEqual({ attendedSessions: 2, totalSessions: 4 });
-      expect(getAttendanceRate(summary)).toBe(50);
-      expect(getAttendanceRate(toAttendanceSummary(countAttendance([UNMARKED])))).toBeNull();
+      expect(summary).toEqual({ attendedSessions: 8, totalSessions: 10 });
+      expect(getAttendanceRate(summary)).toBe(80);
+      expect(getAttendanceRate(toAttendanceSummary(countAttendance([EXCUSED])))).toBeNull();
     });
 
     it.each([
@@ -650,49 +644,34 @@ describe('features/parent-dashboard/utils', () => {
       expect(getAttendanceLevel(rate).label).toBe(label);
     });
 
-    it.each([
-      [0, 0, 'buổi'],
-      [1, 1, 'có phép'],
-      [2, 0, 'không phép'],
-      [3, 1, '1 có phép'],
-    ])('formatAbsenceCaption vang %p, co phep %p -> %p', (absent, excused, caption) => {
-      expect(formatAbsenceCaption({ absent, excused })).toBe(caption);
-    });
-
     it('formatAttendanceBreakdown dem tong va bo loai khong co buoi', () => {
       expect(formatAttendanceBreakdown(countAttendance(ALL_RECORDS))).toBe(
-        '5 buổi · 1 có mặt, 2 vắng, 1 học bù, 1 chưa điểm danh',
+        '4 buổi · 1 có mặt, 1 học bù, 1 vắng, 1 nghỉ có phép',
       );
       expect(formatAttendanceBreakdown(countAttendance([PRESENT]))).toBe('1 buổi · 1 có mặt');
     });
 
-    it('buoi vang da hoc bu xong hien da hoc bu va khong can lam noi', () => {
-      const excusedWaiting: AttendanceRecord = {
-        ...MADE_UP,
-        makeup: { status: 'BOOKED', startsAt: at(10, 20) },
-      };
-
+    it('nhan theo ket qua; chi buoi vang chua hoc bu moi can lam noi', () => {
       expect(getAttendanceRecordStatus(MADE_UP)).toMatchObject({
         label: 'Đã học bù',
         tone: 'primary',
       });
-      expect(getAttendanceRecordStatus(excusedWaiting).label).toBe('Nghỉ có phép');
+      expect(getAttendanceRecordStatus(EXCUSED).label).toBe('Nghỉ có phép');
       expect(getAttendanceRecordStatus(ABSENT).label).toBe('Vắng mặt');
       expect(getAttendanceRecordStatus(PRESENT).label).toBe('Có mặt');
 
       expect(isOutstandingAbsence(MADE_UP)).toBe(false);
-      expect(isOutstandingAbsence(excusedWaiting)).toBe(true);
+      expect(isOutstandingAbsence(EXCUSED)).toBe(false);
       expect(isOutstandingAbsence(ABSENT)).toBe(true);
       expect(isOutstandingAbsence(PRESENT)).toBe(false);
     });
 
-    it('getAttendanceNotes: ly do nghi, buoi hoc bu cua buoi vang, buoi duoc bu', () => {
+    it('getAttendanceNotes: ly do nghi va lich hoc bu cua buoi vang', () => {
       const now = new Date(2026, 9, 14, 8, 0);
       const texts = (item: AttendanceRecord) =>
         getAttendanceNotes(item, now).map(({ text }) => text);
 
       expect(texts(MADE_UP)).toEqual(['Con bị ốm', 'Đã hoàn thành học bù: Hôm nay, 17:00']);
-      expect(texts(MAKEUP)).toEqual(['Học bù cho buổi nghỉ ngày 12/10']);
       expect(texts(PRESENT)).toEqual([]);
       expect(
         getAttendanceNotes({ ...ABSENT, makeup: { status: 'MISSED', startsAt: at(9, 28) } }, now),
@@ -708,20 +687,20 @@ describe('features/parent-dashboard/utils', () => {
           records.map(({ sessionId }) => sessionId),
         ]),
       ).toEqual([
-        ['Tháng 10/2026', ['present', 'makeup', 'made-up']],
-        ['Tháng 09/2026', ['unmarked', 'absent']],
+        ['Tháng 10/2026', ['present', 'made-up', 'excused']],
+        ['Tháng 09/2026', ['absent']],
       ]);
     });
 
     it('chip loc theo mon sap theo ten, con chi hoc mot mon thi khong can loc', () => {
       expect(getSubjectFilterOptions([PRESENT, ABSENT])).toEqual([]);
-      expect(getSubjectFilterOptions([MAKEUP, PRESENT, MADE_UP])).toEqual([
+      expect(getSubjectFilterOptions([MADE_UP, PRESENT])).toEqual([
         { filter: 'ALL', label: 'Tất cả môn' },
         { filter: 'Toán', label: 'Toán' },
         { filter: 'Vật lý', label: 'Vật lý' },
       ]);
 
-      expect(filterBySubject(ALL_RECORDS, 'Vật lý')).toEqual([MAKEUP, MADE_UP]);
+      expect(filterBySubject(ALL_RECORDS, 'Vật lý')).toEqual([MADE_UP]);
       expect(filterBySubject(ALL_RECORDS, 'ALL')).toEqual(ALL_RECORDS);
     });
   });
@@ -744,6 +723,7 @@ describe('features/parent-dashboard/utils', () => {
     function assignment(id: string, overrides: Partial<StudentAssignment> = {}): StudentAssignment {
       return {
         id,
+        testType: null,
         title: `Bài ${id}`,
         instructions: '',
         subjectName: 'Toán',

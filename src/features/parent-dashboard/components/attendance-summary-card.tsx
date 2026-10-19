@@ -6,14 +6,9 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/utils/format';
 
-import { TONES, type Tone } from '../constants';
+import { ATTENDANCE_BREAKDOWN, TONES, type Tone } from '../constants';
 import type { AttendanceCounts } from '../types';
-import {
-  formatAbsenceCaption,
-  getAttendanceLevel,
-  getAttendanceRate,
-  toAttendanceSummary,
-} from '../utils';
+import { getAttendanceLevel, getAttendanceRate, toAttendanceSummary } from '../utils';
 
 import { ToneBadge } from './tone-badge';
 import { ToneIcon } from './tone-icon';
@@ -26,7 +21,7 @@ export type AttendanceSummaryCardProps = {
   since: string;
 };
 
-/** Ty le di hoc, muc chuyen can va so buoi co mat, vang, hoc bu cua con. */
+/** Ty le di hoc, muc chuyen can va so buoi theo 4 ket qua diem danh cua con. */
 export function AttendanceSummaryCard({ counts, since }: AttendanceSummaryCardProps) {
   const theme = useTheme();
   const rate = getAttendanceRate(toAttendanceSummary(counts));
@@ -53,20 +48,16 @@ export function AttendanceSummaryCard({ counts, since }: AttendanceSummaryCardPr
       </View>
 
       <View style={styles.counters}>
-        <AttendanceCounter label="Có mặt" value={counts.present} caption="buổi" tone="success" />
-        <AttendanceCounter
-          label="Vắng"
-          value={counts.absent}
-          caption={formatAbsenceCaption(counts)}
-          tone="danger"
-        />
-        <AttendanceCounter
-          label="Học bù"
-          value={counts.madeUp}
-          caption="hoàn thành"
-          tone="primary"
-        />
+        {ATTENDANCE_BREAKDOWN.map(({ count, counter, tone }) => (
+          <AttendanceCounter key={count} label={counter} value={counts[count]} tone={tone} />
+        ))}
       </View>
+      {/* Giai thich vi sao buoi nghi co phep khong lam giam ty le (SRS muc 5.5) */}
+      {counts.excused > 0 ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          Buổi nghỉ có phép trong thời gian tạm nghỉ không tính vào tỷ lệ đi học.
+        </ThemedText>
+      ) : null}
     </ThemedView>
   );
 }
@@ -74,19 +65,18 @@ export function AttendanceSummaryCard({ counts, since }: AttendanceSummaryCardPr
 type AttendanceCounterProps = {
   label: string;
   value: number;
-  caption: string;
   /** Mau cham truoc nhan. */
   tone: Tone;
 };
 
-function AttendanceCounter({ label, value, caption, tone }: AttendanceCounterProps) {
+function AttendanceCounter({ label, value, tone }: AttendanceCounterProps) {
   const theme = useTheme();
 
   return (
     <ThemedView
       type="background"
       accessible
-      accessibilityLabel={`${label}: ${value}, ${caption}`}
+      accessibilityLabel={`${label}: ${value} buổi`}
       style={styles.counter}
     >
       <View style={styles.counterLabel}>
@@ -96,9 +86,6 @@ function AttendanceCounter({ label, value, caption, tone }: AttendanceCounterPro
         </ThemedText>
       </View>
       <ThemedText type="heading">{value}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-        {caption}
-      </ThemedText>
     </ThemedView>
   );
 }

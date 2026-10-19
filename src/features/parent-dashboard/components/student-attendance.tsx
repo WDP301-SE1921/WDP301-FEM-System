@@ -81,9 +81,7 @@ export function StudentAttendance({ student, onOpenSession }: StudentAttendanceP
         <AttendanceMonthSection
           key={month.label}
           month={month}
-          onOpenSession={({ id, startsAt }) =>
-            onOpenSession({ studentId: student.id, sessionId: id, startsAt })
-          }
+          onOpenSession={({ id }) => onOpenSession({ studentId: student.id, sessionId: id })}
         />
       ))}
     </View>

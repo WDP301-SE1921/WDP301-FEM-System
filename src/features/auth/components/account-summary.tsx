@@ -40,8 +40,8 @@ export function AccountSummary({ user }: AccountSummaryProps) {
       </View>
       {user.role === 'PARENT' ? (
         <ThemedText type="small" themeColor="textSecondary">
-          Khi đăng ký môn học cho con tại trung tâm, đọc email này để nhân viên tìm tài khoản của
-          bạn.
+          Khi đăng ký môn học cho học sinh tại trung tâm, đọc email này để nhân viên tìm tài khoản
+          của bạn.
         </ThemedText>
       ) : null}
     </ThemedView>

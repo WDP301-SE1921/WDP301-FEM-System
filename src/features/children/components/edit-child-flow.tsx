@@ -36,7 +36,7 @@ export function EditChildFlow({ studentId, onBack, onDone }: EditChildFlowProps)
     if (!child) {
       return (
         <EmptyState
-          title="Không tìm thấy hồ sơ của con"
+          title="Không tìm thấy hồ sơ học sinh"
           description="Hồ sơ này không thuộc tài khoản của bạn."
         />
       );
@@ -47,8 +47,8 @@ export function EditChildFlow({ studentId, onBack, onDone }: EditChildFlowProps)
   return (
     <View style={styles.flow}>
       <ChildFormHeader
-        title="Hồ sơ của con"
-        description="Trung tâm xếp lớp theo đúng lớp ghi ở đây. Không đổi được lớp khi con đang có môn học tại trung tâm."
+        title="Hồ sơ học sinh"
+        description="Trung tâm xếp lớp theo đúng lớp ghi ở đây. Không đổi được lớp khi học sinh đang có môn học tại trung tâm."
         onBack={onBack}
       />
       {renderBody()}

@@ -31,11 +31,11 @@ export function AddChildSuccess({ childName, grade, parentEmail, onDone }: AddCh
           <Icon name="checkmark-circle" size={ICON_SIZE} themeColor="success" />
         </ThemedView>
         <ThemedText type="heading" accessibilityRole="header" style={styles.center}>
-          Đã thêm con vào tài khoản
+          Đã thêm học sinh vào tài khoản
         </ThemedText>
         <ThemedText type="small" themeColor="textSecondary" style={[styles.center, styles.text]}>
-          Hồ sơ của {childName} đã được tạo. Con chưa có môn học cho tới khi bạn đăng ký tại trung
-          tâm.
+          Hồ sơ của {childName} đã được tạo. Học sinh chưa có môn học cho tới khi bạn đăng ký tại
+          trung tâm.
         </ThemedText>
       </View>
 

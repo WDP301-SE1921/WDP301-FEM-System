@@ -1,20 +1,25 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import { logger } from '@/lib/logger';
-import type { ApiResponse } from '@/types/api';
+import { AppError, type ApiResponse } from '@/types/api';
 import { addDays, toDateKey } from '@/utils/date';
 
 import type {
   AssignmentDetail,
   AssignmentSummary,
   AttendanceRecord,
+  AttendanceReport,
+  AttendanceSummary,
   BillPage,
   EnrollmentLesson,
   LeaveQuery,
   LeaveRequest,
   LinkedStudent,
+  MakeupBooking,
   PageQuery,
+  Room,
   ScheduledSession,
+  ScheduledSessionDetail,
   ScheduledSessionQuery,
   ScheduleRange,
   ScheduleSession,
@@ -33,13 +38,14 @@ import type {
   TuitionReceipt,
   UnreadNotificationCount,
 } from '../types';
-import { getActiveSubjectNames } from '../utils';
+import { getActiveSubjectNames, toAttendanceSummary } from '../utils';
 
 import {
-  findSessionDetail,
   getStudentClassIds,
   getTermRange,
+  toAttendanceRecords,
   toEnrollmentLessons,
+  toSessionDetail,
   toStudentAssignment,
   toStudentEnrollments,
   toStudentSchedule,
@@ -51,6 +57,14 @@ const PAGE_LIMIT = 100;
 const MAX_PAGES = 20;
 /** Tim buoi tiep theo cua mon trong 30 ngay toi, bang khoang BE mac dinh cho phu huynh. */
 const UPCOMING_SESSION_DAYS = 30;
+/**
+ * Ma loi khi phu huynh mo mot buoi khong (con) thuoc lich cua con: buoi khong ton tai, hoac con da
+ * chuyen lop, ket thuc mon truoc buoi do.
+ */
+const SESSION_UNAVAILABLE_CODES: readonly (string | undefined)[] = [
+  'SESSION_NOT_FOUND',
+  'FORBIDDEN',
+];
 
 /**
  * Doc het cac trang cua mot route `academic`. BE tra mang khong kem tong so ban ghi, nen doc toi khi
@@ -67,6 +81,16 @@ async function readAllPages<T>(readPage: (query: PageQuery) => Promise<T[]>): Pr
     maxPages: MAX_PAGES,
   });
   return items;
+}
+
+/** Phong chi de hien ten phong: tai loi thi an ten phong thay vi lam loi ca man hinh. */
+async function readRoomsOrEmpty(): Promise<Room[]> {
+  try {
+    return await parentDashboardApi.getRooms();
+  } catch (error) {
+    logger.warn('[parent-dashboard] Khong tai duoc danh sach phong, an ten phong', error);
+    return [];
+  }
 }
 
 export const parentDashboardApi = {
@@ -94,10 +118,15 @@ export const parentDashboardApi = {
     return data.data;
   },
 
-  /** Buoi hoc khong bi huy cua moi con trong khoang ngay, theo gio tang dan. */
-  async getScheduledSessions(range: ScheduleRange): Promise<ScheduledSession[]> {
+  /** Buoi hoc khong bi huy cua mot con trong khoang ngay, theo gio tang dan. */
+  async getScheduledSessions(studentId: string, range: ScheduleRange): Promise<ScheduledSession[]> {
     return readAllPages(async (page) => {
-      const params: ScheduledSessionQuery = { fromDate: range.from, toDate: range.to, ...page };
+      const params: ScheduledSessionQuery = {
+        studentId,
+        fromDate: range.from,
+        toDate: range.to,
+        ...page,
+      };
       const { data } = await apiClient.get<ApiResponse<ScheduledSession[]>>(
         Endpoints.academic.scheduledSessions,
         { params },
@@ -124,45 +153,70 @@ export const parentDashboardApi = {
     });
   },
 
-  /** Cac buoi hoc cua mot con trong khoang ngay. */
+  /** Don nghi va don bao luu da duyet cua mot con. */
+  async getApprovedLeaves(studentId: string): Promise<LeaveRequest[]> {
+    return readAllPages(async (page) => {
+      const params: LeaveQuery = { studentId, status: 'APPROVED', ...page };
+      const { data } = await apiClient.get<ApiResponse<LeaveRequest[]>>(Endpoints.academic.leaves, {
+        params,
+      });
+      return data.data;
+    });
+  },
+
+  /** Lich hoc bu cua moi con cua phu huynh, moi xep truoc. */
+  async getMakeups(): Promise<MakeupBooking[]> {
+    return readAllPages(async (params) => {
+      const { data } = await apiClient.get<ApiResponse<MakeupBooking[]>>(
+        Endpoints.academic.makeups,
+        { params },
+      );
+      return data.data;
+    });
+  },
+
+  /** Moi phong hoc cua trung tam. */
+  async getRooms(): Promise<Room[]> {
+    const { data } = await apiClient.get<ApiResponse<Room[]>>(Endpoints.rooms);
+    return data.data;
+  },
+
+  /** Cac buoi con hoc trong khoang ngay, gom buoi hoc bu o lop khac. */
   async getStudentSchedule(studentId: string, range: ScheduleRange): Promise<ScheduleSession[]> {
-    const [enrollments, sessions] = await Promise.all([
-      parentDashboardApi.getTuitionEnrollments(studentId),
-      parentDashboardApi.getScheduledSessions(range),
-    ]);
-    return toStudentSchedule(sessions, enrollments);
+    return toStudentSchedule(await parentDashboardApi.getScheduledSessions(studentId, range));
   },
 
-  /**
-   * Mot buoi trong lich hoc cua con. BE khong co route doc mot buoi cho phu huynh, nen tim trong lich
-   * cua ngay hoc. null khi khong thay buoi (khong thuoc con, da huy hoac doi sang ngay khac).
-   */
-  async getSessionDetail({
-    studentId,
-    sessionId,
-    startsAt,
-  }: SessionRef): Promise<SessionDetail | null> {
-    const day = toDateKey(new Date(startsAt));
-    const [enrollments, sessions] = await Promise.all([
-      parentDashboardApi.getTuitionEnrollments(studentId),
-      parentDashboardApi.getScheduledSessions({ from: day, to: day }),
-    ]);
-    return findSessionDetail(sessions, enrollments, sessionId);
+  /** Mot buoi cua con. null khi buoi khong co trong lich cua con. */
+  async getSessionDetail({ studentId, sessionId }: SessionRef): Promise<SessionDetail | null> {
+    try {
+      const [{ data }, rooms] = await Promise.all([
+        apiClient.get<ApiResponse<ScheduledSessionDetail>>(
+          Endpoints.academic.scheduledSession(sessionId),
+          { params: { studentId } },
+        ),
+        readRoomsOrEmpty(),
+      ]);
+      return toSessionDetail(data.data, rooms);
+    } catch (error) {
+      if (error instanceof AppError && SESSION_UNAVAILABLE_CODES.includes(error.code)) return null;
+      throw error;
+    }
   },
 
-  /** Cac mon con da ghi danh kem lop, lich co dinh, tien do, don bao luu va buoi tiep theo. */
+  /** Cac mon con da ghi danh kem lop, phong, lich co dinh, tien do, don bao luu va buoi tiep theo. */
   async getStudentEnrollments(studentId: string): Promise<StudentEnrollment[]> {
     const now = new Date();
     const today = toDateKey(now);
-    const [enrollments, pauses, upcomingSessions] = await Promise.all([
+    const [enrollments, pauses, upcomingSessions, rooms] = await Promise.all([
       parentDashboardApi.getTuitionEnrollments(studentId),
       parentDashboardApi.getActivePauses(studentId, today),
-      parentDashboardApi.getScheduledSessions({
+      parentDashboardApi.getScheduledSessions(studentId, {
         from: today,
         to: toDateKey(addDays(now, UPCOMING_SESSION_DAYS)),
       }),
+      readRoomsOrEmpty(),
     ]);
-    return toStudentEnrollments({ enrollments, pauses, upcomingSessions, now });
+    return toStudentEnrollments({ enrollments, pauses, upcomingSessions, rooms, now });
   },
 
   /** Lo trinh cua mot mon: cac buoi trong ky ghi danh theo gio hoc, moi buoi mot bai. */
@@ -172,16 +226,33 @@ export const parentDashboardApi = {
     const range = enrollment ? getTermRange(enrollment) : null;
     if (!enrollment || !range) return [];
 
-    const sessions = await parentDashboardApi.getScheduledSessions(range);
+    const sessions = await parentDashboardApi.getScheduledSessions(studentId, range);
     return toEnrollmentLessons(sessions, enrollment);
   },
 
-  /** Cac buoi da ket thuc cua mot con kem ket qua diem danh, don xin nghi va buoi hoc bu. */
-  async getStudentAttendance(studentId: string): Promise<AttendanceRecord[]> {
-    const { data } = await apiClient.get<ApiResponse<AttendanceRecord[]>>(
-      Endpoints.parent.studentAttendance(studentId),
+  /** So buoi theo ket qua diem danh va cac buoi da chot diem danh cua mot con, tu truoc toi nay. */
+  async getAttendanceReport(studentId: string): Promise<AttendanceReport> {
+    const { data } = await apiClient.get<ApiResponse<AttendanceReport>>(
+      Endpoints.academic.studentAttendance(studentId),
     );
     return data.data;
+  },
+
+  /** Ty le di hoc cua mot con, cung cach tinh voi web. */
+  async getAttendanceSummary(studentId: string): Promise<AttendanceSummary> {
+    const { counts } = await parentDashboardApi.getAttendanceReport(studentId);
+    return toAttendanceSummary(counts);
+  },
+
+  /** Cac buoi da chot diem danh cua mot con kem ket qua, don nghi va lich hoc bu. */
+  async getStudentAttendance(studentId: string): Promise<AttendanceRecord[]> {
+    const [{ history }, enrollments, makeups, leaves] = await Promise.all([
+      parentDashboardApi.getAttendanceReport(studentId),
+      parentDashboardApi.getTuitionEnrollments(studentId),
+      parentDashboardApi.getMakeups(),
+      parentDashboardApi.getApprovedLeaves(studentId),
+    ]);
+    return toAttendanceRecords({ history, enrollments, makeups, leaves });
   },
 
   /** Bai tap (khong phai `DRAFT`) giao cho moi con cua phu huynh, moi tao truoc. */

@@ -34,8 +34,8 @@ const HOANG_LONG: LinkedStudent = {
   subjectNames: ['Tiếng Anh'],
 };
 
-const MATH = { className: 'Toán nâng cao 8A2', subjectName: 'Toán', room: 'P.203' };
-const PHYSICS = { className: 'Vật lý 8 chuyên sâu', subjectName: 'Vật lý', room: 'Lab 102' };
+const MATH = { className: 'Toán nâng cao 8A2', subjectName: 'Toán' };
+const PHYSICS = { className: 'Vật lý 8 chuyên sâu', subjectName: 'Vật lý' };
 
 /** Gio dia phuong nam 2026, de ngay va thang hien tren man hinh khong phu thuoc mui gio. */
 function at(month: number, day: number, hours = 18): string {
@@ -52,11 +52,9 @@ function record(
     sessionId,
     startsAt,
     endsAt: startsAt,
-    kind: 'REGULAR',
-    attendance: 'PRESENT',
+    status: 'PRESENT',
     leaveReason: null,
     makeup: null,
-    originalSession: null,
     ...overrides,
   };
 }
@@ -67,24 +65,24 @@ const MATH_OCT_16 = record('math-oct-16', at(10, 16));
 
 // API tra lung tung thu tu, man hinh phai tu sap xep
 const MINH_ANH_RECORDS: AttendanceRecord[] = [
-  record('math-sep-26', at(9, 26), { attendance: 'ABSENT' }),
+  record('math-sep-26', at(9, 26), { status: 'ABSENT' }),
   MATH_OCT_16,
   record('physics-oct-12', at(10, 12, 17), {
     ...PHYSICS,
-    attendance: 'EXCUSED',
+    status: 'MADE_UP',
     leaveReason: 'Con bị ốm, đã báo giáo vụ',
     makeup: { status: 'COMPLETED', startsAt: MADE_UP_AT },
   }),
-  record('physics-oct-14', MADE_UP_AT, {
-    ...PHYSICS,
-    kind: 'MAKEUP',
-    originalSession: { startsAt: at(10, 12, 17) },
-  }),
   record('physics-oct-05', at(10, 5, 17), {
     ...PHYSICS,
-    attendance: 'EXCUSED',
+    status: 'ABSENT',
     leaveReason: 'Gia đình có việc',
     makeup: { status: 'BOOKED', startsAt: BOOKED_MAKEUP_AT },
+  }),
+  record('physics-oct-01', at(10, 1, 17), {
+    ...PHYSICS,
+    status: 'EXCUSED',
+    leaveReason: 'Tạm nghỉ ôn thi học kỳ',
   }),
   record('math-oct-09', at(10, 9)),
   record('math-sep-30', at(9, 30)),
@@ -142,41 +140,43 @@ describe('features/parent-dashboard/StudentAttendance', () => {
     mockTwoChildren();
     await renderAttendance();
 
-    // 3 buoi co mat + 1 buoi hoc bu tren 7 buoi da diem danh
-    expect(await screen.findByText('57%')).toBeOnTheScreen();
+    // (3 co mat + 1 hoc bu) / 6 buoi phai hoc: buoi nghi co phep khong tinh (SRS muc 5.5)
+    expect(await screen.findByText('67%')).toBeOnTheScreen();
     expect(screen.getByText('Vắng nhiều')).toBeOnTheScreen();
     expect(screen.getByText('Tỷ lệ đi học từ 26/09/2026')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Có mặt: 3, buổi')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Vắng: 3, 2 có phép')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Học bù: 1, hoàn thành')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Có mặt: 3 buổi')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Học bù: 1 buổi')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Vắng: 2 buổi')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Có phép: 1 buổi')).toBeOnTheScreen();
+    expect(screen.getByText(/không tính vào tỷ lệ đi học/)).toBeOnTheScreen();
     expect(screen.getByRole('tab', { name: 'Điểm danh' })).toBeSelected();
     expect(screen.queryByRole('button', { name: /^Chọn tuần/ })).not.toBeOnTheScreen();
     expect(api.getStudentAttendance).toHaveBeenCalledWith(MINH_ANH.id);
 
     expect(monthTitles()).toEqual(['Tháng 10/2026', 'Tháng 09/2026']);
-    expect(screen.getByText('5 buổi · 2 có mặt, 2 vắng, 1 học bù')).toBeOnTheScreen();
+    expect(
+      screen.getByText('5 buổi · 2 có mặt, 1 học bù, 1 vắng, 1 nghỉ có phép'),
+    ).toBeOnTheScreen();
     expect(screen.getByText('2 buổi · 1 có mặt, 1 vắng')).toBeOnTheScreen();
   });
 
-  it('the buoi vang ghi ro ly do, lich hoc bu; buoi hoc bu tro ve buoi vang', async () => {
+  it('the buoi vang ghi ro ly do nghi va lich hoc bu', async () => {
     mockTwoChildren();
     await renderAttendance();
-    await screen.findByText('57%');
+    await screen.findByText('67%');
 
-    // Buoi 12/10 da hoc bu xong nen chi con buoi 05/10 hien nghi co phep
     expect(screen.getByText('Đã học bù')).toBeOnTheScreen();
     expect(screen.getAllByText('Nghỉ có phép')).toHaveLength(1);
-    expect(screen.getByText('Vắng mặt')).toBeOnTheScreen();
+    expect(screen.getAllByText('Vắng mặt')).toHaveLength(2);
 
     expect(screen.getByText('Con bị ốm, đã báo giáo vụ')).toBeOnTheScreen();
+    expect(screen.getByText('Tạm nghỉ ôn thi học kỳ')).toBeOnTheScreen();
     expect(
       screen.getByText(`Đã hoàn thành học bù: ${formatNextSession(MADE_UP_AT)}`),
     ).toBeOnTheScreen();
     expect(
       screen.getByText(`Lịch học bù: ${formatNextSession(BOOKED_MAKEUP_AT)}`),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Học bù cho buổi nghỉ ngày 12/10')).toBeOnTheScreen();
-    expect(screen.getAllByText('Phòng Lab 102')).toHaveLength(3);
   });
 
   it('loc theo mon: chi con buoi cua mon do, tong quan giu nguyen', async () => {
@@ -187,15 +187,15 @@ describe('features/parent-dashboard/StudentAttendance', () => {
     await user.press(screen.getByRole('button', { name: 'Lọc: Vật lý' }));
 
     expect(monthTitles()).toEqual(['Tháng 10/2026']);
-    expect(screen.getByText('3 buổi · 2 vắng, 1 học bù')).toBeOnTheScreen();
-    expect(screen.queryByText('Vắng mặt')).not.toBeOnTheScreen();
-    expect(screen.getByText('57%')).toBeOnTheScreen();
+    expect(screen.getByText('3 buổi · 1 học bù, 1 vắng, 1 nghỉ có phép')).toBeOnTheScreen();
+    expect(screen.getAllByText('Vắng mặt')).toHaveLength(1);
+    expect(screen.getByText('67%')).toBeOnTheScreen();
   });
 
   it('bam mot buoi thi mo chi tiet dung buoi cua dung con', async () => {
     mockTwoChildren();
     const { onOpenSession, user } = await renderAttendance();
-    await screen.findByText('57%');
+    await screen.findByText('67%');
 
     // Ten nut ghep tu chu trong the, co ca ky tu icon
     await user.press(
@@ -205,16 +205,17 @@ describe('features/parent-dashboard/StudentAttendance', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: MATH_OCT_16.sessionId,
-      startsAt: MATH_OCT_16.startsAt,
     });
   });
 
   it('doi con thi tai diem danh cua con do; con hoc mot mon thi khong can loc', async () => {
     mockTwoChildren();
     const { user } = await renderAttendance();
-    await screen.findByText('57%');
+    await screen.findByText('67%');
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(await screen.findByText('100%')).toBeOnTheScreen();
@@ -244,7 +245,7 @@ describe('features/parent-dashboard/StudentAttendance', () => {
 
     await user.press(await screen.findByRole('button', { name: 'Thử lại' }));
 
-    expect(await screen.findByText('57%')).toBeOnTheScreen();
+    expect(await screen.findByText('67%')).toBeOnTheScreen();
     expect(api.getStudentAttendance).toHaveBeenCalledTimes(2);
   });
 });

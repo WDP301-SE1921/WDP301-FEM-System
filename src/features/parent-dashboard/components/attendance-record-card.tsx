@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Icon, type IconName } from '@/components/ui/icon';
+import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -28,7 +28,7 @@ export type AttendanceRecordCardProps = {
   onPress: () => void;
 };
 
-/** Mot buoi trong lich su diem danh: ngay, lop, ket qua, gio hoc, phong va ghi chu vang, hoc bu. */
+/** Mot buoi trong lich su diem danh: ngay, lop, ket qua, gio hoc va ghi chu vang, hoc bu. */
 export function AttendanceRecordCard({ record, onPress }: AttendanceRecordCardProps) {
   const theme = useTheme();
   const status = getAttendanceRecordStatus(record);
@@ -59,12 +59,11 @@ export function AttendanceRecordCard({ record, onPress }: AttendanceRecordCardPr
         </View>
 
         <View style={styles.detailRow}>
-          <View style={styles.details}>
-            <Detail
-              icon="time-outline"
-              text={`${formatTime(record.startsAt)} – ${formatTime(record.endsAt)}`}
-            />
-            {record.room ? <Detail icon="location-outline" text={`Phòng ${record.room}`} /> : null}
+          <View style={styles.detail}>
+            <Icon name="time-outline" size={DETAIL_ICON_SIZE} themeColor="textSecondary" />
+            <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+              {formatTime(record.startsAt)} – {formatTime(record.endsAt)}
+            </ThemedText>
           </View>
           <Icon name="chevron-forward" size={CHEVRON_SIZE} themeColor="textSecondary" />
         </View>
@@ -74,17 +73,6 @@ export function AttendanceRecordCard({ record, onPress }: AttendanceRecordCardPr
         ))}
       </ThemedView>
     </Pressable>
-  );
-}
-
-function Detail({ icon, text }: { icon: IconName; text: string }) {
-  return (
-    <View style={styles.detail}>
-      <Icon name={icon} size={DETAIL_ICON_SIZE} themeColor="textSecondary" />
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-        {text}
-      </ThemedText>
-    </View>
   );
 }
 
@@ -115,14 +103,7 @@ const styles = StyleSheet.create({
   titleBlock: { flex: 1 },
   title: { fontWeight: 700 },
   detailRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  details: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    columnGap: Spacing.three,
-    rowGap: Spacing.one,
-  },
-  detail: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  detail: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   note: {
     flexDirection: 'row',
     alignItems: 'flex-start',

@@ -27,7 +27,7 @@ export function FreeDayCard({ studentName, isToday, onOpenAssignments }: FreeDay
         <Icon name="sunny-outline" size={ICON_SIZE} themeColor="primary" />
       </ThemedView>
       <ThemedText type="default" style={[styles.center, styles.title]}>
-        {isToday ? 'Hôm nay con không có buổi học' : 'Ngày này con không có buổi học'}
+        {isToday ? 'Hôm nay học sinh không có buổi học' : 'Ngày này học sinh không có buổi học'}
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
         {studentName} có thể dành thời gian nghỉ ngơi, tự ôn tập hoặc tham gia các hoạt động ngoại

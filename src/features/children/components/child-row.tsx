@@ -29,7 +29,7 @@ export function ChildRow({ child, onPress }: ChildRowProps) {
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${child.fullName}, ${details}`}
-      accessibilityHint="Sửa hồ sơ của con"
+      accessibilityHint="Sửa hồ sơ học sinh"
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,

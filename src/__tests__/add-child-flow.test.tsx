@@ -13,7 +13,7 @@ jest.mock('@/features/children/api/children-api', () => ({
 const api = jest.mocked(childrenApi);
 
 /** Icon trong Button la Text chua glyph, nen ten nut co them ky tu ngoai chu. */
-const SUBMIT_BUTTON_NAME = /Thêm con$/;
+const SUBMIT_BUTTON_NAME = /Thêm học sinh$/;
 const DONE_BUTTON_NAME = /Về trang chủ$/;
 /** Lan render dau phai transform nhieu module, mat hon 1 giay mac dinh cua findBy khi CI. */
 const FIRST_RENDER_TIMEOUT_MS = 5000;
@@ -54,7 +54,7 @@ describe('features/children/AddChildFlow', () => {
     });
     const { onDone, invalidateQueries, user } = await renderFlow();
 
-    await user.type(screen.getByLabelText('Họ và tên của con'), 'Nguyễn Gia Huy');
+    await user.type(screen.getByLabelText('Họ và tên học sinh'), 'Nguyễn Gia Huy');
     await user.press(screen.getByRole('radio', { name: 'Lớp 7' }));
     // Ban phim so khong co phim `/`: o nhap tu chen dau
     await user.type(screen.getByLabelText('Ngày sinh (không bắt buộc)'), '20052014');
@@ -63,7 +63,7 @@ describe('features/children/AddChildFlow', () => {
 
     expect(
       await screen.findByText(
-        'Đã thêm con vào tài khoản',
+        'Đã thêm học sinh vào tài khoản',
         {},
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
@@ -102,12 +102,12 @@ describe('features/children/AddChildFlow', () => {
 
     expect(
       await screen.findByText(
-        'Vui lòng nhập họ tên của con',
+        'Vui lòng nhập họ tên học sinh',
         {},
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Vui lòng chọn lớp của con')).toBeOnTheScreen();
+    expect(screen.getByText('Vui lòng chọn lớp của học sinh')).toBeOnTheScreen();
     expect(api.create).not.toHaveBeenCalled();
   });
 
@@ -115,7 +115,7 @@ describe('features/children/AddChildFlow', () => {
     api.create.mockRejectedValue(new AppError('Không kết nối được tới máy chủ.'));
     const { onBack, user } = await renderFlow();
 
-    await user.type(screen.getByLabelText('Họ và tên của con'), 'Nguyễn Gia Huy');
+    await user.type(screen.getByLabelText('Họ và tên học sinh'), 'Nguyễn Gia Huy');
     await user.press(screen.getByRole('radio', { name: 'Lớp 6' }));
     await user.press(screen.getByRole('button', { name: SUBMIT_BUTTON_NAME }));
 
@@ -135,7 +135,7 @@ describe('features/children/AddChildFlow', () => {
       await screen.findByText('Cần xác minh email trước', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
     expect(screen.getByText('phuhuynh@example.com')).toBeOnTheScreen();
-    expect(screen.queryByLabelText('Họ và tên của con')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText('Họ và tên học sinh')).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Xác minh email' }));
     expect(onVerifyEmail).toHaveBeenCalledTimes(1);

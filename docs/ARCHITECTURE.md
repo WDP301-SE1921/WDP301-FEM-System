@@ -15,12 +15,14 @@ src/
 │   ├── index.tsx             # Cong vao, dieu huong theo trang thai dang nhap
 │   ├── verify-email.tsx      # Phu huynh dan ma BE gui qua email de xac minh tai khoan
 │   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
+│   ├── edit-account.tsx      # Phu huynh sua ho ten va so dien thoai lien he
+│   ├── change-password.tsx   # Doi mat khau tai khoan dang dang nhap
 │   ├── children/
 │   │   └── [studentId].tsx   # Phu huynh sua ho so mot con (ho ten, lop, ngay sinh)
 │   ├── assignments/
 │   │   └── [assignmentId].tsx # Mot bai tap cua con: lam bai, nop bai, diem va dap an (query `studentId`)
 │   ├── sessions/
-│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`, `startsAt`)
+│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`)
 │   ├── receipts/
 │   │   └── [registrationId].tsx # Bien lai thu hoc phi cua mot don dang ky
 │   ├── bills/
@@ -30,7 +32,8 @@ src/
 │   │   ├── _layout.tsx       # Chan nguoi da dang nhap
 │   │   ├── welcome.tsx       # Man hinh chao, cong vao khi chua dang nhap
 │   │   ├── login.tsx
-│   │   └── register.tsx      # Phu huynh tu tao tai khoan
+│   │   ├── register.tsx      # Phu huynh tu tao tai khoan
+│   │   └── forgot-password.tsx # Gui email dat lai mat khau (dat lai tren trang web)
 │   └── (tabs)/               # Nhom route chinh, co bottom tab
 │       ├── _layout.tsx       # Chan nguoi chua dang nhap + cau hinh tab
 │       ├── index.tsx         # Trang chu (phu huynh: tong quan cua con)
@@ -38,7 +41,7 @@ src/
 │       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con)
 │       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
 │       ├── notifications.tsx # Thong bao (chua lam). Khong co nut tren thanh tab, mo tu trang chu
-│       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, danh sach ho so con)
+│       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, sua thong tin, doi mat khau, ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token

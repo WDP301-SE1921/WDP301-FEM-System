@@ -34,6 +34,7 @@ const NOW = new Date(2026, 9, 16, 10, 0);
 const MATH_CLASS: TuitionClass = {
   id: 'class-1',
   name: 'Toán nâng cao 8A2',
+  roomId: null,
   program: { name: 'Toán 8 – Chuyên đề nâng cao', subject: 'Toán', grade: 8 },
   // Thu Hai va thu Nam
   weeklySchedules: [

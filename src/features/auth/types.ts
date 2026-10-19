@@ -1,4 +1,4 @@
-import type { RegisterInput } from './schemas';
+import type { AccountProfileInput, ChangePasswordInput, RegisterInput } from './schemas';
 
 /**
  * Body POST /auth/register (RegisterParentDto). `confirmPassword` chi de validate o client; `phone`
@@ -7,6 +7,15 @@ import type { RegisterInput } from './schemas';
 export type RegisterPayload = Omit<RegisterInput, 'confirmPassword' | 'phone'> & {
   phone?: string;
 };
+
+/** Body POST /auth/change-password (ChangePasswordDto). */
+export type ChangePasswordPayload = Omit<ChangePasswordInput, 'confirmPassword'>;
+
+/**
+ * Body PATCH /auth/me (UpdateProfileDto). Gui `phone` rong thi BE xoa so dang luu, nen bo trong thi
+ * khong gui.
+ */
+export type UpdateProfilePayload = Omit<AccountProfileInput, 'phone'> & { phone?: string };
 
 /**
  * Response POST /auth/resend-verification. `sent: false` khi BE khong gui duoc email (BE chua cau

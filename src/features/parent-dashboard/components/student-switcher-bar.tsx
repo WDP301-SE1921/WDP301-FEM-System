@@ -25,7 +25,7 @@ export function StudentSwitcherBar({ student, onPress }: StudentSwitcherBarProps
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Chọn con, đang xem ${student.fullName}`}
+      accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.pressed]}
     >

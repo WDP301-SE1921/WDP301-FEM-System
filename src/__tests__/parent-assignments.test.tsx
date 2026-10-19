@@ -51,6 +51,7 @@ function assignment(id: string, overrides: Partial<StudentAssignment>): StudentA
   return {
     ...MATH,
     id,
+    testType: null,
     title: `Bài ${id}`,
     instructions: 'Làm vào vở và nộp ảnh bài làm.',
     teacherName: 'Đặng Hải Yến',
@@ -69,6 +70,7 @@ const MATH_DUE_SOON = assignment('math-12', {
 });
 const PHYSICS_QUIZ = assignment('physics-9', {
   ...PHYSICS,
+  testType: 'FIFTEEN_MINUTES',
   title: 'Đề trắc nghiệm: Thấu kính hội tụ',
   teacherName: 'Trần Quang Huy',
   dueAt: daysFromToday(5, 20),
@@ -157,7 +159,7 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     ).toBeOnTheScreen();
     expect(api.getStudentAssignments).toHaveBeenCalledWith(MINH_ANH.id);
     expect(
-      screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }),
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
     ).toBeOnTheScreen();
 
     expect(screen.getByRole('tab', { name: 'Cần làm, 2 bài' })).toBeSelected();
@@ -168,6 +170,8 @@ describe('features/parent-dashboard/ParentAssignments', () => {
       screen.getByText(`Hạn nộp gần nhất: ${formatNextSession(MATH_DUE_SOON.dueAt)}`),
     ).toBeOnTheScreen();
     expect(screen.getByText('Gấp')).toBeOnTheScreen();
+    // Bai kiem tra gan voi buoi hoc co nhan loai bai kiem tra, bai tap ve nha thi khong
+    expect(screen.getAllByText('Kiểm tra 15 phút')).toHaveLength(1);
     expect(
       screen.getByText('Nhắc Minh Anh hoàn thành bài tập Toán đúng hạn nhé!'),
     ).toBeOnTheScreen();
@@ -263,7 +267,9 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
     await user.press(screen.getByRole('tab', { name: 'Đã có điểm, 2 bài' }));
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(await screen.findByText(ENGLISH_TODO.title)).toBeOnTheScreen();
@@ -296,9 +302,9 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     const { onAddChild, user } = await renderAssignments();
 
     expect(
-      await screen.findByText('Chưa có hồ sơ của con', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+      await screen.findByText('Chưa có hồ sơ học sinh', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
 
     expect(onAddChild).toHaveBeenCalledTimes(1);
     expect(api.getStudentAssignments).not.toHaveBeenCalled();

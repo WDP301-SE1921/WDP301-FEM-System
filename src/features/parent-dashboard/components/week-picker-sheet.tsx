@@ -37,7 +37,7 @@ export function WeekPickerSheet({
     <BottomSheet
       isVisible={isVisible}
       title="Chọn tuần"
-      subtitle="Xem lịch học của con theo từng tuần"
+      subtitle="Xem lịch học của học sinh theo từng tuần"
       onClose={onClose}
     >
       <ScrollView

@@ -52,7 +52,7 @@ export function ChildForm({
       <FormInput
         control={control}
         name="fullName"
-        label="Họ và tên của con"
+        label="Họ và tên học sinh"
         placeholder="Nguyễn Minh Anh"
         autoCapitalize="words"
         // Tat goi y de may khong dien ten cua chinh phu huynh

@@ -63,7 +63,7 @@ export function ScheduleHeader({
       {student ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Chọn con, đang xem ${student.fullName}`}
+          accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
           onPress={onPressStudent}
           style={({ pressed }) => [pressed && styles.pressed]}
         >

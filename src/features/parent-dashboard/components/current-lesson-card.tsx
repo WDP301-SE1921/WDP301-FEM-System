@@ -67,7 +67,7 @@ export function CurrentLessonCard({
             <View style={styles.room}>
               <Icon name="location-outline" size={ICON_SIZE} themeColor="textSecondary" />
               <ThemedText type="small" themeColor="textSecondary">
-                Phòng {enrollment.room}
+                {enrollment.room}
               </ThemedText>
             </View>
           ) : null}

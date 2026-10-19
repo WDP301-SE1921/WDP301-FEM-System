@@ -51,6 +51,7 @@ const ENROLLMENT: TuitionEnrollment = {
   class: {
     id: 'class-1',
     name: 'Toán nâng cao 8A2',
+    roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
   },
@@ -75,6 +76,8 @@ const ESSAY_QUESTION: AssignmentQuestion = {
 const DETAIL: AssignmentDetail = {
   id: ASSIGNMENT_ID,
   classId: 'class-1',
+  kind: 'HOMEWORK',
+  testType: null,
   title: 'Bài tập về nhà bài 10',
   instructions: 'Làm trực tiếp trên EduGrade.',
   dueAt: daysFromToday(3),
@@ -145,7 +148,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     expect(screen.getByText('Còn 1 câu chưa trả lời.')).toBeOnTheScreen();
     await user.type(screen.getByLabelText('Bài làm câu 2'), '(x − 2)(x − 3)');
     expect(
-      screen.getByText(/^Đã trả lời đủ\. Sau lần này con còn 1 lần nộp lại/),
+      screen.getByText(/^Đã trả lời đủ\. Sau lần này học sinh còn 1 lần nộp lại/),
     ).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
@@ -158,8 +161,8 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     expect(screen.getByText('Đang chấm bài')).toBeOnTheScreen();
     expect(screen.getByText('Lần nộp 1/2')).toBeOnTheScreen();
     // Chua cong bo dap an: chi danh dau lua chon cua con, khong bao dung sai
-    expect(screen.getByLabelText(`${WRONG_CHOICE}, con đã chọn`)).toBeOnTheScreen();
-    expect(screen.queryByText(/^Con trả lời/)).not.toBeOnTheScreen();
+    expect(screen.getByLabelText(`${WRONG_CHOICE}, học sinh đã chọn`)).toBeOnTheScreen();
+    expect(screen.queryByText(/^Học sinh trả lời/)).not.toBeOnTheScreen();
   });
 
   it('bai da nop con luot: lam lai tu bai cu, bo nop lai thi quay ve bai da nop', async () => {
@@ -179,7 +182,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     expect(screen.getByText(/^Đã trả lời đủ\. Đây là lần nộp cuối/)).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Giữ bài đã nộp' }));
-    expect(screen.getByText('Bài làm của con')).toBeOnTheScreen();
+    expect(screen.getByText('Bài làm của học sinh')).toBeOnTheScreen();
     expect(api.submitAssignment).not.toHaveBeenCalled();
   });
 
@@ -219,8 +222,8 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     expect(screen.getByText('“Cần cẩn thận hơn ở phần trắc nghiệm.”')).toBeOnTheScreen();
 
     expect(screen.getByLabelText(`${CORRECT_CHOICE}, đáp án đúng`)).toBeOnTheScreen();
-    expect(screen.getByLabelText(`${WRONG_CHOICE}, con đã chọn, chưa đúng`)).toBeOnTheScreen();
-    expect(screen.getByText('Con trả lời chưa đúng')).toBeOnTheScreen();
+    expect(screen.getByLabelText(`${WRONG_CHOICE}, học sinh đã chọn, chưa đúng`)).toBeOnTheScreen();
+    expect(screen.getByText('Học sinh trả lời chưa đúng')).toBeOnTheScreen();
     expect(screen.getByText('0 / 4 điểm')).toBeOnTheScreen();
     expect(screen.getByText('5.5 / 6 điểm')).toBeOnTheScreen();
     expect(screen.getByText('Đáp án tham khảo')).toBeOnTheScreen();
@@ -257,7 +260,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
 
     expect(
       await screen.findByText(
-        'Bài này không giao cho con',
+        'Bài này không giao cho học sinh',
         {},
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),

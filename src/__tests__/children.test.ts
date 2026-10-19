@@ -58,12 +58,14 @@ describe('features/children', () => {
 
     it('bat buoc ho ten va lop', () => {
       expect(firstErrorMessage({ ...VALID_INPUT, fullName: '  ' })).toBe(
-        'Vui lòng nhập họ tên của con',
+        'Vui lòng nhập họ tên học sinh',
       );
       expect(firstErrorMessage({ ...VALID_INPUT, grade: undefined })).toBe(
-        'Vui lòng chọn lớp của con',
+        'Vui lòng chọn lớp của học sinh',
       );
-      expect(firstErrorMessage({ ...VALID_INPUT, grade: 10 })).toBe('Vui lòng chọn lớp của con');
+      expect(firstErrorMessage({ ...VALID_INPUT, grade: 10 })).toBe(
+        'Vui lòng chọn lớp của học sinh',
+      );
     });
 
     it('chan ngay sinh sai hoac sau hom nay', () => {

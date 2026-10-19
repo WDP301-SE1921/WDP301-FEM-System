@@ -27,7 +27,7 @@ export default function AssignmentDetailScreen() {
       <Screen>
         <EmptyState
           title="Không mở được bài tập"
-          description="Vào Điểm & Bài tập và chọn lại bài của con."
+          description="Vào Điểm & Bài tập và chọn lại bài của học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />

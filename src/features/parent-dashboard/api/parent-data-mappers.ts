@@ -1,21 +1,28 @@
 /**
- * Ghep du lieu cua BE thanh du lieu man hinh phu huynh. BE tra buoi hoc va bai tap chung cho moi con
- * cua phu huynh, khong kem id cua con, nen app tach theo ghi danh cua tung con
- * (GET /me/students/:id/enrollments). Cac field BE chua co (ten giao vien, phong, diem danh, nhan xet)
- * de null hoac rong.
+ * Ghep du lieu cua BE thanh du lieu man hinh phu huynh. Buoi hoc doc theo tung con (`studentId`) kem cho
+ * cua con trong buoi; bai tap, lich hoc bu va lich su diem danh chi co id ghi danh hoac id lop, nen app
+ * lay ten lop, mon tu ghi danh cua con (GET /me/students/:id/enrollments). Cac field BE chua co (ten
+ * giao vien o lich tuan, gio vao lop, tai lieu) de null hoac rong.
  */
 import { addDays, toDateKey } from '@/utils/date';
 
 import type {
   AssignmentDetail,
+  AttendanceHistoryItem,
+  AttendanceMakeup,
+  AttendanceRecord,
   CurriculumItemKind,
   EnrollmentLesson,
   LeaveRequest,
   LessonKind,
+  MakeupBooking,
+  Room,
   ScheduledSession,
+  ScheduledSessionDetail,
   ScheduleRange,
   ScheduleSession,
   SessionDetail,
+  SessionParticipation,
   StudentAssignment,
   StudentEnrollment,
   SubmissionRecord,
@@ -50,15 +57,44 @@ function toApiDateKey(value: string): string {
   return value.slice(0, DATE_KEY_LENGTH);
 }
 
+/** Cho con hieu luc cua con trong buoi. undefined khi con chua co trong buoi hoac cho da bi huy. */
+function findActiveParticipation(
+  participations: readonly SessionParticipation[],
+): SessionParticipation | undefined {
+  return participations.find(({ cancelled }) => !cancelled);
+}
+
 /**
- * Buoi thuoc ghi danh khi ghi danh con `ACTIVE`, buoi roi vao ky hoc `[startDate, endDate)` va dung
- * lop con hoc luc do, giong cach BE chon buoi cho phu huynh. Ngay hoc tinh theo gio cua may: app
- * dung o Viet Nam, cung mui gio BE dung de tinh ngay.
+ * Con con hoc buoi nay. BE tra ca buoi ma cho cua con da bi huy (con chuyen lop, lich hoc bu bi huy);
+ * buoi chua co danh sach diem danh thi BE da chon theo lop va ky hoc cua con.
+ */
+export function isAttendedSession({
+  participations,
+}: Pick<ScheduledSession, 'participations'>): boolean {
+  return participations.length === 0 || findActiveParticipation(participations) !== undefined;
+}
+
+/** Buoi con den hoc bu, khong phai buoi co dinh cua lop con. */
+function isMakeupSession({ participations }: Pick<ScheduledSession, 'participations'>): boolean {
+  return findActiveParticipation(participations)?.kind === 'MAKEUP';
+}
+
+/**
+ * Buoi thuoc ghi danh. Co cho cua con trong buoi thi theo ghi danh cua cho do. Chua co thi giong cach
+ * BE chon buoi: ghi danh con `ACTIVE`, buoi roi vao ky hoc `[startDate, endDate)` va dung lop con hoc
+ * luc do. Ngay hoc tinh theo gio cua may: app dung o Viet Nam, cung mui gio BE dung de tinh ngay.
  */
 export function isEnrollmentSession(
-  session: Pick<ScheduledSession, 'classId' | 'startsAt'>,
-  enrollment: Pick<TuitionEnrollment, 'status' | 'startDate' | 'endDate' | 'class' | 'placements'>,
+  session: Pick<ScheduledSession, 'classId' | 'startsAt' | 'participations'>,
+  enrollment: Pick<
+    TuitionEnrollment,
+    'id' | 'status' | 'startDate' | 'endDate' | 'class' | 'placements'
+  >,
 ): boolean {
+  if (session.participations.length > 0) {
+    return findActiveParticipation(session.participations)?.enrollmentId === enrollment.id;
+  }
+
   const { status, startDate, endDate } = enrollment;
   if (status !== 'ACTIVE' || !startDate || !endDate) return false;
 
@@ -75,13 +111,6 @@ export function isEnrollmentSession(
   );
 }
 
-function isStudentSession(
-  session: ScheduledSession,
-  enrollments: readonly TuitionEnrollment[],
-): boolean {
-  return enrollments.some((enrollment) => isEnrollmentSession(session, enrollment));
-}
-
 export function toScheduleSession(session: ScheduledSession): ScheduleSession {
   return {
     id: session.id,
@@ -91,40 +120,49 @@ export function toScheduleSession(session: ScheduledSession): ScheduleSession {
     endsAt: session.endsAt,
     room: null,
     teacherName: null,
-    type: 'REGULAR',
+    type: isMakeupSession(session) ? 'MAKEUP' : 'REGULAR',
     topic: session.lesson.title,
     note: null,
   };
 }
 
-/** Cac buoi cua mot con trong cac buoi BE tra cho phu huynh, giu thu tu cua BE. */
-export function toStudentSchedule(
-  sessions: readonly ScheduledSession[],
-  enrollments: readonly TuitionEnrollment[],
-): ScheduleSession[] {
-  return sessions
-    .filter((session) => isStudentSession(session, enrollments))
-    .map(toScheduleSession);
+/** Cac buoi con con hoc trong cac buoi BE tra cho mot con, giu thu tu cua BE. */
+export function toStudentSchedule(sessions: readonly ScheduledSession[]): ScheduleSession[] {
+  return sessions.filter(isAttendedSession).map(toScheduleSession);
 }
 
-/** Chi tiet buoi `sessionId` cua con. null khi buoi khong thuoc con hoac BE khong tra (da huy). */
-export function findSessionDetail(
-  sessions: readonly ScheduledSession[],
-  enrollments: readonly TuitionEnrollment[],
-  sessionId: string,
-): SessionDetail | null {
-  const session = sessions.find(
-    (item) => item.id === sessionId && isStudentSession(item, enrollments),
-  );
-  if (!session) return null;
+/** Ten phong theo id. null khi khong co phong hoac phong khong co trong danh sach. */
+export function findRoomName(rooms: readonly Room[], roomId: string | null): string | null {
+  if (!roomId) return null;
+  return rooms.find(({ id }) => id === roomId)?.name ?? null;
+}
+
+/** Chi tiet mot buoi cua con. Buoi da huy van hien, kem ly do huy cua trung tam. */
+export function toSessionDetail(
+  detail: ScheduledSessionDetail,
+  rooms: readonly Room[],
+): SessionDetail {
+  const participation =
+    detail.participation && !detail.participation.cancelled ? detail.participation : null;
 
   return {
-    ...toScheduleSession(session),
-    status: session.status,
-    lesson: { sequence: null, title: session.lesson.title, description: null },
-    attendance: null,
+    id: detail.id,
+    className: detail.class.name,
+    subjectName: detail.class.program.subject,
+    startsAt: detail.startsAt,
+    endsAt: detail.endsAt,
+    room: findRoomName(rooms, detail.roomId ?? detail.class.roomId),
+    teacherName: detail.teacher.displayName,
+    type: participation?.kind === 'MAKEUP' ? 'MAKEUP' : 'REGULAR',
+    topic: detail.lesson.title,
+    note: detail.status === 'CANCELLED' ? detail.cancelReason : null,
+    status: detail.status,
+    // `sequence` cua BE dem trong tung hoc phan (thang), khong khop so bai tren lo trinh cua mon
+    lesson: { sequence: null, title: detail.lesson.title, description: null },
+    attendance: participation?.attendance ?? null,
     checkedInAt: null,
-    teacherComment: null,
+    // BE luu chuoi rong khi giao vien khong ghi
+    teacherComment: detail.summary || null,
     materials: [],
   };
 }
@@ -157,8 +195,9 @@ export type EnrollmentSources = {
   enrollments: readonly TuitionEnrollment[];
   /** Don bao luu da duyet dang hieu luc hom nay cua con. */
   pauses: readonly LeaveRequest[];
-  /** Buoi tu hom nay tro di, theo gio tang dan. */
+  /** Buoi cua con tu hom nay tro di, theo gio tang dan. */
   upcomingSessions: readonly ScheduledSession[];
+  rooms: readonly Room[];
   now?: Date;
 };
 
@@ -167,6 +206,7 @@ export function toStudentEnrollments({
   enrollments,
   pauses,
   upcomingSessions,
+  rooms,
   now = new Date(),
 }: EnrollmentSources): StudentEnrollment[] {
   return enrollments.map((enrollment) => {
@@ -195,7 +235,7 @@ export function toStudentEnrollments({
       subjectName: currentClass.program.subject,
       className: currentClass.name,
       teacherName: null,
-      room: null,
+      room: findRoomName(rooms, currentClass.roomId),
       weeklySlots: currentClass.weeklySchedules,
       completedSessions: termSessions?.elapsed ?? 0,
       totalSessions: termSessions?.total ?? 0,
@@ -206,13 +246,16 @@ export function toStudentEnrollments({
   });
 }
 
-/** Lo trinh cua ghi danh: moi buoi trong ky hoc la mot bai, theo gio hoc. */
+/**
+ * Lo trinh cua ghi danh: moi buoi co dinh trong ky hoc la mot bai, theo gio hoc. Buoi hoc bu day lai
+ * bai cua buoi vang nen khong tinh them.
+ */
 export function toEnrollmentLessons(
   sessions: readonly ScheduledSession[],
   enrollment: TuitionEnrollment,
 ): EnrollmentLesson[] {
   return sessions
-    .filter((session) => isEnrollmentSession(session, enrollment))
+    .filter((session) => isEnrollmentSession(session, enrollment) && !isMakeupSession(session))
     .sort((a, b) => toTime(a.startsAt) - toTime(b.startsAt))
     .map((session, index) => ({
       id: session.id,
@@ -225,8 +268,8 @@ export function toEnrollmentLessons(
     }));
 }
 
-/** Lop cua bai tap trong cac lop con da hoc theo ghi danh. */
-function findAssignmentClass(enrollment: TuitionEnrollment, classId: string): TuitionClass {
+/** Lop `classId` trong cac lop con da hoc theo ghi danh, khong thay thi lop luc dang ky. */
+function findEnrollmentClass(enrollment: TuitionEnrollment, classId: string): TuitionClass {
   const placement = enrollment.placements.find((item) => item.classId === classId);
   return placement?.class ?? enrollment.class;
 }
@@ -250,12 +293,13 @@ export function toStudentAssignment({
   const enrollment = enrollments.find(({ id }) => id === recipient?.enrollmentId);
   if (!recipient || !enrollment) return null;
 
-  const assignmentClass = findAssignmentClass(enrollment, detail.classId);
+  const assignmentClass = findEnrollmentClass(enrollment, detail.classId);
   const latest = findLatestSubmission(submissions, recipient.id);
   const grade = getPublishedGrade(latest);
 
   return {
     id: detail.id,
+    testType: detail.testType,
     title: detail.title,
     instructions: detail.instructions,
     subjectName: assignmentClass.program.subject,
@@ -285,4 +329,80 @@ export function getStudentClassIds(enrollments: readonly TuitionEnrollment[]): S
       ...placements.map(({ classId }) => classId),
     ]),
   );
+}
+
+type ActiveMakeupBooking = MakeupBooking & { status: AttendanceMakeup['status'] };
+
+function isActiveBooking(booking: MakeupBooking): booking is ActiveMakeupBooking {
+  return booking.status !== 'CANCELLED';
+}
+
+/** Lich hoc bu moi nhat chua huy cua buoi vang (BE tra lich moi xep truoc). */
+function findMakeup(
+  makeups: readonly MakeupBooking[],
+  { enrollmentId, session }: AttendanceHistoryItem,
+): AttendanceMakeup | null {
+  const booking = makeups
+    .filter(isActiveBooking)
+    .find(
+      ({ original }) => original.sessionId === session.id && original.enrollmentId === enrollmentId,
+    );
+  return booking
+    ? { status: booking.status, startsAt: booking.replacement.session.startsAt }
+    : null;
+}
+
+/** Ly do cua don nghi da duyet ap cho buoi: don nghi dung buoi do, hoac don tam nghi chua ngay hoc. */
+function findLeaveReason(
+  leaves: readonly LeaveRequest[],
+  { enrollmentId, session }: AttendanceHistoryItem,
+): string | null {
+  const day = toDateKey(new Date(session.startsAt));
+  const leave = leaves.find(
+    (item) =>
+      item.status === 'APPROVED' &&
+      item.enrollmentId === enrollmentId &&
+      (item.kind === 'SINGLE_ABSENCE'
+        ? item.sessionId === session.id
+        : toApiDateKey(item.fromDate) <= day && day <= toApiDateKey(item.toDate)),
+  );
+  return leave?.reason ?? null;
+}
+
+export type AttendanceSources = {
+  history: readonly AttendanceHistoryItem[];
+  enrollments: readonly TuitionEnrollment[];
+  makeups: readonly MakeupBooking[];
+  leaves: readonly LeaveRequest[];
+};
+
+/**
+ * Lich su diem danh cua con, giu thu tu cua BE. Lop va mon lay theo ghi danh cua buoi; buoi con co mat
+ * thi khong kem don nghi hay lich hoc bu.
+ */
+export function toAttendanceRecords({
+  history,
+  enrollments,
+  makeups,
+  leaves,
+}: AttendanceSources): AttendanceRecord[] {
+  return history.flatMap((item) => {
+    const enrollment = enrollments.find(({ id }) => id === item.enrollmentId);
+    if (!enrollment) return [];
+
+    const sessionClass = findEnrollmentClass(enrollment, item.session.classId);
+    const isPresent = item.effectiveStatus === 'PRESENT';
+    return [
+      {
+        sessionId: item.session.id,
+        className: sessionClass.name,
+        subjectName: sessionClass.program.subject,
+        startsAt: item.session.startsAt,
+        endsAt: item.session.endsAt,
+        status: item.effectiveStatus,
+        leaveReason: isPresent ? null : findLeaveReason(leaves, item),
+        makeup: isPresent ? null : findMakeup(makeups, item),
+      },
+    ];
+  });
 }

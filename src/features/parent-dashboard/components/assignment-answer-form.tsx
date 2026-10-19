@@ -92,8 +92,8 @@ export function AssignmentAnswerForm({
 function getSubmitHint(remainingAttempts: number): string {
   const attemptsAfterSubmit = remainingAttempts - 1;
   return attemptsAfterSubmit > 0
-    ? `Đã trả lời đủ. Sau lần này con còn ${attemptsAfterSubmit} lần nộp lại.`
-    : 'Đã trả lời đủ. Đây là lần nộp cuối, con kiểm tra lại bài trước khi nộp nhé.';
+    ? `Đã trả lời đủ. Sau lần này học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
+    : 'Đã trả lời đủ. Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.';
 }
 
 const styles = StyleSheet.create({

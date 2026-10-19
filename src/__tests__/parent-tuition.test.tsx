@@ -54,6 +54,7 @@ function classroom(name: string, subject: string, slotsPerWeek: number): Tuition
   return {
     id: `class-${name}`,
     name,
+    roomId: null,
     program: { name: `Chương trình ${subject}`, subject, grade: 8 },
     weeklySchedules: Array.from({ length: slotsPerWeek }, (_, index) => ({
       weekday: index + 1,
@@ -212,7 +213,7 @@ describe('features/parent-dashboard/ParentTuition', () => {
     expect(api.getTuitionEnrollments).toHaveBeenCalledWith(MINH_ANH.id);
     expect(api.getStudentBills).toHaveBeenCalledWith(MINH_ANH.id);
     expect(
-      screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }),
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
     ).toBeOnTheScreen();
 
     // Chi bill UNPAID la dang cho trung tam xac nhan thu hoc phi
@@ -297,7 +298,9 @@ describe('features/parent-dashboard/ParentTuition', () => {
       { timeout: FIRST_RENDER_TIMEOUT_MS },
     );
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(
@@ -350,9 +353,9 @@ describe('features/parent-dashboard/ParentTuition', () => {
     const { onAddChild, user } = await renderTuition();
 
     expect(
-      await screen.findByText('Chưa có hồ sơ của con', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+      await screen.findByText('Chưa có hồ sơ học sinh', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
 
     expect(onAddChild).toHaveBeenCalledTimes(1);
     expect(api.getTuitionEnrollments).not.toHaveBeenCalled();

@@ -5,7 +5,11 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 import { toDateKey } from '@/utils/date';
 
-import { useStudentDashboard, useStudentSchedule } from '../hooks/use-parent-dashboard';
+import {
+  useAttendanceSummary,
+  useStudentDashboard,
+  useStudentSchedule,
+} from '../hooks/use-parent-dashboard';
 
 import { AttendanceStatCard } from './attendance-stat-card';
 import { AttentionList } from './attention-list';
@@ -25,26 +29,32 @@ export function StudentOverview({
   onOpenAssignments,
   onOpenNotifications,
 }: StudentOverviewProps) {
+  // Buoi hom nay va ty le di hoc lay tu BE; diem, viec can chu y va thong bao BE chua co nen con la mock
   const dashboard = useStudentDashboard(studentId);
-  // Buoi hom nay lay tu lich hoc cua BE; cac phan con lai cua tong quan BE chua co nen con la mock
   const today = toDateKey(new Date());
   const todaySessions = useStudentSchedule(studentId, { from: today, to: today });
+  const attendance = useAttendanceSummary(studentId);
 
-  if (dashboard.isPending || todaySessions.isPending) return <LoadingState />;
+  if (dashboard.isPending || todaySessions.isPending || attendance.isPending) {
+    return <LoadingState />;
+  }
   if (dashboard.isError) {
     return <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} />;
   }
   if (todaySessions.isError) {
     return <ErrorState error={todaySessions.error} onRetry={() => void todaySessions.refetch()} />;
   }
+  if (attendance.isError) {
+    return <ErrorState error={attendance.error} onRetry={() => void attendance.refetch()} />;
+  }
 
-  const { attendance, scoreSummary, attentionItems, recentNotifications } = dashboard.data;
+  const { scoreSummary, attentionItems, recentNotifications } = dashboard.data;
 
   return (
     <View style={styles.sections}>
       <TodaySessions sessions={todaySessions.data} onPrepare={onOpenAssignments} />
       <View style={styles.stats}>
-        <AttendanceStatCard attendance={attendance} />
+        <AttendanceStatCard attendance={attendance.data} />
         <ScoreStatCard score={scoreSummary} />
       </View>
       {attentionItems.length > 0 ? (

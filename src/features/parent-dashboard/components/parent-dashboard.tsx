@@ -61,9 +61,9 @@ export function ParentDashboard({
     if (!selected) {
       return (
         <EmptyState
-          title="Chưa có hồ sơ của con"
-          description="Thêm con vào tài khoản để theo dõi việc học của con."
-          actionLabel="Thêm con"
+          title="Chưa có hồ sơ học sinh"
+          description="Thêm học sinh vào tài khoản để theo dõi việc học."
+          actionLabel="Thêm học sinh"
           onAction={onAddChild}
         />
       );

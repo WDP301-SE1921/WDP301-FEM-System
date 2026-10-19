@@ -23,6 +23,7 @@ import {
   ASSIGNMENT_STATES,
   ATTENDANCE_BREAKDOWN,
   ATTENDANCE_LEVELS,
+  ATTENDANCE_RESULTS,
   ATTENDANCE_STATUSES,
   CANCELLED_SESSION_STATUS,
   CENTER_NAME,
@@ -38,9 +39,7 @@ import {
   LESSON_PROGRESSES,
   LESSON_SCORE_LABELS,
   LOW_ATTENDANCE_LEVEL,
-  MADE_UP_STATUS,
   MAKEUP_NOTES,
-  ORIGINAL_SESSION_NOTE,
   ROADMAP_DONE_LESSONS_SHOWN,
   ROADMAP_UPCOMING_LESSONS_SHOWN,
   SCORE_LEVELS,
@@ -65,6 +64,7 @@ import type {
   AttendanceCounts,
   AttendanceMonth,
   AttendanceRecord,
+  AttendanceResult,
   AttendanceStatus,
   AttendanceSummary,
   BillParent,
@@ -388,7 +388,7 @@ export function formatDateKey(key: string): string {
 }
 
 export type AttendanceNote = {
-  key: 'leave-reason' | 'makeup' | 'original-session';
+  key: 'leave-reason' | 'makeup';
   text: string;
   icon: IconName;
   tone: Tone;
@@ -401,26 +401,26 @@ export function sortAttendanceRecords(records: readonly AttendanceRecord[]): Att
   );
 }
 
-function getCountKey({
-  kind,
-  attendance,
-}: Pick<AttendanceRecord, 'kind' | 'attendance'>): Exclude<keyof AttendanceCounts, 'excused'> {
-  if (attendance === 'UNMARKED') return 'unmarked';
-  if (attendance !== 'PRESENT') return 'absent';
-  return kind === 'MAKEUP' ? 'madeUp' : 'present';
-}
+const ATTENDANCE_COUNT_KEYS: Record<AttendanceResult, keyof AttendanceCounts> = {
+  PRESENT: 'present',
+  ABSENT: 'absent',
+  MADE_UP: 'madeUp',
+  EXCUSED: 'excused',
+};
 
-/** Dem buoi theo ket qua diem danh, tach buoi hoc bu khoi buoi co dinh. */
+/** Dem buoi theo ket qua diem danh. */
 export function countAttendance(records: readonly AttendanceRecord[]): AttendanceCounts {
-  const counts: AttendanceCounts = { present: 0, madeUp: 0, absent: 0, excused: 0, unmarked: 0 };
-  records.forEach((record) => {
-    counts[getCountKey(record)] += 1;
-    if (record.attendance === 'EXCUSED') counts.excused += 1;
+  const counts: AttendanceCounts = { present: 0, absent: 0, madeUp: 0, excused: 0 };
+  records.forEach(({ status }) => {
+    counts[ATTENDANCE_COUNT_KEYS[status]] += 1;
   });
   return counts;
 }
 
-/** Buoi co mat (ke ca hoc bu) tren buoi da chot diem danh, de tinh bang `getAttendanceRate`. */
+/**
+ * Cong thuc cua SRS muc 5.5, giong BE va web: (co mat + hoc bu) / buoi phai hoc. Buoi nghi co phep
+ * (`excused`) trong thoi gian tam nghi khong tinh la buoi phai hoc.
+ */
 export function toAttendanceSummary({
   present,
   madeUp,
@@ -434,18 +434,7 @@ export function getAttendanceLevel(rate: number): StatusAppearance {
   return ATTENDANCE_LEVELS.find((level) => rate >= level.minRate) ?? LOW_ATTENDANCE_LEVEL;
 }
 
-/** Chu duoi so buoi vang, vd `có phép`, `không phép`, `1 có phép`. */
-export function formatAbsenceCaption({
-  absent,
-  excused,
-}: Pick<AttendanceCounts, 'absent' | 'excused'>): string {
-  if (absent === 0) return 'buổi';
-  if (excused === absent) return 'có phép';
-  if (excused === 0) return 'không phép';
-  return `${excused} có phép`;
-}
-
-/** Vd `7 buổi · 5 có mặt, 1 vắng, 1 học bù`, bo loai khong co buoi nao. */
+/** Vd `7 buổi · 5 có mặt, 1 học bù, 1 vắng`, bo loai khong co buoi nao. */
 export function formatAttendanceBreakdown(counts: AttendanceCounts): string {
   const parts = ATTENDANCE_BREAKDOWN.filter(({ count }) => counts[count] > 0).map(
     ({ count, label }) => `${counts[count]} ${label}`,
@@ -454,27 +443,24 @@ export function formatAttendanceBreakdown(counts: AttendanceCounts): string {
   return [`${total} buổi`, parts.join(', ')].filter(Boolean).join(' · ');
 }
 
-/** Buoi vang chua duoc hoc bu xong, the can lam noi de phu huynh chu y. */
-export function isOutstandingAbsence({
-  attendance,
-  makeup,
-}: Pick<AttendanceRecord, 'attendance' | 'makeup'>): boolean {
-  const isAbsent = attendance === 'ABSENT' || attendance === 'EXCUSED';
-  return isAbsent && makeup?.status !== 'COMPLETED';
+/**
+ * Buoi vang chua duoc hoc bu, the can lam noi de phu huynh chu y. Buoi nghi co phep khong tinh la buoi
+ * phai hoc nen khong can bu.
+ */
+export function isOutstandingAbsence({ status }: Pick<AttendanceRecord, 'status'>): boolean {
+  return status === 'ABSENT';
 }
 
-/** Nhan tren the lich su diem danh: buoi vang da hoc bu xong thi bao da hoc bu. */
+/** Nhan tren the lich su diem danh. */
 export function getAttendanceRecordStatus({
-  attendance,
-  makeup,
-}: Pick<AttendanceRecord, 'attendance' | 'makeup'>): StatusAppearance {
-  if (makeup?.status === 'COMPLETED') return MADE_UP_STATUS;
-  return ATTENDANCE_STATUSES[attendance];
+  status,
+}: Pick<AttendanceRecord, 'status'>): StatusAppearance {
+  return ATTENDANCE_RESULTS[status];
 }
 
-/** Dong ghi chu duoi the: ly do nghi, buoi hoc bu cua buoi vang, buoi vang ma buoi hoc bu bu cho. */
+/** Dong ghi chu duoi the: ly do nghi va lich hoc bu cua buoi vang. */
 export function getAttendanceNotes(
-  { leaveReason, makeup, originalSession }: AttendanceRecord,
+  { leaveReason, makeup }: Pick<AttendanceRecord, 'leaveReason' | 'makeup'>,
   now: Date = new Date(),
 ): AttendanceNote[] {
   const leaveNote: AttendanceNote[] = leaveReason
@@ -490,16 +476,7 @@ export function getAttendanceNotes(
         },
       ]
     : [];
-  const originalNote: AttendanceNote[] = originalSession
-    ? [
-        {
-          key: 'original-session',
-          text: `Học bù cho buổi nghỉ ngày ${formatDayMonth(originalSession.startsAt)}`,
-          ...ORIGINAL_SESSION_NOTE,
-        },
-      ]
-    : [];
-  return [...leaveNote, ...makeupNote, ...originalNote];
+  return [...leaveNote, ...makeupNote];
 }
 
 /** Chia cac buoi theo thang, giu thu tu dau vao. */

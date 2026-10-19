@@ -84,8 +84,8 @@ function AddChildItem({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="Thêm con"
-      accessibilityHint="Tạo hồ sơ cho con để theo dõi việc học"
+      accessibilityLabel="Thêm học sinh"
+      accessibilityHint="Tạo hồ sơ học sinh để theo dõi việc học"
       onPress={onPress}
       style={({ pressed }) => [styles.item, pressed && styles.pressed]}
     >
@@ -93,7 +93,7 @@ function AddChildItem({ onPress }: { onPress: () => void }) {
         <Icon name="add" size={ADD_ICON_SIZE} themeColor="textSecondary" />
       </ThemedView>
       <ThemedText type="small" themeColor="textSecondary">
-        Thêm con
+        Thêm học sinh
       </ThemedText>
     </Pressable>
   );

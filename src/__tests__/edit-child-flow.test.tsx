@@ -110,7 +110,7 @@ describe('features/children/EditChildFlow', () => {
     await user.press(screen.getByRole('button', { name: SAVE_BUTTON_NAME }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Không đổi được lớp khi con đang có môn học tại trung tâm.',
+      'Không đổi được lớp khi học sinh đang có môn học tại trung tâm.',
     );
     expect(api.update).toHaveBeenCalledWith(MINH_ANH.id, {
       fullName: 'Nguyễn Minh Anh',
@@ -125,7 +125,7 @@ describe('features/children/EditChildFlow', () => {
 
     expect(
       await screen.findByText(
-        'Không tìm thấy hồ sơ của con',
+        'Không tìm thấy hồ sơ học sinh',
         {},
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
@@ -167,7 +167,7 @@ describe('features/children/ChildrenSection', () => {
     // Con chua nhap ngay sinh thi chi hien lop
     expect(screen.getByRole('button', { name: 'Nguyễn Hoàng Long, Lớp 6' })).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);
   });
 
@@ -178,6 +178,6 @@ describe('features/children/ChildrenSection', () => {
     expect(
       await screen.findByText(/^Chưa có hồ sơ nào/, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: 'Thêm con' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Thêm học sinh' })).toBeOnTheScreen();
   });
 });

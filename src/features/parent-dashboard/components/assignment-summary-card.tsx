@@ -31,7 +31,7 @@ export function AssignmentSummaryCard({ detail, className, latest }: AssignmentS
   return (
     <AssignmentCardFrame>
       <AssignmentCardHeader
-        assignment={{ questionCounts, className }}
+        assignment={{ questionCounts, className, testType: detail.testType }}
         trailing={<ToneBadge label={status.label} tone={status.tone} icon={status.icon} />}
       />
       <ThemedText type="heading" accessibilityRole="header">

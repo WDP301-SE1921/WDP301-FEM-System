@@ -30,7 +30,7 @@ export function TodaySessions({ sessions, onPrepare }: TodaySessionsProps) {
     return (
       <SectionCard title={TITLE} icon="calendar-outline">
         <ThemedText type="small" themeColor="textSecondary">
-          Hôm nay con không có buổi học nào.
+          Hôm nay học sinh không có buổi học nào.
         </ThemedText>
       </SectionCard>
     );
@@ -75,7 +75,7 @@ function TodaySessionCard({
             <View style={styles.metaItem}>
               <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor="primary" />
               <ThemedText type="small" themeColor="textSecondary">
-                Phòng {session.room}
+                {session.room}
               </ThemedText>
             </View>
           ) : null}

@@ -21,14 +21,14 @@ export function ValueProposition() {
   return (
     <View style={styles.container}>
       <ThemedText type="heading" style={styles.center}>
-        Đồng hành cùng con mỗi buổi học
+        Đồng hành cùng học sinh mỗi buổi học
       </ThemedText>
       <ThemedText
         type="small"
         themeColor="textSecondary"
         style={[styles.center, styles.description]}
       >
-        Xem lịch học, điểm danh, kết quả học tập của con ở một nơi
+        Xem lịch học, điểm danh, kết quả học tập của học sinh ở một nơi
       </ThemedText>
 
       <View style={styles.highlights}>

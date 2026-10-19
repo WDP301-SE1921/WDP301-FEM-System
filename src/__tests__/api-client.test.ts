@@ -155,7 +155,7 @@ describe('api/client', () => {
     expect(error).toMatchObject({
       status: 409,
       code: 'PARENT_EMAIL_UNVERIFIED',
-      message: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ của con.',
+      message: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ học sinh.',
     });
   });
 

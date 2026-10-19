@@ -23,7 +23,7 @@ export function NextFreeDayCard({ date, onView }: NextFreeDayCardProps) {
       <View style={styles.text}>
         <ThemedText type="smallBold">Ngày nghỉ tiếp theo</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
-          {dateLabel} con không có buổi học
+          {dateLabel} học sinh không có buổi học
         </ThemedText>
       </View>
       <ActionChip

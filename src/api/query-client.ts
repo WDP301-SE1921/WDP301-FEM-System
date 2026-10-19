@@ -45,6 +45,9 @@ export const queryKeys = {
       ['parent', 'students', studentId, 'enrollments', enrollmentId, 'lessons'] as const,
     studentAttendance: (studentId: string) =>
       ['parent', 'students', studentId, 'attendance'] as const,
+    /** Chi ty le di hoc, cho trang chu: khong doc them ghi danh, lich hoc bu, don nghi. */
+    studentAttendanceSummary: (studentId: string) =>
+      ['parent', 'students', studentId, 'attendance', 'summary'] as const,
     studentAssignments: (studentId: string) =>
       ['parent', 'students', studentId, 'assignments'] as const,
     unreadNotificationCount: ['parent', 'notifications', 'unread-count'] as const,

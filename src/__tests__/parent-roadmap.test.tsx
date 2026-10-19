@@ -44,7 +44,7 @@ function enrollment(
     subjectName: 'Toán',
     className: 'Toán nâng cao 8A2',
     teacherName: 'Đặng Hải Yến',
-    room: 'P.203',
+    room: 'Phòng P.203',
     weeklySlots: [],
     completedSessions: 2,
     totalSessions: 8,
@@ -213,14 +213,12 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
     expect(onOpenSession).toHaveBeenLastCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session--7',
-      startsAt: atDay(-7),
     });
 
     await user.press(screen.getByRole('button', { name: /Xem chi tiết buổi học$/ }));
     expect(onOpenSession).toHaveBeenLastCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session-1',
-      startsAt: atDay(1),
     });
 
     await user.press(screen.getByRole('button', { name: /^Bài tập về nhà bài 3, .*Chưa nộp$/ }));

@@ -26,7 +26,7 @@ export default function ReceiptDetailScreen() {
       <Screen>
         <EmptyState
           title="Không mở được biên lai"
-          description="Vào Học phí và chọn lại biên lai của con."
+          description="Vào Học phí và chọn lại biên lai của học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />

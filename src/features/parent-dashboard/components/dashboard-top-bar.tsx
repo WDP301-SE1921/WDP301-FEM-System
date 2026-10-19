@@ -39,7 +39,7 @@ export function DashboardTopBar({ student, onPressStudent }: DashboardTopBarProp
       {student ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Chọn con, đang xem ${student.fullName}`}
+          accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
           onPress={onPressStudent}
           style={({ pressed }) => [styles.avatarButton, pressed && styles.pressed]}
         >
