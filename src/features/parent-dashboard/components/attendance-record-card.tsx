@@ -82,11 +82,11 @@ export function AttendanceRecordCard({ record, onPress }: AttendanceRecordCardPr
 }
 
 function NoteRow({ note }: { note: AttendanceNote }) {
-  const { color, soft } = TONES[note.tone];
+  const { text, soft } = TONES[note.tone];
 
   return (
     <ThemedView type={soft} style={styles.note}>
-      <Icon name={note.icon} size={DETAIL_ICON_SIZE} themeColor={color} style={styles.noteIcon} />
+      <Icon name={note.icon} size={DETAIL_ICON_SIZE} themeColor={text} style={styles.noteIcon} />
       <ThemedText type="small" style={styles.noteText}>
         {note.text}
       </ThemedText>

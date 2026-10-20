@@ -10,13 +10,15 @@ import { StatCard } from './stat-card';
 
 export type StudentScoreStatProps = {
   studentId: string;
+  /** Mo cac bai da co diem cua con. */
+  onPress: () => void;
 };
 
 /** O "Điểm trung bình" cua con: tu tai diem, loi thi chi o nay bao loi va thu lai. */
-export function StudentScoreStat({ studentId }: StudentScoreStatProps) {
+export function StudentScoreStat({ studentId, onPress }: StudentScoreStatProps) {
   const grades = useStudentGrades(studentId);
 
-  if (grades.isSuccess) return <ScoreStatCard score={grades.data.summary} />;
+  if (grades.isSuccess) return <ScoreStatCard score={grades.data.summary} onPress={onPress} />;
 
   return (
     <StatCard label={SCORE_STAT_LABEL}>

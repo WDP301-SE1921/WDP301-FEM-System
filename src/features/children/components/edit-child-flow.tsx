@@ -48,7 +48,7 @@ export function EditChildFlow({ studentId, onBack, onDone }: EditChildFlowProps)
     <View style={styles.flow}>
       <ChildFormHeader
         title="Hồ sơ học sinh"
-        description="Trung tâm xếp lớp theo đúng lớp ghi ở đây. Không đổi được lớp khi học sinh đang có môn học tại trung tâm."
+        description="Trung tâm xếp lớp theo đúng khối ghi ở đây. Không đổi được khối khi học sinh đang có môn học tại trung tâm."
         onBack={onBack}
       />
       {renderBody()}

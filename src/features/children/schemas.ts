@@ -24,7 +24,7 @@ export const addChildSchema = z.object({
     .trim()
     .min(FULL_NAME_MIN_LENGTH, 'Vui lòng nhập họ tên học sinh')
     .max(FULL_NAME_MAX_LENGTH, 'Họ tên quá dài'),
-  grade: z.literal(CHILD_GRADES, { error: 'Vui lòng chọn lớp của học sinh' }),
+  grade: z.literal(CHILD_GRADES, { error: 'Vui lòng chọn khối của học sinh' }),
   dateOfBirth: birthDateSchema,
 });
 

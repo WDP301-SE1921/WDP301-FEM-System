@@ -1,14 +1,23 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentAssignments } from '@/features/parent-dashboard/components/parent-assignments';
-import type { LinkedStudent, StudentAssignment } from '@/features/parent-dashboard/types';
+import {
+  ParentAssignments,
+  type ParentAssignmentsProps,
+} from '@/features/parent-dashboard/components/parent-assignments';
+import type {
+  AssignmentTab,
+  LinkedStudent,
+  StudentAssignment,
+} from '@/features/parent-dashboard/types';
 import {
   formatAssignmentDue,
   formatAssignmentSubmitted,
   formatNextSession,
 } from '@/features/parent-dashboard/utils';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay } from '@/utils/date';
 
@@ -123,6 +132,15 @@ function mockTwoChildren() {
   );
 }
 
+/** Route giu tab tren URL; o day giu bang state de bam chuyen tab nhu tren app. */
+function AssignmentsWithTab(props: Omit<ParentAssignmentsProps, 'tab' | 'onChangeTab'>) {
+  const [tab, setTab] = useState<AssignmentTab>('TODO');
+  return <ParentAssignments {...props} tab={tab} onChangeTab={setTab} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderAssignments() {
   const onAddChild = jest.fn();
   const onOpenAssignment = jest.fn();
@@ -132,7 +150,7 @@ async function renderAssignments() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentAssignments onAddChild={onAddChild} onOpenAssignment={onOpenAssignment} />
+      <AssignmentsWithTab onAddChild={onAddChild} onOpenAssignment={onOpenAssignment} />
     </QueryClientProvider>,
   );
   return { onAddChild, onOpenAssignment, user: userEvent.setup() };
@@ -154,8 +172,8 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     await renderAssignments();
 
     expect(
-      await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
-    ).toBeOnTheScreen();
+      await screen.findAllByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toHaveLength(2);
     expect(api.getStudentAssignments).toHaveBeenCalledWith(MINH_ANH.id);
     expect(
       screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
@@ -188,7 +206,7 @@ describe('features/parent-dashboard/ParentAssignments', () => {
   it('tab Da nop hien gio nop va lan nop lai; tab Da co diem hien diem, xep loai, nhan xet', async () => {
     mockTwoChildren();
     const { user } = await renderAssignments();
-    await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+    await screen.findAllByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
 
     await user.press(screen.getByRole('tab', { name: 'Đã nộp, 1 bài' }));
     expect(cardTitles()).toEqual([PHYSICS_SUBMITTED.title]);
@@ -215,8 +233,17 @@ describe('features/parent-dashboard/ParentAssignments', () => {
   it('moi the co nut mo chi tiet bai cua con dang xem: lam bai, bai da nop, bai lam va dap an', async () => {
     mockTwoChildren();
     const { onOpenAssignment, user } = await renderAssignments();
-    await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+    await screen.findAllByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
 
+    await user.press(
+      screen.getByRole('button', {
+        name: `Hạn nộp gần nhất: ${formatNextSession(MATH_DUE_SOON.dueAt)}, ${MATH_DUE_SOON.title}`,
+      }),
+    );
+    expect(onOpenAssignment).toHaveBeenLastCalledWith({
+      studentId: MINH_ANH.id,
+      assignmentId: MATH_DUE_SOON.id,
+    });
     await user.press(screen.getByRole('button', { name: `Làm bài: ${MATH_DUE_SOON.title}` }));
     expect(onOpenAssignment).toHaveBeenLastCalledWith({
       studentId: MINH_ANH.id,
@@ -245,7 +272,7 @@ describe('features/parent-dashboard/ParentAssignments', () => {
   it('loc theo mon: so bai tren tab va danh sach theo mon, nhac han nop giu nguyen', async () => {
     mockTwoChildren();
     const { user } = await renderAssignments();
-    await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+    await screen.findAllByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
 
     await user.press(screen.getByRole('button', { name: 'Lọc: Vật lý' }));
     expect(screen.getByRole('tab', { name: 'Cần làm, 1 bài' })).toBeSelected();
@@ -260,10 +287,10 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     expect(screen.getByText('Không có bài chờ chấm')).toBeOnTheScreen();
   });
 
-  it('doi con thi tai bai cua con do va quay ve tab Can lam; mot mon thi khong can loc', async () => {
+  it('doi con thi tai bai cua con do va giu tab dang xem; mot mon thi khong can loc', async () => {
     mockTwoChildren();
     const { user } = await renderAssignments();
-    await screen.findByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+    await screen.findAllByText(MATH_DUE_SOON.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
     await user.press(screen.getByRole('tab', { name: 'Đã có điểm, 2 bài' }));
 
     await user.press(
@@ -271,9 +298,11 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
-    expect(await screen.findByText(ENGLISH_TODO.title)).toBeOnTheScreen();
+    expect(await screen.findAllByText(ENGLISH_TODO.title)).not.toHaveLength(0);
     expect(api.getStudentAssignments).toHaveBeenLastCalledWith(HOANG_LONG.id);
-    expect(screen.getByRole('tab', { name: 'Cần làm, 1 bài' })).toBeSelected();
+    // Tab nam tren URL cua route nen giu nguyen khi doi con, nhu che do xem cua tab Lich hoc
+    expect(screen.getByRole('tab', { name: 'Đã có điểm, 0 bài' })).toBeSelected();
+    expect(screen.getByText('Chưa có bài nào có điểm')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /^Lọc:/ })).not.toBeOnTheScreen();
     // Con 4 ngay nen chua gap
     expect(
@@ -320,7 +349,7 @@ describe('features/parent-dashboard/ParentAssignments', () => {
       await screen.findByRole('button', { name: 'Thử lại' }, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     );
 
-    expect(await screen.findByText(MATH_DUE_SOON.title)).toBeOnTheScreen();
+    expect(await screen.findAllByText(MATH_DUE_SOON.title)).not.toHaveLength(0);
     expect(api.getStudentAssignments).toHaveBeenCalledTimes(2);
   });
 });

@@ -4,7 +4,7 @@ App mobile cua **EduGrade**, nen tang quan ly hoc tap cua mot trung tam day them
 
 ## San pham
 
-EduGrade co hai nen tang dung chung du lieu: Web cho nhan su trung tam (Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien) va **Mobile cho phu huynh** (repo nay). Khong co tai khoan hoc sinh: phu huynh dang nhap, quan ly mot hoac nhieu ho so con, con nhan bai va nop bai qua phien dang nhap cua phu huynh.
+EduGrade co hai nen tang dung chung du lieu: Web cho nhan su trung tam (Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien) va **Mobile cho phu huynh va hoc sinh** (repo nay; giao vien va nhan su trung tam khong dung mobile, app chan dang nhap bang tai khoan cua ho). Khong co tai khoan hoc sinh: phu huynh dang nhap, quan ly mot hoac nhieu ho so con, con nhan bai va nop bai qua phien dang nhap cua phu huynh.
 
 Pham vi cua app theo SRS (mot so phan chua lam, vi du nop bai va xem dap an dung):
 

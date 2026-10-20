@@ -19,6 +19,8 @@ export type QuestionReviewCardProps = {
   review: QuestionReview;
   /** false khi con chua nop bai: chi hien de (va dap an neu da cong bo). */
   hasSubmission: boolean;
+  /** Lan nop co anh bai lam: cau tu luan de trong la con tra loi bang anh. */
+  hasAttachments: boolean;
 };
 
 /**
@@ -30,6 +32,7 @@ export function QuestionReviewCard({
   question,
   review,
   hasSubmission,
+  hasAttachments,
 }: QuestionReviewCardProps) {
   const maxPoints = formatPoints(question.maxScore);
   const result =
@@ -52,7 +55,7 @@ export function QuestionReviewCard({
       {!question.choices && hasSubmission ? (
         <AnswerBlock
           label="Câu trả lời của học sinh"
-          text={review.answer === '' ? 'Học sinh để trống câu này.' : review.answer}
+          text={getEssayAnswerText(review.answer, hasAttachments)}
           background="background"
         />
       ) : null}
@@ -76,6 +79,13 @@ export function QuestionReviewCard({
       ) : null}
     </QuestionFrame>
   );
+}
+
+function getEssayAnswerText(answer: string, hasAttachments: boolean): string {
+  if (answer !== '') return answer;
+  return hasAttachments
+    ? 'Học sinh trả lời bằng ảnh bài làm gửi kèm.'
+    : 'Học sinh để trống câu này.';
 }
 
 function AnswerBlock({

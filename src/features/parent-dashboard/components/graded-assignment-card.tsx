@@ -30,7 +30,10 @@ export function GradedAssignmentCard({ assignment, grade, onOpen }: GradedAssign
   const level = getGradeLevel(grade);
 
   return (
-    <AssignmentCardFrame>
+    <AssignmentCardFrame
+      onPress={onOpen}
+      accessibilityLabel={`Xem bài làm và đáp án: ${assignment.title}`}
+    >
       <View style={styles.header}>
         <View style={styles.titleBlock}>
           <AssignmentCardHeader assignment={assignment} />
@@ -65,13 +68,7 @@ export function GradedAssignmentCard({ assignment, grade, onOpen }: GradedAssign
       ) : null}
 
       <View style={styles.actions}>
-        <ActionChip
-          label="Xem bài làm và đáp án"
-          variant="soft"
-          trailingIcon="arrow-forward"
-          accessibilityLabel={`Xem bài làm và đáp án: ${assignment.title}`}
-          onPress={onOpen}
-        />
+        <ActionChip label="Xem bài làm và đáp án" variant="soft" trailingIcon="arrow-forward" />
       </View>
     </AssignmentCardFrame>
   );

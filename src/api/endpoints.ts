@@ -100,5 +100,10 @@ export const Endpoints = {
       `/academic/assignments/${assignmentId}/submissions`,
     /** POST: con nop bai qua phien dang nhap cua phu huynh. */
     submissions: '/academic/submissions',
+    /**
+     * POST multipart (truong `file`): phu huynh tai anh bai lam (JPEG, PNG) hoac PDF toi da 10 MB, tra
+     * id de gui kem bai nop qua `fileIds`.
+     */
+    files: '/academic/files',
   },
 } as const;

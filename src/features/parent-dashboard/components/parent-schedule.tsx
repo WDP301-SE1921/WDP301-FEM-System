@@ -7,22 +7,26 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 import { startOfDay, startOfWeek } from '@/utils/date';
 
-import { useLinkedStudents } from '../hooks/use-parent-dashboard';
+import { useSelectedStudent } from '../hooks/use-selected-student';
 import type { ScheduleView, SessionRef } from '../types';
-import { getDefaultDayOfWeek } from '../utils';
+import { getAdjacentWeek, getDefaultDayOfWeek } from '../utils';
 
 import { ChildPickerSheet } from './child-picker-sheet';
-import { ScheduleHeader } from './schedule-header';
 import { ScheduleViewSwitch } from './schedule-view-switch';
 import { StudentAttendance } from './student-attendance';
 import { StudentCourses } from './student-courses';
 import { StudentRoadmap } from './student-roadmap';
+import { StudentSwitcherBar } from './student-switcher-bar';
 import { StudentWeekSchedule } from './student-week-schedule';
+import { WeekNavigator } from './week-navigator';
 import { WeekPickerSheet } from './week-picker-sheet';
 
 type OpenSheet = 'child' | 'week' | null;
 
 export type ParentScheduleProps = {
+  /** Che do xem dang mo, route giu tren URL de nut o trang chu mo dung che do (vd diem danh). */
+  view: ScheduleView;
+  onChangeView: (view: ScheduleView) => void;
   /** Cac nut dan ra ngoai lich hoc; route quyet dinh dieu huong toi dau. */
   onAddChild: () => void;
   onOpenAssignments: () => void;
@@ -34,31 +38,31 @@ export type ParentScheduleProps = {
  * ghi danh, lo trinh bai hoc tung mon hoac lich su diem danh. Doi con thi giu nguyen cach xem.
  */
 export function ParentSchedule({
+  view,
+  onChangeView,
   onAddChild,
   onOpenAssignments,
   onOpenSession,
 }: ParentScheduleProps) {
-  const students = useLinkedStudents();
+  const { students, selected, selectStudent } = useSelectedStudent();
   const today = startOfDay(new Date());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState(today);
   const [openSheet, setOpenSheet] = useState<OpenSheet>(null);
-  const [view, setView] = useState<ScheduleView>('WEEK');
 
-  // Chua chon (hoac con da chon khong con trong danh sach) thi xem con dau tien
-  const selected =
-    students.data?.find((student) => student.id === selectedId) ?? students.data?.[0];
   const weekStart = startOfWeek(selectedDate);
 
   const closeSheet = () => setOpenSheet(null);
 
-  const selectStudent = (studentId: string) => {
-    setSelectedId(studentId);
+  const selectFromPicker = (studentId: string) => {
+    selectStudent(studentId);
     closeSheet();
   };
 
-  const selectWeek = (nextWeekStart: Date) => {
+  const showWeek = (nextWeekStart: Date) =>
     setSelectedDate(getDefaultDayOfWeek(nextWeekStart, today));
+
+  const selectWeekFromPicker = (nextWeekStart: Date) => {
+    showWeek(nextWeekStart);
     closeSheet();
   };
 
@@ -117,20 +121,28 @@ export function ParentSchedule({
 
   return (
     <View style={styles.container}>
-      <ScheduleHeader
-        weekStart={weekStart}
-        student={selected}
-        onPressWeek={view === 'WEEK' ? () => setOpenSheet('week') : undefined}
-        onPressStudent={() => setOpenSheet('child')}
-      />
-      {selected ? <ScheduleViewSwitch value={view} onChange={setView} /> : null}
+      {selected ? (
+        <>
+          <StudentSwitcherBar student={selected} onPress={() => setOpenSheet('child')} />
+          <ScheduleViewSwitch value={view} onChange={onChangeView} />
+          {view === 'WEEK' ? (
+            <WeekNavigator
+              weekStart={weekStart}
+              previousWeek={getAdjacentWeek(weekStart, -1, today)}
+              nextWeek={getAdjacentWeek(weekStart, 1, today)}
+              onSelectWeek={showWeek}
+              onOpenPicker={() => setOpenSheet('week')}
+            />
+          ) : null}
+        </>
+      ) : null}
       {renderBody()}
 
       <WeekPickerSheet
         isVisible={openSheet === 'week'}
         selectedWeekStart={weekStart}
         today={today}
-        onSelect={selectWeek}
+        onSelect={selectWeekFromPicker}
         onClose={closeSheet}
       />
       {students.data && selected ? (
@@ -138,7 +150,7 @@ export function ParentSchedule({
           isVisible={openSheet === 'child'}
           students={students.data}
           selectedId={selected.id}
-          onSelect={selectStudent}
+          onSelect={selectFromPicker}
           onAddChild={addChildFromPicker}
           onClose={closeSheet}
         />
@@ -148,5 +160,5 @@ export function ParentSchedule({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, gap: Spacing.four },
+  container: { flex: 1, gap: Spacing.three },
 });

@@ -71,7 +71,7 @@ describe('features/children/EditChildFlow', () => {
       {},
       { timeout: FIRST_RENDER_TIMEOUT_MS },
     );
-    expect(screen.getByRole('radio', { name: 'Lớp 8' })).toBeChecked();
+    expect(screen.getByRole('radio', { name: 'Khối 8' })).toBeChecked();
     expect(screen.getByDisplayValue('15/03/2013')).toBeOnTheScreen();
 
     await user.clear(nameInput);
@@ -106,11 +106,11 @@ describe('features/children/EditChildFlow', () => {
       { timeout: FIRST_RENDER_TIMEOUT_MS },
     );
     await user.clear(birthInput);
-    await user.press(screen.getByRole('radio', { name: 'Lớp 9' }));
+    await user.press(screen.getByRole('radio', { name: 'Khối 9' }));
     await user.press(screen.getByRole('button', { name: SAVE_BUTTON_NAME }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Không đổi được lớp khi học sinh đang có môn học tại trung tâm.',
+      'Không đổi được khối khi học sinh đang có môn học tại trung tâm.',
     );
     expect(api.update).toHaveBeenCalledWith(MINH_ANH.id, {
       fullName: 'Nguyễn Minh Anh',
@@ -159,13 +159,13 @@ describe('features/children/ChildrenSection', () => {
     await user.press(
       await screen.findByRole(
         'button',
-        { name: 'Nguyễn Minh Anh, Lớp 8 · Sinh ngày 15/03/2013' },
+        { name: 'Nguyễn Minh Anh, Khối 8 · Sinh ngày 15/03/2013' },
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     );
     expect(onEditChild).toHaveBeenCalledWith(MINH_ANH.id);
     // Con chua nhap ngay sinh thi chi hien lop
-    expect(screen.getByRole('button', { name: 'Nguyễn Hoàng Long, Lớp 6' })).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Nguyễn Hoàng Long, Khối 6' })).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);

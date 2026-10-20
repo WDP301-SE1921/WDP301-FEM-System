@@ -80,7 +80,7 @@ export function ChildForm({
           <Input
             ref={field.ref}
             label="Ngày sinh (không bắt buộc)"
-            placeholder="dd/mm/yyyy"
+            placeholder="VD: 15/08/2013"
             leadingIcon="calendar-outline"
             keyboardType="number-pad"
             maxLength={BIRTH_DATE_LENGTH}

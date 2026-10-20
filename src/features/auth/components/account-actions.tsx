@@ -28,7 +28,7 @@ export function AccountActions({ onEditProfile, onChangePassword }: AccountActio
       <ActionRow
         icon="lock-closed-outline"
         title="Đổi mật khẩu"
-        description="Đăng xuất tài khoản trên các thiết bị khác"
+        description="Đặt mật khẩu mới cho tài khoản"
         onPress={onChangePassword}
       />
     </View>

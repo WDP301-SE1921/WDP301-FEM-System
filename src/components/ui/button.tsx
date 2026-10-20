@@ -17,6 +17,8 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const ICON_SIZE = 20;
+/** Vung cham toi thieu 44x44 (design-mobile.md), ke ca nut nho. */
+const MIN_TOUCH_HEIGHT = 44;
 
 export type ButtonProps = Omit<PressableProps, 'style'> & {
   title: string;
@@ -105,7 +107,11 @@ const styles = StyleSheet.create({
 });
 
 const sizeStyles = StyleSheet.create({
-  sm: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, minHeight: 36 },
+  sm: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    minHeight: MIN_TOUCH_HEIGHT,
+  },
   md: { paddingVertical: Spacing.three, paddingHorizontal: Spacing.four, minHeight: 48 },
   lg: { paddingVertical: Spacing.four, paddingHorizontal: Spacing.five, minHeight: 56 },
 });

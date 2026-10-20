@@ -18,12 +18,12 @@ export type ToneBadgeProps = {
 
 /** Nhan dang vien thuoc: trang thai buoi hoc, xep loai diem, lop cua con. */
 export function ToneBadge({ label, tone, icon }: ToneBadgeProps) {
-  const { color, soft } = TONES[tone];
+  const { text, soft } = TONES[tone];
 
   return (
     <ThemedView type={soft} style={styles.badge}>
-      {icon ? <Icon name={icon} size={ICON_SIZE} themeColor={color} /> : null}
-      <ThemedText type="smallBold" themeColor={color} numberOfLines={1} style={styles.label}>
+      {icon ? <Icon name={icon} size={ICON_SIZE} themeColor={text} /> : null}
+      <ThemedText type="smallBold" themeColor={text} numberOfLines={1} style={styles.label}>
         {label}
       </ThemedText>
     </ThemedView>

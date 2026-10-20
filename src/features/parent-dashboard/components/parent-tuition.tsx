@@ -4,10 +4,9 @@ import { StyleSheet, View } from 'react-native';
 import { EmptyState } from '@/components/common/empty-state';
 import { ErrorState } from '@/components/common/error-state';
 import { LoadingState } from '@/components/common/loading-state';
-import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
-import { useLinkedStudents } from '../hooks/use-parent-dashboard';
+import { useSelectedStudent } from '../hooks/use-selected-student';
 
 import { ChildPickerSheet } from './child-picker-sheet';
 import { StudentSwitcherBar } from './student-switcher-bar';
@@ -22,18 +21,13 @@ export type ParentTuitionProps = {
 
 /** Tab hoc phi cua con dang chon: bill chua thanh toan, goi hoc dang ap dung va lich su dong hoc phi. */
 export function ParentTuition({ onAddChild, onOpenReceipt, onOpenBill }: ParentTuitionProps) {
-  const students = useLinkedStudents();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { students, selected, selectStudent } = useSelectedStudent();
   const [isPickerVisible, setIsPickerVisible] = useState(false);
-
-  // Chua chon (hoac con da chon khong con trong danh sach) thi xem con dau tien
-  const selected =
-    students.data?.find((student) => student.id === selectedId) ?? students.data?.[0];
 
   const closePicker = () => setIsPickerVisible(false);
 
-  const selectStudent = (studentId: string) => {
-    setSelectedId(studentId);
+  const selectFromPicker = (studentId: string) => {
+    selectStudent(studentId);
     closePicker();
   };
 
@@ -64,14 +58,6 @@ export function ParentTuition({ onAddChild, onOpenReceipt, onOpenBill }: ParentT
 
   return (
     <View style={styles.container}>
-      <View>
-        <ThemedText type="heading" accessibilityRole="header">
-          Quản lý học phí
-        </ThemedText>
-        <ThemedText type="small" themeColor="textSecondary">
-          Thông tin gói học và lịch sử đóng học phí
-        </ThemedText>
-      </View>
       {selected ? (
         <StudentSwitcherBar student={selected} onPress={() => setIsPickerVisible(true)} />
       ) : null}
@@ -82,7 +68,7 @@ export function ParentTuition({ onAddChild, onOpenReceipt, onOpenBill }: ParentT
           isVisible={isPickerVisible}
           students={students.data}
           selectedId={selected.id}
-          onSelect={selectStudent}
+          onSelect={selectFromPicker}
           onAddChild={addChildFromPicker}
           onClose={closePicker}
         />

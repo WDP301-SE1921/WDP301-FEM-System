@@ -1,42 +1,40 @@
 import { router } from 'expo-router';
 
-import { Screen } from '@/components/common/screen';
-import { ThemedText } from '@/components/ui/themed-text';
+import { Screen, TAB_SCREEN_EDGES } from '@/components/common/screen';
+import { TabHeader } from '@/components/common/tab-header';
 import { useAuth } from '@/features/auth';
 import {
-  getNotificationHref,
+  getParentGreeting,
+  NotificationBell,
   ParentDashboard,
+  useOpenParentDestination,
   useRefreshParentData,
 } from '@/features/parent-dashboard';
+import { formatWeekdayDate } from '@/utils/format';
 
 export default function HomeScreen() {
   const { user } = useAuth();
   const { isRefreshing, refresh } = useRefreshParentData();
+  const openDestination = useOpenParentDestination();
 
-  if (user?.role === 'PARENT') {
-    return (
-      <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
-        <ParentDashboard
-          parentName={user.displayName}
-          parentEmail={user.email}
-          onAddChild={() => router.push('/add-child')}
-          onOpenNotifications={() => router.navigate('/notifications')}
-          onOpenNotification={(destination) => router.push(getNotificationHref(destination))}
-          onOpenAssignments={() => router.navigate('/grades')}
-        />
-      </Screen>
-    );
-  }
+  // Layout cua (tabs) chi render cac tab cho phien phu huynh
+  if (!user) return null;
 
-  // Chua chot giao vien, quan ly co dung app mobile hay khong: giu man hinh tam
+  const openNotifications = () => router.navigate('/notifications');
+
   return (
-    <Screen>
-      <ThemedText type="title">Xin chào</ThemedText>
-      {/* Ten hoac email dat dong rieng, co chu nho hon: email dai o co 48px bi be giua chu */}
-      {user ? <ThemedText type="heading">{user.displayName ?? user.email}</ThemedText> : null}
-      <ThemedText type="small" themeColor="textSecondary">
-        Bắt đầu xây dựng tính năng tại src/features/ và thêm màn hình tại src/app/.
-      </ThemedText>
+    <Screen edges={TAB_SCREEN_EDGES} onRefresh={refresh} isRefreshing={isRefreshing}>
+      <TabHeader
+        title={getParentGreeting(user.displayName)}
+        subtitle={`Hôm nay, ${formatWeekdayDate(new Date())}`}
+        trailing={<NotificationBell onPress={openNotifications} />}
+      />
+      <ParentDashboard
+        parentEmail={user.email}
+        onAddChild={() => router.push('/add-child')}
+        onOpenNotifications={openNotifications}
+        onOpenDestination={openDestination}
+      />
     </Screen>
   );
 }

@@ -1,10 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentSchedule } from '@/features/parent-dashboard/components/parent-schedule';
-import type { AttendanceRecord, LinkedStudent } from '@/features/parent-dashboard/types';
+import {
+  ParentSchedule,
+  type ParentScheduleProps,
+} from '@/features/parent-dashboard/components/parent-schedule';
+import type {
+  ScheduleView,
+  AttendanceRecord,
+  LinkedStudent,
+} from '@/features/parent-dashboard/types';
 import { formatNextSession } from '@/features/parent-dashboard/utils';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { formatWeekdayDate } from '@/utils/format';
 
@@ -103,6 +112,15 @@ function mockTwoChildren() {
   );
 }
 
+/** Route giu che do xem tren URL; o day giu bang state de bam chuyen che do nhu tren app. */
+function ScheduleWithView(props: Omit<ParentScheduleProps, 'view' | 'onChangeView'>) {
+  const [view, setView] = useState<ScheduleView>('WEEK');
+  return <ParentSchedule {...props} view={view} onChangeView={setView} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderAttendance() {
   const handlers = {
     onAddChild: jest.fn(),
@@ -115,7 +133,7 @@ async function renderAttendance() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentSchedule {...handlers} />
+      <ScheduleWithView {...handlers} />
     </QueryClientProvider>,
   );
   const user = userEvent.setup();

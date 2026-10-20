@@ -5,7 +5,7 @@ import { logger } from '@/lib/logger';
 
 import { parentDashboardApi } from '../api/parent-dashboard-api';
 import { NOTIFICATION_PAGE_SIZE } from '../constants';
-import type { AppNotification, NotificationDestination } from '../types';
+import type { AppNotification, ParentDestination } from '../types';
 import { getNotificationDestination } from '../utils';
 
 export function useUnreadNotificationCount() {
@@ -50,9 +50,7 @@ export function useMarkAllNotificationsRead() {
  * Bam mot thong bao: danh dau da doc (khong cho BE, loi thi chi ghi log vi lan sau van danh dau duoc)
  * roi bao route mo man hinh cua ban ghi thong bao tro toi, neu co.
  */
-export function useOpenNotification(
-  onOpenDestination: (destination: NotificationDestination) => void,
-) {
+export function useOpenNotification(onOpenDestination: (destination: ParentDestination) => void) {
   const invalidate = useInvalidateNotifications();
   const markRead = useMutation({
     mutationFn: (notificationId: string) => parentDashboardApi.markNotificationRead(notificationId),

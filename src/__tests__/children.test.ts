@@ -61,10 +61,10 @@ describe('features/children', () => {
         'Vui lòng nhập họ tên học sinh',
       );
       expect(firstErrorMessage({ ...VALID_INPUT, grade: undefined })).toBe(
-        'Vui lòng chọn lớp của học sinh',
+        'Vui lòng chọn khối của học sinh',
       );
       expect(firstErrorMessage({ ...VALID_INPUT, grade: 10 })).toBe(
-        'Vui lòng chọn lớp của học sinh',
+        'Vui lòng chọn khối của học sinh',
       );
     });
 

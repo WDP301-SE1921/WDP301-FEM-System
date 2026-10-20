@@ -1,5 +1,6 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
+import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
 import { logger } from '@/lib/logger';
 import { AppError, type ApiResponse } from '@/types/api';
 import { addDays, toDateKey } from '@/utils/date';
@@ -46,6 +47,7 @@ import type {
   TuitionEnrollment,
   TuitionReceipt,
   UnreadNotificationCount,
+  UploadedFile,
 } from '../types';
 import { getActiveSubjectNames, toAttendanceSummary } from '../utils';
 
@@ -59,6 +61,21 @@ import {
   toStudentEnrollments,
   toStudentSchedule,
 } from './parent-data-mappers';
+
+/**
+ * Gui anh cham hon request thuong: anh 2-4 MB tren 4G yeu, BE con day tiep len kho luu tru (cho toi
+ * 30 giay).
+ */
+const UPLOAD_TIMEOUT_MS = 90_000;
+const HTTP_PAYLOAD_TOO_LARGE = 413;
+const HTTP_SERVICE_UNAVAILABLE = 503;
+/** Loi BE chi tra `HTTP_ERROR` khi gui anh, phan biet bang status. */
+const UPLOAD_STATUS_MESSAGES: Partial<Record<number, string>> = {
+  [HTTP_PAYLOAD_TOO_LARGE]: 'Ảnh phải nhỏ hơn 10 MB.',
+  // Kho luu tru anh cua BE chua cau hinh
+  [HTTP_SERVICE_UNAVAILABLE]:
+    'Trung tâm chưa nhận ảnh bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
+};
 
 /** `limit` lon nhat BE nhan (PageDto). */
 const PAGE_LIMIT = 100;
@@ -306,6 +323,30 @@ export const parentDashboardApi = {
       );
       return data.data;
     });
+  },
+
+  /** Tai mot anh bai lam len de gui kem bai nop. */
+  async uploadSubmissionImage(image: PickedImage): Promise<UploadedFile> {
+    const form = new FormData();
+    await appendImageToForm(form, 'file', image);
+    try {
+      const { data } = await apiClient.post<ApiResponse<UploadedFile>>(
+        Endpoints.academic.files,
+        form,
+        {
+          // apiClient mac dinh gui JSON: axios se doi FormData thanh JSON neu khong doi header
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: UPLOAD_TIMEOUT_MS,
+        },
+      );
+      return data.data;
+    } catch (error) {
+      const message = error instanceof AppError ? UPLOAD_STATUS_MESSAGES[error.status ?? 0] : null;
+      if (error instanceof AppError && message) {
+        throw new AppError(message, error.status, error.code);
+      }
+      throw error;
+    }
   },
 
   /** Con nop bai qua phien dang nhap cua phu huynh. */

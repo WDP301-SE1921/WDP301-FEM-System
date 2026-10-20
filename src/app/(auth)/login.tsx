@@ -3,7 +3,13 @@ import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/common/screen';
 import { Spacing } from '@/constants/theme';
-import { LoginFooter, LoginForm, LoginHeader, LoginIntro } from '@/features/auth';
+import {
+  LoginFooter,
+  LoginForm,
+  LoginHeader,
+  LoginIntro,
+  SessionExpiredNotice,
+} from '@/features/auth';
 
 export default function LoginScreen() {
   // Vao thang tu dang xuat (replace) thi khong co man hinh truoc de quay lai
@@ -15,6 +21,7 @@ export default function LoginScreen() {
 
       <View style={styles.main}>
         <LoginIntro />
+        <SessionExpiredNotice />
         <LoginForm
           onForgotPassword={(email) =>
             router.push({ pathname: '/(auth)/forgot-password', params: { email } })

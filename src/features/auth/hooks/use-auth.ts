@@ -3,18 +3,21 @@ import { router } from 'expo-router';
 
 import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/store/auth-store';
+import { AppError } from '@/types/api';
 import type { AuthSession } from '@/types/auth';
 
 import { authApi } from '../api/auth-api';
+import { MOBILE_ACCESS_DENIED_CODE, MOBILE_ACCESS_DENIED_MESSAGE } from '../constants';
 import type { LoginInput, RegisterInput } from '../schemas';
-import { getPostSignInHref } from '../utils';
+import { canUseMobileApp, getPostSignInHref } from '../utils';
 
 /** Doc trang thai dang nhap hien tai. */
 export function useAuth() {
   const user = useAuthStore((s) => s.user);
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
-  return { user, isAuthenticated, isHydrated };
+  const isSessionExpired = useAuthStore((s) => s.isSessionExpired);
+  return { user, isAuthenticated, isHydrated, isSessionExpired };
 }
 
 /**
@@ -30,11 +33,28 @@ function useStartSession() {
   };
 }
 
+/**
+ * Dang nhap bang tai khoan BE. Tai khoan giao vien, nhan su trung tam khong luu phien: thu hoi phien BE
+ * vua tao roi bao loi duoi form.
+ */
+async function signInToMobileApp(input: LoginInput): Promise<AuthSession> {
+  const session = await authApi.login(input);
+  if (canUseMobileApp(session.user)) return session;
+
+  try {
+    await authApi.revokeSession(session.tokens.accessToken);
+  } catch (error) {
+    // Khong thu hoi duoc thi phien tu het han; van chan dang nhap
+    logger.warn('Khong thu hoi duoc phien cua tai khoan khong dung app mobile', error);
+  }
+  throw new AppError(MOBILE_ACCESS_DENIED_MESSAGE, 403, MOBILE_ACCESS_DENIED_CODE);
+}
+
 export function useLogin() {
   const startSession = useStartSession();
 
   return useMutation({
-    mutationFn: (input: LoginInput) => authApi.login(input),
+    mutationFn: signInToMobileApp,
     onSuccess: startSession,
   });
 }

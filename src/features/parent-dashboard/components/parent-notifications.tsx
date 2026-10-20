@@ -15,21 +15,28 @@ import {
   useUnreadNotificationCount,
 } from '../hooks/use-notifications';
 import { useLinkedStudents } from '../hooks/use-parent-dashboard';
-import type { NotificationDestination } from '../types';
-import { getNotificationStudentLabel, mergeNotificationPages } from '../utils';
+import type { ParentDestination } from '../types';
+import {
+  getNotificationDestination,
+  getNotificationStudentLabel,
+  mergeNotificationPages,
+} from '../utils';
 
+import { DetailHeader } from './detail-header';
 import { NotificationRow } from './notification-row';
 
 export type ParentNotificationsProps = {
+  /** Roi hop thu, ve man hinh vua mo chuong. */
+  onBack: () => void;
   /** Mo man hinh cua ban ghi thong bao tro toi; route quyet dinh dieu huong. */
-  onOpenNotification: (destination: NotificationDestination) => void;
+  onOpenNotification: (destination: ParentDestination) => void;
 };
 
 /**
  * Hop thu thong bao cua phu huynh, chung moi con. Thong bao moi den qua realtime nen danh sach tu cap
  * nhat; bam mot thong bao thi danh dau da doc va mo man hinh lien quan.
  */
-export function ParentNotifications({ onOpenNotification }: ParentNotificationsProps) {
+export function ParentNotifications({ onBack, onOpenNotification }: ParentNotificationsProps) {
   const inbox = useNotificationInbox();
   const unread = useUnreadNotificationCount();
   const markAll = useMarkAllNotificationsRead();
@@ -63,6 +70,7 @@ export function ParentNotifications({ onOpenNotification }: ParentNotificationsP
             key={notification.id}
             notification={notification}
             studentLabel={getNotificationStudentLabel(notification, labelStudents)}
+            canOpen={getNotificationDestination(notification) !== null}
             onPress={() => openNotification(notification)}
           />
         ))}
@@ -80,15 +88,11 @@ export function ParentNotifications({ onOpenNotification }: ParentNotificationsP
 
   return (
     <View style={styles.container}>
+      <DetailHeader title="Thông báo" onBack={onBack} />
       <View style={styles.header}>
-        <View style={styles.heading}>
-          <ThemedText type="heading" accessibilityRole="header">
-            Thông báo
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Đã đọc hết thông báo'}
-          </ThemedText>
-        </View>
+        <ThemedText type="small" themeColor="textSecondary" style={styles.heading}>
+          {unreadCount > 0 ? `${unreadCount} thông báo chưa đọc` : 'Đã đọc hết thông báo'}
+        </ThemedText>
         {unreadCount > 0 ? (
           <Button
             title="Đọc tất cả"
@@ -109,6 +113,6 @@ export function ParentNotifications({ onOpenNotification }: ParentNotificationsP
 const styles = StyleSheet.create({
   container: { flex: 1, gap: Spacing.three },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  heading: { flex: 1, gap: Spacing.half },
+  heading: { flex: 1 },
   list: { gap: Spacing.two },
 });

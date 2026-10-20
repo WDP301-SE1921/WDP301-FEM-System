@@ -4,6 +4,7 @@
  * `./api/parent-data-mappers.ts`.
  */
 import type { IconName } from '@/components/ui/icon';
+import type { PickImageResult } from '@/lib/image-picker';
 
 /**
  * Mot phan tu cua GET /me/students (module `registration-flow` cua BE, da noi BE that): ban ghi
@@ -623,6 +624,8 @@ export type SubmissionRecord = {
   attemptNo: number;
   answers: SubmissionAnswer[];
   submittedAt: string;
+  /** Anh bai lam gui kem lan nop. BE chi tra id; xem anh can `GET /academic/files/:id/download`. */
+  files: { fileId: string }[];
   /** Chi gom diem da cong bo, ban sua moi nhat truoc. Rong khi giao vien chua cong bo. */
   grades: SubmissionGrade[];
 };
@@ -630,7 +633,30 @@ export type SubmissionRecord = {
 /** Body POST /academic/submissions (SubmissionDto): dung mot cau tra loi cho moi cau hoi. */
 export type SubmitAssignmentPayload = {
   recipientId: string;
+  /** Cau tu luan duoc de trong khi co anh bai lam (BE cho `answer` rong). */
   answers: SubmissionAnswer[];
+  /**
+   * Id anh bai lam (`POST /academic/files`), toi da `MAX_SUBMISSION_FILES`, phai do chinh phu huynh
+   * tai len (`INVALID_FILES`). Khong co anh thi khong gui.
+   */
+  fileIds?: string[];
+};
+
+/** Response POST /academic/files: tep phu huynh da tai len, gui kem bai nop qua `fileIds`. */
+export type UploadedFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+};
+
+/**
+ * Anh bai lam gui kem lan nop. `uri` la anh tren may de xem truoc; null voi anh lay lai tu lan nop
+ * truoc khi con nop lai (app chua doc duoc anh da nop: `GET /academic/files/:id/download` chua wire).
+ */
+export type SubmissionAttachment = {
+  fileId: string;
+  uri: string | null;
 };
 
 /** Response POST /academic/submissions. */
@@ -643,6 +669,15 @@ export type SubmissionReceipt = {
 
 /** Cau tra loi con dang lam, key la id cau hoi. Cau chua lam thi khong co key. */
 export type AnswerDraft = Partial<Record<string, string>>;
+
+/** Ly do khong co anh de gui sau khi mo camera hoac thu vien (nguoi dung tu huy thi khong bao). */
+export type ImagePickProblem = Exclude<PickImageResult['status'], 'PICKED' | 'CANCELED'>;
+
+/** Bai lam dang do luu tren may: cau tra loi va anh bai lam da tai len. */
+export type AssignmentDraft = {
+  answers: AnswerDraft;
+  attachments: SubmissionAttachment[];
+};
 
 /** Trang thai mot lua chon khi xem lai bai: chua chon, con chon (chua biet dung sai), dung, sai. */
 export type ChoiceState = 'IDLE' | 'SELECTED' | 'CORRECT' | 'WRONG';
@@ -855,7 +890,10 @@ export type ScoreTrend = 'UP' | 'DOWN' | 'FLAT';
  * trung binh cong khong trong so, khong phai diem tong ket chinh thuc.
  */
 export type ScoreSummary = {
+  /** Trung binh cong moi bai da cong bo diem (thang 10), khong trong so theo loai bai. */
   average: number;
+  /** So bai da cong bo diem dung de tinh `average`. */
+  gradedCount: number;
   /** Chenh lech so voi diem trung binh tinh toi het thang truoc. null khi thang truoc chua co diem. */
   changeFromLastMonth: number | null;
 };
@@ -1004,14 +1042,16 @@ export type NotificationQuery = PageQuery & { studentId?: string };
 export type ReadAllNotificationsResult = UnreadNotificationCount & { updatedCount: number };
 
 /**
- * Man hinh mo khi phu huynh bam mot thong bao. Thong bao lop, don nghi, hoc bu, ghi danh khong co man
- * hinh rieng nen khong co dich. Ban ghi co the khong con mo duoc (con da chuyen lop): man hinh dich tu
- * bao khong tim thay.
+ * Man hinh mo khi phu huynh bam mot thong bao hoac mot nut o trang chu. `SCHEDULE` va `ASSIGNMENTS`
+ * la tab (Lich hoc, Diem & Bai): mo thi chon con trong dich roi chuyen tab, mo dung che do xem. Ban ghi
+ * co the khong con mo duoc (con da chuyen lop): man hinh dich tu bao khong tim thay.
  */
-export type NotificationDestination =
+export type ParentDestination =
   | { kind: 'ASSIGNMENT'; studentId: string; assignmentId: string }
   | { kind: 'SESSION'; studentId: string; sessionId: string }
-  | { kind: 'BILL'; registrationId: string };
+  | { kind: 'BILL'; registrationId: string }
+  | { kind: 'SCHEDULE'; studentId: string; view: ScheduleView }
+  | { kind: 'ASSIGNMENTS'; studentId: string; tab: AssignmentTab };
 
 export type AttentionItemType = 'TUITION' | 'ASSIGNMENT';
 
@@ -1021,4 +1061,6 @@ export type AttentionItem = {
   type: AttentionItemType;
   title: string;
   description: string;
+  /** Bam viec thi mo bill hoac bai tap do. */
+  destination: ParentDestination;
 };

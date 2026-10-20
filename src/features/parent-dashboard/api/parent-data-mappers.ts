@@ -449,6 +449,7 @@ export function toScoreSummary(
   );
   return {
     average,
+    gradedCount: scored.length,
     changeFromLastMonth: previousAverage === null ? null : average - previousAverage,
   };
 }

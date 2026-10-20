@@ -60,6 +60,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-secure-store',
     [
+      // Hoc sinh chup hoac chon anh bai tu luan de nop kem bai (POST /academic/files)
+      'expo-image-picker',
+      {
+        photosPermission: 'EduGrade cần xem ảnh để học sinh chọn ảnh bài làm gửi giáo viên.',
+        cameraPermission: 'EduGrade cần dùng camera để học sinh chụp bài làm gửi giáo viên.',
+        microphonePermission: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         backgroundColor: '#208AEF',

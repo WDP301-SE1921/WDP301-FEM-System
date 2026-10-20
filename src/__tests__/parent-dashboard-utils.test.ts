@@ -30,6 +30,7 @@ import {
   formatScoreChange,
   formatWeekRange,
   formatWeeklySlots,
+  getAdjacentWeek,
   getAssessmentMarkers,
   getAssignmentDeadline,
   getAssignmentFormat,
@@ -38,6 +39,7 @@ import {
   getAttendanceBadge,
   getAttendanceLevel,
   getAttendanceNotes,
+  getParentGreeting,
   getAttendanceRate,
   getAttendanceRecordStatus,
   getCourseFilterOptions,
@@ -69,6 +71,7 @@ import {
   summarizeRoadmap,
   toAttendanceSummary,
 } from '@/features/parent-dashboard/utils';
+import { addDays } from '@/utils/date';
 
 describe('features/parent-dashboard/utils', () => {
   describe('getSessionStatus', () => {
@@ -290,6 +293,16 @@ describe('features/parent-dashboard/utils', () => {
         '3 tuần sau',
         '4 tuần sau',
       ]);
+    });
+
+    it('getAdjacentWeek cho mui ten doi tuan, het pham vi chon tuan thi null', () => {
+      const today = new Date(2026, 9, 15);
+      const weekAt = (offset: number) => addDays(WEEK_START, offset * 7);
+
+      expect(getAdjacentWeek(WEEK_START, 1, today)).toEqual(weekAt(1));
+      expect(getAdjacentWeek(WEEK_START, -1, today)).toEqual(weekAt(-1));
+      expect(getAdjacentWeek(weekAt(-WEEKS_BEFORE), -1, today)).toBeNull();
+      expect(getAdjacentWeek(weekAt(WEEKS_AFTER), 1, today)).toBeNull();
     });
   });
 
@@ -841,6 +854,16 @@ describe('features/parent-dashboard/utils', () => {
 
     it('formatAssignmentSubmitted hien gio va ngay nop', () => {
       expect(formatAssignmentSubmitted(submittedOn(15).submittedAt)).toBe('Đã nộp: 20:00, 15/10');
+    });
+  });
+
+  describe('getParentGreeting', () => {
+    it('goi phu huynh bang tu cuoi cua ho ten', () => {
+      expect(getParentGreeting('Phạm Thu Hà')).toBe('Chào Hà 👋');
+    });
+
+    it('chua dat ten thi chao chung', () => {
+      expect(getParentGreeting(null)).toBe('Xin chào 👋');
     });
   });
 });

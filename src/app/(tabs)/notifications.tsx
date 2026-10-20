@@ -1,21 +1,23 @@
 import { router } from 'expo-router';
 
-import { Screen } from '@/components/common/screen';
+import { Screen, TAB_SCREEN_EDGES } from '@/components/common/screen';
 import {
-  getNotificationHref,
   ParentNotifications,
+  useOpenParentDestination,
   useRefreshParentData,
 } from '@/features/parent-dashboard';
 
-// Mo tu nut chuong va "Xem tất cả" o trang chu; tab nay khong co nut tren thanh tab
+// Mo tu nut chuong va "Xem tất cả" o trang chu; tab nay khong co nut tren thanh tab nen co nut quay lai
 export default function NotificationsScreen() {
   const { isRefreshing, refresh } = useRefreshParentData();
+  const openDestination = useOpenParentDestination();
+
+  // Thanh tab giu lich su (`backBehavior`) nen quay lai dung tab vua mo chuong; mo thang tu link thi ve trang chu
+  const goBack = () => (router.canGoBack() ? router.back() : router.navigate('/'));
 
   return (
-    <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
-      <ParentNotifications
-        onOpenNotification={(destination) => router.push(getNotificationHref(destination))}
-      />
+    <Screen edges={TAB_SCREEN_EDGES} onRefresh={refresh} isRefreshing={isRefreshing}>
+      <ParentNotifications onBack={goBack} onOpenNotification={openDestination} />
     </Screen>
   );
 }

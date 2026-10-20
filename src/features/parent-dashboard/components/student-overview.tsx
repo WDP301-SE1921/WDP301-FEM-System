@@ -6,7 +6,7 @@ import { Spacing } from '@/constants/theme';
 import { toDateKey } from '@/utils/date';
 
 import { useAttendanceSummary, useStudentSchedule } from '../hooks/use-parent-dashboard';
-import type { NotificationDestination } from '../types';
+import type { ParentDestination } from '../types';
 
 import { AttendanceStatCard } from './attendance-stat-card';
 import { StudentAttention } from './student-attention';
@@ -16,22 +16,21 @@ import { TodaySessions } from './today-sessions';
 
 export type StudentOverviewProps = {
   studentId: string;
-  onOpenAssignments: () => void;
   onOpenNotifications: () => void;
-  onOpenNotification: (destination: NotificationDestination) => void;
+  /** Mo man hinh cua the duoc bam, theo con dang xem. */
+  onOpenDestination: (destination: ParentDestination) => void;
 };
 
 /**
  * Tong quan hom nay cua con dang chon, ghep tu cac route that cua BE (BE khong co route tong quan).
  * Phan chinh (buoi hom nay, ty le di hoc) tai loi thi ca khoi bao loi. Phan phu (diem trung binh, viec
  * can chu y, thong bao moi) tu tai va tu bao loi trong the cua minh, de mot route phu loi khong che mat
- * lich hoc cua con.
+ * lich hoc cua con. The nao cung bam duoc de mo phan chi tiet tuong ung.
  */
 export function StudentOverview({
   studentId,
-  onOpenAssignments,
   onOpenNotifications,
-  onOpenNotification,
+  onOpenDestination,
 }: StudentOverviewProps) {
   const today = toDateKey(new Date());
   const todaySessions = useStudentSchedule(studentId, { from: today, to: today });
@@ -47,15 +46,25 @@ export function StudentOverview({
 
   return (
     <View style={styles.sections}>
-      <TodaySessions sessions={todaySessions.data} onPrepare={onOpenAssignments} />
+      <TodaySessions
+        sessions={todaySessions.data}
+        onOpenSession={(sessionId) => onOpenDestination({ kind: 'SESSION', studentId, sessionId })}
+        onPrepare={() => onOpenDestination({ kind: 'ASSIGNMENTS', studentId, tab: 'TODO' })}
+      />
       <View style={styles.stats}>
-        <AttendanceStatCard attendance={attendance.data} />
-        <StudentScoreStat studentId={studentId} />
+        <AttendanceStatCard
+          attendance={attendance.data}
+          onPress={() => onOpenDestination({ kind: 'SCHEDULE', studentId, view: 'ATTENDANCE' })}
+        />
+        <StudentScoreStat
+          studentId={studentId}
+          onPress={() => onOpenDestination({ kind: 'ASSIGNMENTS', studentId, tab: 'GRADED' })}
+        />
       </View>
-      <StudentAttention studentId={studentId} onOpenAssignments={onOpenAssignments} />
+      <StudentAttention studentId={studentId} onOpenDestination={onOpenDestination} />
       <StudentRecentNotifications
         studentId={studentId}
-        onOpenNotification={onOpenNotification}
+        onOpenNotification={onOpenDestination}
         onSeeAll={onOpenNotifications}
       />
     </View>

@@ -4,7 +4,8 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
 import { useOpenNotification, useRecentNotifications } from '../hooks/use-notifications';
-import type { NotificationDestination } from '../types';
+import type { ParentDestination } from '../types';
+import { getNotificationDestination } from '../utils';
 
 import { NotificationRow } from './notification-row';
 import { RecentNotifications } from './recent-notifications';
@@ -14,7 +15,7 @@ import { SectionLoading } from './section-loading';
 export type StudentRecentNotificationsProps = {
   studentId: string;
   /** Mo man hinh cua ban ghi thong bao tro toi; route quyet dinh dieu huong. */
-  onOpenNotification: (destination: NotificationDestination) => void;
+  onOpenNotification: (destination: ParentDestination) => void;
   onSeeAll: () => void;
 };
 
@@ -50,6 +51,7 @@ export function StudentRecentNotifications({
           <NotificationRow
             key={notification.id}
             notification={notification}
+            canOpen={getNotificationDestination(notification) !== null}
             onPress={() => openNotification(notification)}
           />
         ))}

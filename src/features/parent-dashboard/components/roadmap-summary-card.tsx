@@ -42,7 +42,8 @@ export function RoadmapSummaryCard({ enrollment, summary, markers }: RoadmapSumm
           </ThemedText>
         </View>
         <ThemedView type="accentSoft" style={styles.percent}>
-          <Icon name="star" size={ICON_SIZE} themeColor="accent" />
+          {/* Khong dung ngoi sao: ngoi sao da danh cho diem, o day la phan tram bai da hoc */}
+          <Icon name="pie-chart-outline" size={ICON_SIZE} themeColor="accentStrong" />
           <ThemedText type="smallBold">{summary.percent}%</ThemedText>
         </ThemedView>
       </View>

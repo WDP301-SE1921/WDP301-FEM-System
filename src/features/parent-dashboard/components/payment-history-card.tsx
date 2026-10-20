@@ -58,7 +58,7 @@ export function PaymentHistoryCard({ enrollment, onPress }: PaymentHistoryCardPr
         <ThemedView style={styles.summary}>
           <View style={styles.summaryItem}>
             <ThemedText type="small" themeColor="textSecondary">
-              Mã phiếu thu
+              Mã biên lai
             </ThemedText>
             <ThemedText type="smallBold" numberOfLines={1}>
               #{payment.receiptNumber}

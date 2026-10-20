@@ -55,6 +55,8 @@ class BeError {
 }
 
 let sent: SentRequest[] = [];
+/** Cau hinh cua request cuoi, de kiem tra header va timeout (vd gui anh). */
+let lastConfig: InternalAxiosRequestConfig | null = null;
 let respond: (request: SentRequest) => unknown = () => [];
 
 /** Dong vai adapter mang cua axios: ghi lai request va tra `data` trong envelope cua BE. */
@@ -68,6 +70,7 @@ function networkAdapter(config: InternalAxiosRequestConfig): Promise<AxiosRespon
     body: typeof config.data === 'string' ? JSON.parse(config.data) : config.data,
   };
   sent.push(request);
+  lastConfig = config;
 
   const reply = respond(request);
   if (reply instanceof BeError) {
@@ -538,7 +541,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       });
 
       await expect(parentDashboardApi.getStudentGrades(STUDENT_ID)).resolves.toEqual({
-        summary: { average: 7, changeFromLastMonth: null },
+        summary: { average: 7, gradedCount: 2, changeFromLastMonth: null },
         subjects,
       });
       expect(sentTo(ROUTES.grades).map(({ query }) => query)).toEqual([
@@ -665,7 +668,79 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     });
   });
 
+  describe('uploadSubmissionImage', () => {
+    const image = {
+      uri: 'file:///cache/bai-lam.jpg',
+      name: 'bai-lam-1.jpg',
+      mimeType: 'image/jpeg' as const,
+      size: 2_000_000,
+    };
+
+    it('gui multipart truong file toi POST /academic/files, cho lau hon request thuong', async () => {
+      const uploaded = {
+        id: 'file-1',
+        name: image.name,
+        mimeType: image.mimeType,
+        size: 2_000_000,
+      };
+      respond = () => uploaded;
+      const append = jest.spyOn(FormData.prototype, 'append');
+
+      await expect(parentDashboardApi.uploadSubmissionImage(image)).resolves.toEqual(uploaded);
+      const [request] = sentTo('/academic/files');
+      expect(request?.method).toBe('post');
+      expect(request?.body).toBeInstanceOf(FormData);
+      // App gui file theo kieu React Native ({ uri, name, type }); FormData cua Jest khong doc lai duoc
+      expect(append).toHaveBeenCalledWith('file', {
+        uri: image.uri,
+        name: image.name,
+        type: image.mimeType,
+      });
+      expect(lastConfig?.headers['Content-Type']).toBe('multipart/form-data');
+      expect(lastConfig?.timeout).toBe(90_000);
+    });
+
+    it('BE chua co kho anh (503) hay anh qua lon (413) thi bao ro cho phu huynh', async () => {
+      respond = () => new BeError(503, 'HTTP_ERROR');
+      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
+        status: 503,
+        message:
+          'Trung tâm chưa nhận ảnh bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
+      });
+
+      respond = () => new BeError(413, 'HTTP_ERROR');
+      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
+        message: 'Ảnh phải nhỏ hơn 10 MB.',
+      });
+
+      respond = () => new BeError(409, 'INVALID_FILE_TYPE');
+      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
+        code: 'INVALID_FILE_TYPE',
+        message: 'Chỉ gửi được ảnh JPG hoặc PNG.',
+      });
+    });
+  });
+
   describe('submitAssignment', () => {
+    it('gui kem fileIds cua anh bai lam', async () => {
+      respond = () => ({
+        id: 'submission-3',
+        recipientId: 'recipient-1',
+        attemptNo: 1,
+        submittedAt: at(0),
+      });
+      const payload = {
+        recipientId: 'recipient-1',
+        answers: [{ questionId: 'q1', answer: '' }],
+        fileIds: ['file-1', 'file-2'],
+      };
+
+      await parentDashboardApi.submitAssignment(payload);
+      expect(sentTo('/academic/submissions')).toEqual([
+        { method: 'post', path: '/academic/submissions', query: {}, body: payload },
+      ]);
+    });
+
     it('gui dung body cua SubmissionDto toi POST /academic/submissions', async () => {
       const receipt = {
         id: 'submission-2',

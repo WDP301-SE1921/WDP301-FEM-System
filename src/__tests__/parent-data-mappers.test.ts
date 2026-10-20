@@ -799,12 +799,14 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       );
 
       expect(summary?.average).toBeCloseTo(23 / 3);
+      expect(summary?.gradedCount).toBe(3);
       expect(summary?.changeFromLastMonth).toBeCloseTo(23 / 3 - 7);
     });
 
     it('thang truoc chua co diem thi khong co chenh lech', () => {
       expect(toScoreSummary([grade(9, at(10, 15))], now)).toEqual({
         average: 9,
+        gradedCount: 1,
         changeFromLastMonth: null,
       });
     });

@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, type PressableProps } from 'react-native';
+import { Pressable, StyleSheet, View, type PressableProps } from 'react-native';
 
 import { Icon, type IconName } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -26,27 +26,42 @@ export type ActionChipProps = Omit<PressableProps, 'style' | 'children'> & {
 
 /**
  * Nut nho dang vien thuoc dat trong the (vd "Xem bài"). `Button` dung chung co chu 16px, qua to
- * khi nam cung hang voi noi dung the tren man hinh hep.
+ * khi nam cung hang voi noi dung the tren man hinh hep. Khong co `onPress` thi chi la nhan trang tri
+ * cua mot the bam duoc ca the (the da doc ten cho trinh doc man hinh).
  */
 export function ActionChip({ label, variant = 'solid', trailingIcon, ...rest }: ActionChipProps) {
   const theme = useTheme();
   const colors = VARIANTS[variant];
+  const chipStyle = [styles.chip, { backgroundColor: theme[colors.background] }];
+  const content = (
+    <>
+      <ThemedText type="smallBold" themeColor={colors.text} numberOfLines={1} style={styles.label}>
+        {label}
+      </ThemedText>
+      {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} themeColor={colors.text} /> : null}
+    </>
+  );
+
+  if (!rest.onPress) {
+    return (
+      <View
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        style={chipStyle}
+      >
+        {content}
+      </View>
+    );
+  }
 
   return (
     <Pressable
       accessibilityRole="button"
       hitSlop={HIT_SLOP}
-      style={({ pressed }) => [
-        styles.chip,
-        { backgroundColor: theme[colors.background] },
-        pressed && styles.pressed,
-      ]}
+      style={({ pressed }) => [...chipStyle, pressed && styles.pressed]}
       {...rest}
     >
-      <ThemedText type="smallBold" themeColor={colors.text} numberOfLines={1} style={styles.label}>
-        {label}
-      </ThemedText>
-      {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} themeColor={colors.text} /> : null}
+      {content}
     </Pressable>
   );
 }

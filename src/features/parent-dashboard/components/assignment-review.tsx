@@ -1,7 +1,9 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
+import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
+import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 
 import type { AssignmentQuestion, SubmissionRecord } from '../types';
@@ -10,6 +12,8 @@ import { getAssignmentMaxScore, getPublishedGrade, getQuestionReview } from '../
 import { GradeResultCard } from './grade-result-card';
 import { QuestionReviewCard } from './question-review-card';
 import { SectionCard } from './section-card';
+
+const FILES_ICON_SIZE = 20;
 
 export type AssignmentReviewProps = {
   questions: AssignmentQuestion[];
@@ -32,6 +36,7 @@ export function AssignmentReview({
 }: AssignmentReviewProps) {
   const grade = getPublishedGrade(submission);
   const hasAnswerKey = questions.some(({ correctAnswer }) => Boolean(correctAnswer));
+  const fileCount = submission?.files.length ?? 0;
 
   const renderStatus = () => {
     if (grade) {
@@ -67,6 +72,16 @@ export function AssignmentReview({
       <ThemedText type="default" accessibilityRole="header" style={styles.sectionTitle}>
         {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
+      {fileCount > 0 ? (
+        // App chua xem lai duoc anh da nop (GET /academic/files/:id/download chua wire)
+        <ThemedView type="backgroundElement" style={styles.files}>
+          <Icon name="images-outline" size={FILES_ICON_SIZE} themeColor="primary" />
+          <ThemedText type="small" style={styles.filesText}>
+            Đã gửi kèm {fileCount} ảnh bài làm. Giáo viên chấm câu tự luận theo ảnh và phần chữ đã
+            gõ.
+          </ThemedText>
+        </ThemedView>
+      ) : null}
       {questions.map((question, index) => (
         <QuestionReviewCard
           key={question.id}
@@ -74,6 +89,7 @@ export function AssignmentReview({
           question={question}
           review={getQuestionReview(question, submission)}
           hasSubmission={submission !== null}
+          hasAttachments={fileCount > 0}
         />
       ))}
 
@@ -100,5 +116,13 @@ const styles = StyleSheet.create({
   container: { gap: Spacing.three },
   sectionTitle: { fontWeight: 700 },
   hint: { textAlign: 'center' },
+  files: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Radius.control,
+  },
+  filesText: { flex: 1 },
   pill: { borderRadius: Radius.full },
 });

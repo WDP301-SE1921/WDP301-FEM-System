@@ -64,13 +64,13 @@ type ReviewBlockProps = PropsWithChildren<{
 }>;
 
 function ReviewBlock({ icon, title, tone, children }: ReviewBlockProps) {
-  const { color } = TONES[tone];
+  const { text } = TONES[tone];
 
   return (
     <ThemedView style={styles.block}>
       <View style={styles.row}>
-        <Icon name={icon} size={BLOCK_ICON_SIZE} themeColor={color} />
-        <ThemedText type="smallBold" themeColor={color} style={styles.rowText}>
+        <Icon name={icon} size={BLOCK_ICON_SIZE} themeColor={text} />
+        <ThemedText type="smallBold" themeColor={text} style={styles.rowText}>
           {title}
         </ThemedText>
       </View>

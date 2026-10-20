@@ -30,7 +30,7 @@ export function VerifyEmailForm({ onSubmit, isPending, error }: VerifyEmailFormP
         control={control}
         name="token"
         label="Mã xác minh"
-        placeholder="Dán mã trong email"
+        placeholder="Dán mã, hoặc cả dòng chứa mã"
         leadingIcon="key-outline"
         // Ma phan biet hoa thuong: khong de ban phim tu viet hoa hay tu sua
         autoCapitalize="none"

@@ -70,6 +70,6 @@ Rule of thumb: minimum radius 12px, never use square corners (`borderRadius: 0`)
 
 ## Target Audience
 
-Parents. The mobile app only serves the parent role (see `docs/SRS.md`, sections 1.2 and 1.3): a parent signs in and manages one or more child profiles. There are no student accounts, so middle/junior-high school students (grades 6–9) use the app through their parent's signed-in session to receive and submit homework and to view results. Teachers and other centre staff use the web app; whether teachers also get mobile access is still open (SRS section 9).
+Parents and students. The mobile app only serves the parent role (see `docs/SRS.md`, sections 1.2 and 1.3): a parent signs in and manages one or more child profiles. There are no student accounts, so middle/junior-high school students (grades 6–9) use the app through their parent's signed-in session to receive and submit homework and to view results. The app is not for teachers: teachers and other centre staff use the web app only (decided 2026-10-20, closing SRS section 9), and the app rejects their sign-in.
 
 Prioritize fast, low-step interactions and clear text that isn't cluttered on small screens.

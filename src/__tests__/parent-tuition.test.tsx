@@ -9,6 +9,7 @@ import type {
   TuitionClass,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay, toDateKey } from '@/utils/date';
 import { formatCurrency, formatDate } from '@/utils/format';
@@ -169,6 +170,9 @@ function mockTwoChildren() {
     studentId === MINH_ANH.id ? [MATH_PAID, GEOMETRY_UNPAID] : [],
   );
 }
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
 
 async function renderTuition() {
   const onAddChild = jest.fn();

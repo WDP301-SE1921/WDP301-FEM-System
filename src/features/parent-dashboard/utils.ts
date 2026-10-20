@@ -24,6 +24,7 @@ import {
   ALL_SUBJECTS,
   ASSESSMENT_BADGE,
   ASSIGNMENT_STATES,
+  ASSIGNMENT_TAB_ORDER,
   ATTENDANCE_BREAKDOWN,
   ATTENDANCE_LEVELS,
   ATTENDANCE_RESULTS,
@@ -47,6 +48,7 @@ import {
   NOTIFICATION_TYPE_APPEARANCES,
   ROADMAP_DONE_LESSONS_SHOWN,
   ROADMAP_UPCOMING_LESSONS_SHOWN,
+  SCHEDULE_VIEW_ORDER,
   SCORE_LEVELS,
   SESSION_STATUSES,
   SUBJECT_ICONS,
@@ -60,6 +62,7 @@ import {
 } from './constants';
 import type {
   AnswerDraft,
+  AssignmentDraft,
   AppNotification,
   AttentionItem,
   AssignmentDetail,
@@ -87,15 +90,17 @@ import type {
   LessonKind,
   LessonProgress,
   LinkedStudent,
-  NotificationDestination,
+  NotificationTargetKind,
   Page,
   PaidEnrollment,
+  ParentDestination,
   QuestionKind,
   QuestionReview,
   RoadmapLesson,
   RoadmapSummary,
   ScheduleRange,
   ScheduleSession,
+  ScheduleView,
   ScoreTrend,
   SessionDetail,
   SessionLesson,
@@ -103,6 +108,7 @@ import type {
   StudentAssignment,
   StudentEnrollment,
   SubmissionAnswer,
+  SubmissionAttachment,
   SubmissionGrade,
   SubmissionRecord,
   TermSessionCount,
@@ -293,6 +299,16 @@ export function getWeekOptions(today: Date): { weekStart: Date; offset: number }
     const offset = index - WEEKS_BEFORE;
     return { weekStart: addDays(currentWeekStart, offset * DAYS_PER_WEEK), offset };
   });
+}
+
+/**
+ * Tuan truoc (`step` -1) hoac tuan sau (1) cua `weekStart` cho nut mui ten cua lich tuan. null khi ra
+ * ngoai cac tuan chon duoc o `getWeekOptions`.
+ */
+export function getAdjacentWeek(weekStart: Date, step: -1 | 1, today: Date): Date | null {
+  const targetKey = toDateKey(addDays(weekStart, step * DAYS_PER_WEEK));
+  const option = getWeekOptions(today).find((week) => toDateKey(week.weekStart) === targetKey);
+  return option?.weekStart ?? null;
 }
 
 /** Vd `Tuần này`, `Tuần sau`, `2 tuần trước`. */
@@ -837,11 +853,125 @@ export function getAssignmentDetailStatus(
 }
 
 /** So cau con chua tra loi. Cau chi co khoang trang coi nhu chua lam. */
+function isUnanswered(questionId: string, draft: AnswerDraft): boolean {
+  return (draft[questionId]?.trim() ?? '') === '';
+}
+
 export function countUnanswered(
   questions: readonly Pick<AssignmentQuestion, 'id'>[],
   draft: AnswerDraft,
 ): number {
-  return questions.filter(({ id }) => (draft[id]?.trim() ?? '') === '').length;
+  return questions.filter(({ id }) => isUnanswered(id, draft)).length;
+}
+
+/**
+ * Thu tu (tinh tu 1) cac cau chua tra loi, de chi cho con biet con thieu cau nao. Co anh bai lam thi
+ * cau tu luan duoc de trong: con lam ra giay va giao vien cham theo anh (anh gui kem ca bai, khong
+ * theo tung cau).
+ */
+export function getUnansweredPositions(
+  questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
+  draft: AnswerDraft,
+  hasAttachments = false,
+): number[] {
+  return questions.flatMap(({ id, kind }, index) => {
+    if (hasAttachments && kind === 'ESSAY') return [];
+    return isUnanswered(id, draft) ? [index + 1] : [];
+  });
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function isAttachment(value: unknown): value is SubmissionAttachment {
+  return (
+    isRecord(value) &&
+    typeof value.fileId === 'string' &&
+    (value.uri === null || typeof value.uri === 'string')
+  );
+}
+
+function toAnswerDraftRecord(value: unknown): AnswerDraft {
+  if (!isRecord(value)) return {};
+  return Object.fromEntries(
+    Object.entries(value).filter(
+      (entry): entry is [string, string] => typeof entry[1] === 'string',
+    ),
+  );
+}
+
+/**
+ * Doc ban nhap luu tren may. Ban luu truoc khi co anh bai lam chi la cau tra loi theo id cau hoi; du
+ * lieu hong thi bo qua phan hong thay vi lam vo man hinh.
+ */
+export function toAssignmentDraft(saved: unknown): AssignmentDraft | null {
+  if (!isRecord(saved)) return null;
+  if (!('answers' in saved)) return { answers: toAnswerDraftRecord(saved), attachments: [] };
+  const attachments = Array.isArray(saved.attachments)
+    ? saved.attachments.filter(isAttachment)
+    : [];
+  return { answers: toAnswerDraftRecord(saved.answers), attachments };
+}
+
+/** Anh cua lan nop truoc, de lan nop lai giu anh cu neu con khong doi (app khong co anh de xem truoc). */
+export function toDraftAttachments(
+  submission: Pick<SubmissionRecord, 'files'> | null,
+): SubmissionAttachment[] {
+  return (submission?.files ?? []).map(({ fileId }) => ({ fileId, uri: null }));
+}
+
+/** Vd `Câu 2, Câu 5`. */
+export function formatQuestionPositions(positions: readonly number[]): string {
+  return positions.map((position) => `Câu ${position}`).join(', ');
+}
+
+/** Co cau tu luan con de trong (duoc phep khi co anh bai lam). */
+export function hasEmptyEssay(
+  questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
+  draft: AnswerDraft,
+): boolean {
+  return questions.some(({ id, kind }) => kind === 'ESSAY' && isUnanswered(id, draft));
+}
+
+export type SubmitHintInput = {
+  /** Thu tu cac cau con thieu, xem `getUnansweredPositions`. */
+  unanswered: readonly number[];
+  /** So lan con duoc nop, tinh ca lan nay. */
+  remainingAttempts: number;
+  /** Co cau tu luan de trong vi da gui anh bai lam. */
+  hasEmptyEssay: boolean;
+};
+
+/** Dong nhac duoi bai lam: cau con thieu, hoac so lan nop con lai sau lan nay. */
+export function getSubmitHint({
+  unanswered,
+  remainingAttempts,
+  hasEmptyEssay: hasEmpty,
+}: SubmitHintInput): string {
+  if (unanswered.length > 0) {
+    return `Còn ${unanswered.length} câu chưa trả lời: ${formatQuestionPositions(unanswered)}.`;
+  }
+  const essayNote = hasEmpty ? ' Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm.' : '';
+  const attemptsAfterSubmit = remainingAttempts - 1;
+  return attemptsAfterSubmit > 0
+    ? `Đã trả lời đủ.${essayNote} Sau lần này học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
+    : `Đã trả lời đủ.${essayNote} Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.`;
+}
+
+/** Cau hoi lai truoc khi nop: so cau, so anh gui kem va con nop lai duoc khong. */
+export function getSubmitConfirmMessage(
+  questionCount: number,
+  remainingAttempts: number,
+  attachmentCount: number,
+): string {
+  const files = attachmentCount > 0 ? `, kèm ${attachmentCount} ảnh bài làm` : '';
+  const attemptsAfterSubmit = remainingAttempts - 1;
+  const attempts =
+    attemptsAfterSubmit > 0
+      ? `Sau khi nộp, học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
+      : 'Đây là lần nộp cuối, nộp xong không sửa được nữa.';
+  return `Đã trả lời đủ ${questionCount} câu${files}. ${attempts}`;
 }
 
 /** Body nop bai: dung mot cau tra loi cho moi cau hoi, theo thu tu de. */
@@ -998,6 +1128,8 @@ export function getUnpaidBills(bills: readonly TuitionBill[]): TuitionBill[] {
 }
 
 export type AttentionSources = {
+  /** Con dang xem: bai tap mo theo con. */
+  studentId: string;
   bills: readonly TuitionBill[];
   assignments: readonly StudentAssignment[];
   now?: Date;
@@ -1005,9 +1137,10 @@ export type AttentionSources = {
 
 /**
  * Viec can chu y o trang chu: bill chua thanh toan (dong tai trung tam), roi bai chua nop sap het han
- * (trong `URGENT_DUE_DAYS` ngay), han gan nhat truoc.
+ * (trong `URGENT_DUE_DAYS` ngay), han gan nhat truoc. Bam mot viec thi mo dung bill hoac bai do.
  */
 export function getAttentionItems({
+  studentId,
   bills,
   assignments,
   now = new Date(),
@@ -1017,6 +1150,7 @@ export function getAttentionItems({
     type: 'TUITION',
     title: `Học phí lớp ${bill.class.name}`,
     description: `Chưa thanh toán ${formatAmount(bill.pricing.total, bill.pricing.currency)}, vui lòng đóng tại trung tâm`,
+    destination: { kind: 'BILL', registrationId: bill.registrationId },
   }));
   const assignmentItems: AttentionItem[] = getTabAssignments(assignments, 'TODO', now)
     .filter(({ dueAt }) => getAssignmentDeadline(dueAt, now).isUrgent)
@@ -1025,6 +1159,7 @@ export function getAttentionItems({
       type: 'ASSIGNMENT',
       title: assignment.title,
       description: formatAssignmentDue(assignment.dueAt),
+      destination: { kind: 'ASSIGNMENT', studentId, assignmentId: assignment.id },
     }));
   return [...tuitionItems, ...assignmentItems];
 }
@@ -1038,13 +1173,31 @@ export function getNotificationAppearance({
 }
 
 /**
- * Man hinh mo khi bam thong bao. Bai tap va buoi hoc doc theo con nen can id cua con trong thong bao;
- * thong bao lop chung nhieu con thi mo theo con dau tien. null khi khong co man hinh phu hop.
+ * Thong bao khong tro toi ban ghi co man hinh rieng thi mo tab chua thong tin do: don nghi va hoc bu
+ * nam trong lich su diem danh, chuyen lop va ket thuc mon o danh sach mon hoc. Loai khong co o day
+ * (thong bao lop, gop y) chi doc duoc trong hop thu.
+ */
+const NOTIFICATION_TAB_DESTINATIONS: Partial<
+  Record<
+    NotificationTargetKind,
+    { kind: 'SCHEDULE'; view: ScheduleView } | { kind: 'ASSIGNMENTS'; tab: AssignmentTab }
+  >
+> = {
+  SUBMISSION: { kind: 'ASSIGNMENTS', tab: 'GRADED' },
+  LEAVE: { kind: 'SCHEDULE', view: 'ATTENDANCE' },
+  MAKEUP: { kind: 'SCHEDULE', view: 'ATTENDANCE' },
+  ENROLLMENT: { kind: 'SCHEDULE', view: 'COURSES' },
+  CURRICULUM_UNIT: { kind: 'SCHEDULE', view: 'ROADMAP' },
+};
+
+/**
+ * Man hinh mo khi bam thong bao. Man hinh cua con can id cua con trong thong bao; thong bao lop chung
+ * nhieu con thi mo theo con dau tien. null khi khong co man hinh phu hop.
  */
 export function getNotificationDestination({
   target,
   context,
-}: Pick<AppNotification, 'target' | 'context'>): NotificationDestination | null {
+}: Pick<AppNotification, 'target' | 'context'>): ParentDestination | null {
   const [studentId] = context.studentIds;
   if (target.kind === 'REGISTRATION') return { kind: 'BILL', registrationId: target.id };
   if (!studentId) return null;
@@ -1052,7 +1205,26 @@ export function getNotificationDestination({
     return { kind: 'ASSIGNMENT', studentId, assignmentId: target.id };
   }
   if (target.kind === 'SESSION') return { kind: 'SESSION', studentId, sessionId: target.id };
-  return null;
+
+  const tab = NOTIFICATION_TAB_DESTINATIONS[target.kind];
+  return tab ? { ...tab, studentId } : null;
+}
+
+/** Dich la mot tab: mo bang cach chuyen tab thay vi dat them man hinh len tren. */
+export function isTabDestination(
+  destination: ParentDestination,
+): destination is Extract<ParentDestination, { kind: 'SCHEDULE' | 'ASSIGNMENTS' }> {
+  return destination.kind === 'SCHEDULE' || destination.kind === 'ASSIGNMENTS';
+}
+
+/** Tham so `view` tren URL cua tab Lich hoc; thieu hoac sai thi xem lich tuan. */
+export function toScheduleView(value: string | string[] | undefined): ScheduleView {
+  return SCHEDULE_VIEW_ORDER.find((view) => view === value) ?? 'WEEK';
+}
+
+/** Tham so `tab` tren URL cua tab Diem & Bai; thieu hoac sai thi xem bai can lam. */
+export function toAssignmentTab(value: string | string[] | undefined): AssignmentTab {
+  return ASSIGNMENT_TAB_ORDER.find((tab) => tab === value) ?? 'TODO';
 }
 
 /**
@@ -1083,9 +1255,13 @@ export function getNotificationStudentLabel(
   return names.length > 0 ? names.join(', ') : null;
 }
 
-/** Route cua man hinh dich. */
-export function getNotificationHref(destination: NotificationDestination): Href {
+/** Route cua man hinh dich. Dich la tab thi kem che do xem cua tab tren URL. */
+export function getParentHref(destination: ParentDestination): Href {
   switch (destination.kind) {
+    case 'SCHEDULE':
+      return { pathname: '/schedule', params: { view: destination.view } };
+    case 'ASSIGNMENTS':
+      return { pathname: '/grades', params: { tab: destination.tab } };
     case 'ASSIGNMENT':
       return {
         pathname: '/assignments/[assignmentId]',
@@ -1232,4 +1408,9 @@ export function buildReceiptShareMessage({
     `Số tiền đã thu: ${formatCurrency(payment.amount, payment.currency)}`,
     `Ngày thu: ${formatDate(payment.confirmedAt)}`,
   ].join('\n');
+}
+
+/** Loi chao dau trang chu, goi phu huynh bang ten (tu cuoi cua ho ten). */
+export function getParentGreeting(parentName: string | null): string {
+  return parentName ? `Chào ${getShortName(parentName, 1)} 👋` : 'Xin chào 👋';
 }

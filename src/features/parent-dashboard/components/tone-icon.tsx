@@ -21,12 +21,14 @@ export type ToneIconProps = {
 
 /** Icon trong nen tron theo sac thai, dung o tieu de the va dau moi dong. */
 export function ToneIcon({ name, tone, variant = 'soft', size = 'md' }: ToneIconProps) {
-  const { color, soft } = TONES[tone];
+  // Mau dam cua sac thai cho ca nen dac lan icon tren nen nhat: mau goc (vd vang) qua nhat de icon
+  // trang hoac icon cung mau tren nen nhat con nhin ro
+  const { text, soft } = TONES[tone];
   const isSolid = variant === 'solid';
 
   return (
-    <ThemedView type={isSolid ? color : soft} style={[styles.circle, sizeStyles[size]]}>
-      <Icon name={name} size={ICON_SIZES[size]} themeColor={isSolid ? 'primaryText' : color} />
+    <ThemedView type={isSolid ? text : soft} style={[styles.circle, sizeStyles[size]]}>
+      <Icon name={name} size={ICON_SIZES[size]} themeColor={isSolid ? 'primaryText' : text} />
     </ThemedView>
   );
 }

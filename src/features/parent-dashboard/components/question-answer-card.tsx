@@ -20,6 +20,8 @@ export type QuestionAnswerCardProps = {
   question: AssignmentQuestion;
   /** Cau tra loi dang lam, chuoi rong khi chua lam. */
   value: string;
+  /** Con da bam nop ma cau nay con trong. */
+  isMissing: boolean;
   onChange: (answer: string) => void;
 };
 
@@ -28,6 +30,7 @@ export function QuestionAnswerCard({
   position,
   question,
   value,
+  isMissing,
   onChange,
 }: QuestionAnswerCardProps) {
   const label = `Câu ${position}`;
@@ -37,6 +40,7 @@ export function QuestionAnswerCard({
       position={position}
       prompt={question.prompt}
       points={formatPoints(question.maxScore)}
+      isMissing={isMissing}
     >
       {question.choices ? (
         <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.choices}>
@@ -52,7 +56,7 @@ export function QuestionAnswerCard({
       ) : (
         <Input
           label={`Bài làm câu ${position}`}
-          placeholder="Nhập bài làm của học sinh"
+          placeholder="Gõ bài làm vào đây"
           multiline
           maxLength={ESSAY_MAX_LENGTH}
           value={value}

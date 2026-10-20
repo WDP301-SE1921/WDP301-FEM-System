@@ -7,9 +7,12 @@ import {
   getAttentionItems,
   getNotificationAppearance,
   getNotificationDestination,
-  getNotificationHref,
   getNotificationStudentLabel,
+  getParentHref,
+  isTabDestination,
   mergeNotificationPages,
+  toAssignmentTab,
+  toScheduleView,
 } from '@/features/parent-dashboard/utils';
 
 const NOW = new Date(2026, 9, 20, 12, 0);
@@ -70,6 +73,7 @@ describe('features/parent-dashboard/utils (thong bao, viec can chu y)', () => {
   describe('getAttentionItems', () => {
     it('bill chua thanh toan truoc, roi bai chua nop sap het han, han gan nhat truoc', () => {
       const items = getAttentionItems({
+        studentId: 'student-1',
         bills: [bill(), bill({ registrationId: 'order-paid', status: 'PAID' })],
         assignments: [
           assignment('ngay-kia', new Date(2026, 9, 22, 23, 59)),
@@ -96,8 +100,26 @@ describe('features/parent-dashboard/utils (thong bao, viec can chu y)', () => {
       });
     });
 
+    it('bam viec thi mo dung bill hoac bai tap cua con dang xem', () => {
+      const [tuition, homework] = getAttentionItems({
+        studentId: 'student-1',
+        bills: [bill()],
+        assignments: [assignment('toi-nay', new Date(2026, 9, 20, 23, 59))],
+        now: NOW,
+      });
+
+      expect(tuition?.destination).toEqual({ kind: 'BILL', registrationId: 'order-1' });
+      expect(homework?.destination).toEqual({
+        kind: 'ASSIGNMENT',
+        studentId: 'student-1',
+        assignmentId: 'toi-nay',
+      });
+    });
+
     it('khong co bill chua dong va bai gap thi rong', () => {
-      expect(getAttentionItems({ bills: [], assignments: [], now: NOW })).toEqual([]);
+      expect(
+        getAttentionItems({ studentId: 'student-1', bills: [], assignments: [], now: NOW }),
+      ).toEqual([]);
     });
   });
 
@@ -132,22 +154,75 @@ describe('features/parent-dashboard/utils (thong bao, viec can chu y)', () => {
       ).toBeNull();
       expect(getNotificationDestination(notification({ context: { studentIds: [] } }))).toBeNull();
     });
+
+    it('don nghi, hoc bu, ghi danh, giao trinh, diem mo tab chua thong tin do theo con', () => {
+      const open = (kind: AppNotification['target']['kind']) =>
+        getNotificationDestination(notification({ target: { kind, id: 'x' } }));
+
+      expect(open('LEAVE')).toEqual({
+        kind: 'SCHEDULE',
+        view: 'ATTENDANCE',
+        studentId: 'student-1',
+      });
+      expect(open('MAKEUP')).toEqual({
+        kind: 'SCHEDULE',
+        view: 'ATTENDANCE',
+        studentId: 'student-1',
+      });
+      expect(open('ENROLLMENT')).toEqual({
+        kind: 'SCHEDULE',
+        view: 'COURSES',
+        studentId: 'student-1',
+      });
+      expect(open('CURRICULUM_UNIT')).toEqual({
+        kind: 'SCHEDULE',
+        view: 'ROADMAP',
+        studentId: 'student-1',
+      });
+      expect(open('SUBMISSION')).toEqual({
+        kind: 'ASSIGNMENTS',
+        tab: 'GRADED',
+        studentId: 'student-1',
+      });
+      expect(open('FEEDBACK')).toBeNull();
+    });
   });
 
-  it('getNotificationHref dua ra route kem tham so', () => {
-    expect(
-      getNotificationHref({ kind: 'ASSIGNMENT', studentId: 's1', assignmentId: 'a1' }),
-    ).toEqual({
+  it('isTabDestination chi dung voi dich la tab', () => {
+    expect(isTabDestination({ kind: 'SCHEDULE', studentId: 's1', view: 'WEEK' })).toBe(true);
+    expect(isTabDestination({ kind: 'ASSIGNMENTS', studentId: 's1', tab: 'TODO' })).toBe(true);
+    expect(isTabDestination({ kind: 'BILL', registrationId: 'o1' })).toBe(false);
+  });
+
+  it('toScheduleView va toAssignmentTab doc tham so URL, sai thi ve mac dinh', () => {
+    expect(toScheduleView('ATTENDANCE')).toBe('ATTENDANCE');
+    expect(toScheduleView(undefined)).toBe('WEEK');
+    expect(toScheduleView('la')).toBe('WEEK');
+    expect(toScheduleView(['ROADMAP'])).toBe('WEEK');
+    expect(toAssignmentTab('GRADED')).toBe('GRADED');
+    expect(toAssignmentTab(undefined)).toBe('TODO');
+  });
+
+  it('getParentHref dua ra route kem tham so', () => {
+    expect(getParentHref({ kind: 'ASSIGNMENT', studentId: 's1', assignmentId: 'a1' })).toEqual({
       pathname: '/assignments/[assignmentId]',
       params: { assignmentId: 'a1', studentId: 's1' },
     });
-    expect(getNotificationHref({ kind: 'SESSION', studentId: 's1', sessionId: 'x1' })).toEqual({
+    expect(getParentHref({ kind: 'SESSION', studentId: 's1', sessionId: 'x1' })).toEqual({
       pathname: '/sessions/[sessionId]',
       params: { sessionId: 'x1', studentId: 's1' },
     });
-    expect(getNotificationHref({ kind: 'BILL', registrationId: 'o1' })).toEqual({
+    expect(getParentHref({ kind: 'BILL', registrationId: 'o1' })).toEqual({
       pathname: '/bills/[registrationId]',
       params: { registrationId: 'o1' },
+    });
+    expect(getParentHref({ kind: 'SCHEDULE', studentId: 's1', view: 'ATTENDANCE' })).toEqual({
+      pathname: '/schedule',
+      params: { view: 'ATTENDANCE' },
+    });
+    expect(getParentHref({ kind: 'ASSIGNMENTS', studentId: 's1', tab: 'GRADED' })).toEqual({
+      pathname: '/grades',
+      params: { tab: 'GRADED' },
     });
   });
 

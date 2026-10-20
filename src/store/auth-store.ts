@@ -7,23 +7,29 @@ import { logger } from '@/lib/logger';
 import { secureStorage, storage } from '@/lib/storage';
 import type { AuthSession, User } from '@/types/auth';
 
+/** `EXPIRED`: app tu dang xuat vi khong lam moi duoc phien (het han hoac bi thu hoi). */
+export type SignOutReason = 'USER' | 'EXPIRED';
+
 type AuthState = {
   user: User | null;
   isAuthenticated: boolean;
   /** false cho toi khi doc xong token da luu -> tranh nhay man hinh luc mo app */
   isHydrated: boolean;
+  /** true sau khi app tu dang xuat vi het phien: man dang nhap bao ly do thay vi im lang. */
+  isSessionExpired: boolean;
   hydrate: () => Promise<void>;
   /** Luu phien BE tra ve sau login, register. */
   signIn: (session: AuthSession) => Promise<void>;
   /** Ghi de tai khoan cua phien dang co bang ban moi doc tu BE, vd sau khi xac minh email. */
   setUser: (user: User) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: (reason?: SignOutReason) => Promise<void>;
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isHydrated: false,
+  isSessionExpired: false,
 
   hydrate: async () => {
     try {
@@ -45,7 +51,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken),
       storage.setJson(StorageKeys.user, user),
     ]);
-    set({ user, isAuthenticated: true });
+    set({ user, isAuthenticated: true, isSessionExpired: false });
   },
 
   setUser: async (user) => {
@@ -55,18 +61,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user });
   },
 
-  signOut: async () => {
+  signOut: async (reason = 'USER') => {
     await Promise.all([
       secureStorage.remove(StorageKeys.accessToken),
       secureStorage.remove(StorageKeys.refreshToken),
       storage.remove(StorageKeys.user),
     ]);
     queryClient.clear();
-    set({ user: null, isAuthenticated: false });
+    set({ user: null, isAuthenticated: false, isSessionExpired: reason === 'EXPIRED' });
   },
 }));
 
-// Khi refresh token that bai -> dang xuat toan app
+// Khi refresh token that bai -> dang xuat toan app va bao het phien o man dang nhap
 setUnauthorizedHandler(() => {
-  void useAuthStore.getState().signOut();
+  void useAuthStore.getState().signOut('EXPIRED');
 });

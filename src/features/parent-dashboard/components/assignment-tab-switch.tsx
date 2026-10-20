@@ -46,7 +46,7 @@ export function AssignmentTabSwitch({ value, counts, onChange }: AssignmentTabSw
                 type={isSelected ? 'primarySoft' : 'backgroundSelected'}
                 style={styles.count}
               >
-                <ThemedText type="smallBold" themeColor={color}>
+                <ThemedText type="smallBold" themeColor={isSelected ? 'primaryStrong' : color}>
                   {counts[tab]}
                 </ThemedText>
               </ThemedView>
@@ -68,13 +68,15 @@ const styles = StyleSheet.create({
   option: { flex: 1 },
   pressed: { opacity: 0.75 },
   // Man hinh 360dp khong du cho ten tab dai ("Đã có điểm") va so bai tren mot dong: cho so bai
-  // xuong dong thay vi cat chu
+  // xuong dong thay vi cat chu. Co `flexWrap` thi cac dong mac dinh dinh mep tren (`alignContent`
+  // la `flex-start`), chu lech len tren khi o cao hon noi dung: can giua ca khoi dong
   optionContent: {
     flexGrow: 1,
     minHeight: OPTION_MIN_HEIGHT,
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+    alignContent: 'center',
     justifyContent: 'center',
     columnGap: Spacing.one,
     rowGap: Spacing.half,

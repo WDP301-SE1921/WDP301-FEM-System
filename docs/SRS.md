@@ -2,7 +2,7 @@
 
 WDP301-SE1921 · 3 thg 10, 2026
 
-> Bản chép vào repo mobile ngày 2026-10-04 từ SRS của nhóm, giữ nguyên nội dung. Hai sơ đồ nhúng trong bản gốc (mục 6.1 và mục 7) không chép được nên được ghi chú tại chỗ. Khi SRS gốc đổi thì cập nhật lại file này.
+> Bản chép vào repo mobile ngày 2026-10-04 từ SRS của nhóm, giữ nguyên nội dung. Hai sơ đồ nhúng trong bản gốc (mục 6.1 và mục 7) không chép được nên được ghi chú tại chỗ. Khi SRS gốc đổi thì cập nhật lại file này. Các dòng bắt đầu bằng "Đã chốt ngày ..." là quyết định thêm vào sau, chưa có trong SRS gốc.
 
 ## 1. Giới thiệu
 
@@ -25,6 +25,8 @@ Single-tenant — không có khái niệm nhiều trung tâm. Không có tài kh
 | Phụ huynh           | Mobile            | Quản lý hồ sơ con, xem lịch/điểm, nộp bài                                |
 
 Ghi chú: danh sách vai trò gốc ghi "Giáo viên — Web", trong khi mục nghiệp vụ chi tiết vẫn ghi "(Web + Mobile)" — tài liệu này tạm theo Web-only, xem mục 9 (Vấn đề cần xác nhận).
+
+Đã chốt ngày 2026-10-20: app Mobile chỉ dành cho phụ huynh và học sinh (học sinh dùng qua tài khoản của phụ huynh), không dành cho giáo viên. Giáo viên chỉ dùng Web; các chỗ ghi "(Web + Mobile)" cho Giáo viên hiểu là Web.
 
 ### 1.4 Định nghĩa, từ viết tắt
 
@@ -342,7 +344,7 @@ Nhân viên và Quản lý trung tâm không dùng chung quyền truy cập dù 
 
 ## 9. Vấn đề cần xác nhận
 
-- Nền tảng Giáo viên: danh sách vai trò ghi "Web", nhưng mục nghiệp vụ chi tiết vẫn ghi "(Web + Mobile)". Tài liệu này tạm theo Web-only.
+- Nền tảng Giáo viên: danh sách vai trò ghi "Web", nhưng mục nghiệp vụ chi tiết vẫn ghi "(Web + Mobile)". Tài liệu này tạm theo Web-only. Đã chốt ngày 2026-10-20: Giáo viên chỉ dùng Web, app Mobile chỉ dành cho phụ huynh và học sinh.
 - "Set cứng lịch": hiểu là Giáo viên xác nhận/khoá lịch cố định cho lớp được phân công, không phải Giáo viên tự tạo lớp — cần xác nhận lại.
 - "Admin": dòng "admin: có tất cả, quản lí các nhân viên" được hiểu là mô tả quyền hạn của Quản lý trung tâm, không phải một vai trò thứ 6 riêng biệt.
 - Luồng A3 (mới cập nhật): đã bỏ bước link/mã — Nhân viên nhập email phụ huynh, hệ thống hiện sẵn danh sách con, Nhân viên chọn trực tiếp. Đã xác nhận: không cần thêm bước xác thực, vì đây là quy trình trực tiếp tại quầy — phụ huynh có mặt khi Nhân viên thao tác. Ô nhập email có gợi ý tự động (debounce, 1–2 ký tự). Nếu phụ huynh chưa có tài khoản (trường hợp A1), Nhân viên hướng dẫn tải app để phụ huynh tự tạo tài khoản + hồ sơ con ngay tại chỗ.

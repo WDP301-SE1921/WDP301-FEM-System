@@ -46,6 +46,7 @@ const UNREAD = notification('moi', {
 });
 
 async function renderNotifications() {
+  const onBack = jest.fn();
   const onOpenNotification = jest.fn();
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -55,10 +56,10 @@ async function renderNotifications() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentNotifications onOpenNotification={onOpenNotification} />
+      <ParentNotifications onBack={onBack} onOpenNotification={onOpenNotification} />
     </QueryClientProvider>,
   );
-  return { onOpenNotification, user: userEvent.setup() };
+  return { onBack, onOpenNotification, user: userEvent.setup() };
 }
 
 describe('features/parent-dashboard/ParentNotifications', () => {
@@ -105,6 +106,39 @@ describe('features/parent-dashboard/ParentNotifications', () => {
       studentId: 'student-1',
       sessionId: 'session-cu',
     });
+  });
+
+  it('co nut quay lai; thong bao chi de doc thi khong bao la mo duoc man khac', async () => {
+    const announcement = notification('lop', {
+      type: 'ANNOUNCEMENT',
+      title: 'Thông báo lớp',
+      target: { kind: 'CLASS', id: 'class-math' },
+    });
+    api.getNotifications.mockResolvedValue({
+      items: [announcement, notification('nghi', { target: { kind: 'LEAVE', id: 'leave-1' } })],
+      page: 1,
+      limit: PAGE_SIZE,
+      total: 2,
+    });
+    const { onBack, onOpenNotification, user } = await renderNotifications();
+    await screen.findByText('Nội dung lop', {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+
+    await user.press(screen.getByRole('button', { name: 'Quay lại' }));
+    expect(onBack).toHaveBeenCalledTimes(1);
+
+    // Don nghi mo lich su diem danh cua con; thong bao lop chi doc trong hop thu
+    await user.press(screen.getByRole('button', { name: /^Thông báo nghi/ }));
+    expect(onOpenNotification).toHaveBeenLastCalledWith({
+      kind: 'SCHEDULE',
+      view: 'ATTENDANCE',
+      studentId: 'student-1',
+    });
+    expect(screen.getByRole('button', { name: /^Thông báo lớp/ })).not.toHaveProp(
+      'accessibilityHint',
+      'Mở nội dung liên quan',
+    );
+    await user.press(screen.getByRole('button', { name: /^Thông báo lớp/ }));
+    expect(onOpenNotification).toHaveBeenCalledTimes(1);
   });
 
   it('tai them trang sau khi BE con thong bao', async () => {

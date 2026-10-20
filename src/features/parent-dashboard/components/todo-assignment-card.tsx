@@ -25,7 +25,11 @@ export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardPro
   const deadline = getAssignmentDeadline(assignment.dueAt);
 
   return (
-    <AssignmentCardFrame highlightTone={deadline.isUrgent ? 'accent' : undefined}>
+    <AssignmentCardFrame
+      highlightTone={deadline.isUrgent ? 'accent' : undefined}
+      onPress={onOpen}
+      accessibilityLabel={`Làm bài: ${assignment.title}`}
+    >
       <AssignmentCardHeader
         assignment={assignment}
         trailing={<ToneBadge label={deadline.label} tone={deadline.tone} icon={deadline.icon} />}
@@ -39,12 +43,7 @@ export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardPro
         trailing={formatQuestionCount(assignment.questionCounts)}
       />
       <View style={styles.actions}>
-        <ActionChip
-          label="Làm bài"
-          trailingIcon="arrow-forward"
-          accessibilityLabel={`Làm bài: ${assignment.title}`}
-          onPress={onOpen}
-        />
+        <ActionChip label="Làm bài" trailingIcon="arrow-forward" />
       </View>
     </AssignmentCardFrame>
   );

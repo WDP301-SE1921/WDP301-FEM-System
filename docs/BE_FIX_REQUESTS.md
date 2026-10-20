@@ -1,6 +1,6 @@
 # Yêu cầu bổ sung/sửa BE cho mobile PHỤ HUYNH
 
-Ngày: 19/10/2026. Phạm vi đối chiếu: nhánh `dev` của `WDP301-BE-System` tại commit `c3b54d4` (sau commit `9188c92` "add parent learning APIs and realtime notifications" và các commit back office ngày 19/10), các module `curriculum-scheduling`, `academic`, `registration-flow`, `auth`, `notifications`, Prisma schema, các tài liệu `docs/parent-learning-api.md`, `docs/notifications-api.md`, `NOTIFICATION_FLOW_GUIDE.md` và `docs/SRS.md` (bản 03/10/2026). Bản trước của file này đối chiếu commit `a02152c` (15/10). File nằm ở repo mobile để gửi nhóm BE; mobile không sửa nguồn BE.
+Ngày: 19/10/2026, bổ sung mục 1.7 ngày 20/10/2026 sau khi rà soát độ dễ dùng của app với phụ huynh và học sinh. Phạm vi đối chiếu: nhánh `dev` của `WDP301-BE-System` tại commit `c3b54d4` (sau commit `9188c92` "add parent learning APIs and realtime notifications" và các commit back office ngày 19/10), các module `curriculum-scheduling`, `academic`, `registration-flow`, `auth`, `notifications`, Prisma schema, các tài liệu `docs/parent-learning-api.md`, `docs/notifications-api.md`, `NOTIFICATION_FLOW_GUIDE.md` và `docs/SRS.md` (bản 03/10/2026). Bản trước của file này đối chiếu commit `a02152c` (15/10). File nằm ở repo mobile để gửi nhóm BE; mobile không sửa nguồn BE.
 
 Cảm ơn nhóm BE: gần hết yêu cầu của bản 15/10 đã có trong bản này (xem "Đã xử lý so với bản 15/10"). Mọi nhận xét dưới đây rút ra từ **đọc code**, chưa chạy lại trên một BE đang chạy: BE local của nhóm mobile chưa chạy các migration mới. Mobile cũng chưa gọi thử BE thật cho các route nối ngày 15/10 và 19/10 (mới kiểm tra bằng typecheck, test với adapter mạng giả và bundle Android), nên nếu chỗ nào mobile hiểu sai contract thì nhờ BE báo lại.
 
@@ -8,7 +8,7 @@ Cảm ơn nhóm BE: gần hết yêu cầu của bản 15/10 đã có trong bả
 
 Từ 19/10 mọi màn hình phụ huynh đều đọc BE thật, không còn dữ liệu giả.
 
-Đã nối từ 05/10, 06/10 và 15/10: đăng nhập, đăng ký, refresh, đăng xuất, `GET` và `PATCH /auth/me`, xác minh email, đổi và quên mật khẩu, `GET/POST /me/students`, `PATCH /me/students/:id`, `GET /me/students/:id/enrollments`, `GET /me/bills`, `GET /registrations/:id/bill`, `GET /registrations/:id/receipt`, `GET /academic/scheduled-sessions`, `GET /academic/scheduled-sessions/:id`, `GET /academic/me/students/:id/attendance`, `GET /academic/leaves`, `GET /academic/makeups`, `GET /rooms`, `GET /academic/assignments`, `GET /academic/assignments/:id`, `GET /academic/assignments/:id/submissions`, `POST /academic/submissions`.
+Đã nối từ 05/10, 06/10 và 15/10: đăng nhập, đăng ký, refresh, đăng xuất, `GET` và `PATCH /auth/me`, xác minh email, đổi và quên mật khẩu, `GET/POST /me/students`, `PATCH /me/students/:id`, `GET /me/students/:id/enrollments`, `GET /me/bills`, `GET /registrations/:id/bill`, `GET /registrations/:id/receipt`, `GET /academic/scheduled-sessions`, `GET /academic/scheduled-sessions/:id`, `GET /academic/me/students/:id/attendance`, `GET /academic/leaves`, `GET /academic/makeups`, `GET /rooms`, `GET /academic/assignments`, `GET /academic/assignments/:id`, `GET /academic/assignments/:id/submissions`, `POST /academic/submissions`. Nối ngày 21/10: `POST /academic/files` (ảnh bài làm JPEG hoặc PNG, gửi kèm bài nộp qua `fileIds`).
 
 Nối thêm hoặc đổi cách gọi ngày 19/10:
 
@@ -54,6 +54,21 @@ Bản này chỉ phát qua Socket.IO khi app đang mở; `NOTIFICATION_FLOW_GUID
 - Điện thoại không gửi header `Origin`, nên `CORS_ORIGINS` không ảnh hưởng mobile; proxy trên môi trường test phải chuyển tiếp WebSocket cho `/socket.io/`.
 - Còn từ bản trước: quyền đọc bill (`targetStudent.parentProfile.userId`) và biên lai (`parentEmail`) kiểm tra theo hai cách khác nhau; số tiền của bill là chuỗi thập phân còn biên lai là number; `GET /me/bills` chưa lọc được theo con hay trạng thái (mobile đọc hết rồi lọc); `EnrollmentStatus.PENDING_LINK` vẫn còn dù SRS đã bỏ luồng link/mã; `GET /classes` cho role `PARENT` trả mọi lớp của trung tâm (kèm `monthlyFee`, `capacity`), mobile không dùng.
 
+### 1.7 Chỗ khó dùng với phụ huynh ít quen công nghệ (bổ sung 20/10)
+
+Ba mục dưới đây rút ra từ đọc code BE `c3b54d4`, chưa thử trên BE đang chạy. Mobile đã làm phần của mình (ghi ở từng mục); phần còn lại cần BE.
+
+**1.7.1 Xác minh email phải dán mã 43 ký tự (P1).** `issueEmailVerification` (`auth.service.ts`) gửi email chỉ có dòng `Mã xác minh tài khoản EduGrade: <mã>`, mã là 32 byte dạng base64url. Phụ huynh phải mở app email, nhấn giữ để chép cả chuỗi dài, quay lại app rồi dán: đây là chỗ người ít dùng điện thoại dễ bỏ cuộc nhất, và xác minh xong mới tạo được hồ sơ con. Mobile đã tự lấy mã khi phụ huynh dán cả dòng (trước đó dán cả dòng thì BE báo `AUTH_INVALID_EMAIL_TOKEN`). Đề xuất, chọn một:
+
+- Email có link bấm được, ví dụ `fem://verify-email?token=<mã>` (scheme theo bản cài: `fem`, `fempreview`, `femdev`) hoặc link web chuyển tiếp về app. Mobile sẽ thêm xử lý link khi BE chốt dạng link.
+- Hoặc mã 6 chữ số, hạn ngắn (ví dụ 15 phút), giới hạn số lần nhập sai: phụ huynh đọc và gõ được, không cần chép dán.
+
+Web không gọi `POST /auth/verify-email` nên không bị ảnh hưởng; giữ được dạng mã cũ song song nếu cần.
+
+**1.7.2 Tuần nào phụ huynh cũng phải đăng nhập lại (P1).** `createAuthenticatedSession` đặt `expiresAt` của phiên bằng lúc đăng nhập cộng `JWT_REFRESH_TTL_SECONDS` (mặc định 604800, tức 7 ngày), còn `refresh` ký cặp token mới với `session.expiresAt` cũ. Vì vậy dù mở app mỗi ngày, phiên vẫn hết đúng 7 ngày sau lần đăng nhập. Phụ huynh hay quên mật khẩu sẽ bị chặn mỗi tuần. Mobile đã báo "Phiên đăng nhập đã hết hạn" ở màn đăng nhập thay vì đưa về màn chào mà không giải thích. Đề xuất: mỗi lần refresh thì gia hạn phiên thêm một chu kỳ (`expiresAt = now + TTL`), kèm một hạn tuyệt đối dài (ví dụ 90 ngày) và vẫn thu hồi khi đổi mật khẩu hoặc dùng lại refresh token cũ. Web dùng chung luồng auth nên cũng đỡ phải đăng nhập lại.
+
+**1.7.3 Chưa có thông tin liên hệ của trung tâm (P2).** App chỉ ghi được "liên hệ quầy lễ tân", không có số để bấm gọi. Mobile tạm đọc số từ biến môi trường `EXPO_PUBLIC_CENTER_PHONE` (để trống thì không hiện nút "Gọi trung tâm"), nhưng đổi số phải build lại app. Đề xuất: `GET /center` (cần đăng nhập, hoặc public) trả `{ name, address, phone, email, openingHours }`, dùng chung cho bill, biên lai và màn học phí; tên trung tâm trên biên lai hiện cũng đang viết cứng ở mobile.
+
 ### Đã xử lý so với bản 15/10
 
 - Chi tiết buổi của phụ huynh không còn trả `lesson.content` (giáo án có đáp án) và thông tin nội bộ của lớp (mục 1.1 cũ, P0).
@@ -71,6 +86,9 @@ Tên route dưới đây là **đề xuất**. Mobile chưa gọi route nào tro
 
 | Ưu tiên | Nhu cầu                                        | Hiện trạng BE                                             | Đề xuất                                                |
 | ------- | ---------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
+| P1      | Xác minh email không phải chép mã dài          | Email chỉ có mã 43 ký tự                                  | Link mở app hoặc mã 6 số (mục 1.7.1)                   |
+| P1      | Không phải đăng nhập lại mỗi tuần              | Phiên hết hạn cố định 7 ngày sau khi đăng nhập            | Gia hạn khi refresh, kèm hạn tuyệt đối (mục 1.7.2)     |
+| P2      | Số điện thoại, địa chỉ trung tâm               | Không có                                                  | `GET /center` (mục 1.7.3)                              |
 | P2      | Tên phòng trên thẻ môn học                     | Ghi danh chỉ có `class.roomId`                            | Thêm `class.room { id, name }` (mục 1.2)               |
 | P2      | Lộ trình của môn sắp học                       | Giáo trình chỉ trả cho ghi danh đang trong kỳ             | Trả cả ghi danh sắp học (mục 1.1)                      |
 | P2      | Báo phụ huynh khi app đóng                     | Chỉ có Socket.IO khi app mở                               | Cần chốt chung (mục 1.5)                               |
@@ -78,7 +96,7 @@ Tên route dưới đây là **đề xuất**. Mobile chưa gọi route nào tro
 
 Trang chủ không cần route tổng quan riêng: mobile đã ghép từ lịch học, điểm danh, điểm, bài tập, bill và thông báo.
 
-Chưa làm ở mobile, chờ nhóm chốt (không phải yêu cầu với BE): phụ huynh gửi đơn xin nghỉ trên app (`POST /academic/leaves` đã cho `PARENT`; SRS mục 3.5 chưa ghi, mục 6.4 ghi "Phụ huynh báo nghỉ"), đính kèm ảnh bài tự luận (`POST /academic/files` đã có, mobile cần thêm thư viện chọn ảnh).
+Chưa làm ở mobile, chờ nhóm chốt (không phải yêu cầu với BE): phụ huynh gửi đơn xin nghỉ trên app (`POST /academic/leaves` đã cho `PARENT`; SRS mục 3.5 chưa ghi, mục 6.4 ghi "Phụ huynh báo nghỉ"). Đính kèm ảnh bài tự luận đã làm ngày 21/10; mobile chưa gọi `GET /academic/files/:id/download` nên phụ huynh chưa xem lại được ảnh đã nộp (route trả link S3 ký 60 giây, kèm `ResponseContentDisposition: attachment`: nếu mobile dùng để hiện ảnh thì nhờ BE cho thêm kiểu `inline`).
 
 ## 3. Contract mobile đang dựa vào
 
@@ -104,3 +122,4 @@ Chưa làm ở mobile, chờ nhóm chốt (không phải yêu cầu với BE): p
 - Môi trường test chạy đủ migration tới `c3b54d4` (gồm `20261019000000_assignment_metadata` và `20261019001000_notifications`) và có dữ liệu: một tài khoản `PARENT` đã xác minh với hai con; mỗi con một ghi danh đang học ở lớp đã sinh buổi từ học phần đã duyệt (có bài kiểm tra tháng) và đã có buổi chốt điểm danh; một buổi vắng có đơn nghỉ đã duyệt và lịch học bù ở lớp khác; một con có đơn tạm nghỉ đã duyệt; một con đã chuyển lớp; một buổi bị huỷ; một bài tập đang mở, một bài kiểm tra 15 phút đã công bố điểm và một đơn đăng ký chưa xác nhận thu tiền (bill `UNPAID`). Nhờ BE cho biết seed (`pnpm seed:dashboard`) tạo tài khoản phụ huynh nào phủ được các trường hợp trên.
 - Để thử realtime: chạy một instance BE, cho điện thoại kết nối được tới cổng BE qua mạng LAN (không dùng `localhost`), rồi lần lượt công bố điểm, chốt điểm danh, huỷ một buổi, lập bill cho con của phụ huynh đó.
 - Cấu hình `SMTP_URL`, `MAIL_FROM` và `WEB_ORIGIN` (địa chỉ điện thoại truy cập được) trên môi trường test: thiếu SMTP thì phụ huynh tự đăng ký không nhận được mã xác minh và link đặt lại mật khẩu.
+- Cấu hình kho lưu trữ (`STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, kèm `STORAGE_ENDPOINT` nếu dùng MinIO) trên môi trường test: thiếu thì `POST /academic/files` trả 503 và học sinh không gửi được ảnh bài làm.

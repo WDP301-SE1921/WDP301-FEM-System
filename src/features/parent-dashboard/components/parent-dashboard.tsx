@@ -7,48 +7,36 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 import { getShortName } from '@/utils/format';
 
-import { useLinkedStudents } from '../hooks/use-parent-dashboard';
-import type { NotificationDestination } from '../types';
+import { useSelectedStudent } from '../hooks/use-selected-student';
+import type { ParentDestination } from '../types';
 
 import { ChildPickerSheet } from './child-picker-sheet';
-import { ChildSwitcher } from './child-switcher';
-import { DashboardGreeting } from './dashboard-greeting';
-import { DashboardTopBar } from './dashboard-top-bar';
 import { EnrollmentGuideCard } from './enrollment-guide-card';
 import { StudentOverview } from './student-overview';
+import { StudentSwitcherBar } from './student-switcher-bar';
 
 export type ParentDashboardProps = {
-  /** `displayName` cua phu huynh, null khi tai khoan chua dat ten. */
-  parentName: string | null;
   /** Email dang nhap, hien trong huong dan dang ky mon tai trung tam. */
   parentEmail: string;
   /** Cac nut dan ra ngoai trang chu; route quyet dinh dieu huong toi dau. */
   onAddChild: () => void;
   onOpenNotifications: () => void;
-  /** Mo man hinh cua ban ghi mot thong bao tro toi (bai tap, buoi hoc, bill). */
-  onOpenNotification: (destination: NotificationDestination) => void;
-  onOpenAssignments: () => void;
+  /** Mo man hinh cua mot the hoac thong bao (bai tap, buoi hoc, bill, tab Lich hoc, tab Diem). */
+  onOpenDestination: (destination: ParentDestination) => void;
 };
 
 /** Trang chu phu huynh: chon con roi xem tong quan hom nay cua con do. */
 export function ParentDashboard({
-  parentName,
   parentEmail,
   onAddChild,
   onOpenNotifications,
-  onOpenNotification,
-  onOpenAssignments,
+  onOpenDestination,
 }: ParentDashboardProps) {
-  const students = useLinkedStudents();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const { students, selected, selectStudent } = useSelectedStudent();
   const [isPickerOpen, setIsPickerOpen] = useState(false);
 
-  // Chua chon (hoac con da chon khong con trong danh sach) thi xem con dau tien
-  const selected =
-    students.data?.find((student) => student.id === selectedId) ?? students.data?.[0];
-
   const selectFromPicker = (studentId: string) => {
-    setSelectedId(studentId);
+    selectStudent(studentId);
     setIsPickerOpen(false);
   };
 
@@ -75,12 +63,6 @@ export function ParentDashboard({
 
     return (
       <>
-        <ChildSwitcher
-          students={students.data}
-          selectedId={selected.id}
-          onSelect={setSelectedId}
-          onAddChild={onAddChild}
-        />
         {/* `subjectNames` la mon cua cac ghi danh dang hoc: rong thi con chua dang ky hoac da hoc xong */}
         {selected.subjectNames.length === 0 ? (
           <EnrollmentGuideCard
@@ -90,9 +72,8 @@ export function ParentDashboard({
         ) : null}
         <StudentOverview
           studentId={selected.id}
-          onOpenAssignments={onOpenAssignments}
           onOpenNotifications={onOpenNotifications}
-          onOpenNotification={onOpenNotification}
+          onOpenDestination={onOpenDestination}
         />
       </>
     );
@@ -100,8 +81,9 @@ export function ParentDashboard({
 
   return (
     <View style={styles.container}>
-      <DashboardTopBar student={selected} onPressStudent={() => setIsPickerOpen(true)} />
-      <DashboardGreeting parentName={parentName} onOpenNotifications={onOpenNotifications} />
+      {selected ? (
+        <StudentSwitcherBar student={selected} onPress={() => setIsPickerOpen(true)} />
+      ) : null}
       {renderBody()}
 
       {students.data && selected ? (
@@ -119,5 +101,5 @@ export function ParentDashboard({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, gap: Spacing.four },
+  container: { flex: 1, gap: Spacing.three },
 });

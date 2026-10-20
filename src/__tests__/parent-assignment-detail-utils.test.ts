@@ -10,13 +10,20 @@ import {
   findLatestSubmission,
   findStudentRecipient,
   formatAttempt,
+  formatQuestionPositions,
   formatPoints,
   getAssignmentDetailStatus,
   getAssignmentMaxScore,
   getChoiceState,
   getPublishedGrade,
+  getUnansweredPositions,
   getQuestionReview,
+  getSubmitConfirmMessage,
+  getSubmitHint,
+  hasEmptyEssay,
   toAnswerDraft,
+  toAssignmentDraft,
+  toDraftAttachments,
   toSubmissionAnswers,
 } from '@/features/parent-dashboard/utils';
 
@@ -54,6 +61,7 @@ function submission(overrides: Partial<SubmissionRecord> = {}): SubmissionRecord
       { questionId: 'q2', answer: '(x − 2)(x − 3)' },
     ],
     submittedAt: new Date(2026, 9, 15, 20, 0).toISOString(),
+    files: [],
     grades: [],
     ...overrides,
   };
@@ -129,6 +137,68 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       tone: 'danger',
       icon: 'timer-outline',
     });
+  });
+
+  it('getUnansweredPositions ke thu tu cau con thieu de chi cho con', () => {
+    expect(getUnansweredPositions(QUESTIONS, {})).toEqual([1, 2]);
+    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9', q2: '  ' })).toEqual([2]);
+    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9', q2: 'Bài làm' })).toEqual([]);
+    expect(formatQuestionPositions([2, 5])).toBe('Câu 2, Câu 5');
+  });
+
+  it('co anh bai lam thi cau tu luan de trong duoc, cau trac nghiem van phai chon', () => {
+    expect(getUnansweredPositions(QUESTIONS, {}, true)).toEqual([1]);
+    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, true)).toEqual([]);
+    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9' })).toBe(true);
+    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9', q2: 'Bài làm' })).toBe(false);
+  });
+
+  it('getSubmitHint nhac cau thieu, cau tu luan cham theo anh va so lan nop con lai', () => {
+    expect(getSubmitHint({ unanswered: [2], remainingAttempts: 2, hasEmptyEssay: false })).toBe(
+      'Còn 1 câu chưa trả lời: Câu 2.',
+    );
+    expect(getSubmitHint({ unanswered: [], remainingAttempts: 2, hasEmptyEssay: true })).toBe(
+      'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm. Sau lần này học sinh còn 1 lần nộp lại.',
+    );
+    expect(getSubmitHint({ unanswered: [], remainingAttempts: 1, hasEmptyEssay: false })).toBe(
+      'Đã trả lời đủ. Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.',
+    );
+  });
+
+  it('getSubmitConfirmMessage ke so anh gui kem', () => {
+    expect(getSubmitConfirmMessage(2, 2, 0)).toBe(
+      'Đã trả lời đủ 2 câu. Sau khi nộp, học sinh còn 1 lần nộp lại.',
+    );
+    expect(getSubmitConfirmMessage(2, 1, 3)).toBe(
+      'Đã trả lời đủ 2 câu, kèm 3 ảnh bài làm. Đây là lần nộp cuối, nộp xong không sửa được nữa.',
+    );
+  });
+
+  it('toAssignmentDraft doc ban nhap moi, ban cu chi co cau tra loi, bo phan hong', () => {
+    const attachment = { fileId: 'file-1', uri: 'file:///a.jpg' };
+    expect(toAssignmentDraft({ answers: { q1: 'x² + 9' }, attachments: [attachment] })).toEqual({
+      answers: { q1: 'x² + 9' },
+      attachments: [attachment],
+    });
+    expect(toAssignmentDraft({ q1: 'x² + 9', q2: 3 })).toEqual({
+      answers: { q1: 'x² + 9' },
+      attachments: [],
+    });
+    expect(
+      toAssignmentDraft({
+        answers: 'hong',
+        attachments: [{ fileId: 1 }, { fileId: 'f', uri: null }],
+      }),
+    ).toEqual({ answers: {}, attachments: [{ fileId: 'f', uri: null }] });
+    expect(toAssignmentDraft(null)).toBeNull();
+    expect(toAssignmentDraft([])).toBeNull();
+  });
+
+  it('toDraftAttachments lay anh cua lan nop truoc, chua co anh xem truoc', () => {
+    expect(toDraftAttachments(submission({ files: [{ fileId: 'file-old' }] }))).toEqual([
+      { fileId: 'file-old', uri: null },
+    ]);
+    expect(toDraftAttachments(null)).toEqual([]);
   });
 
   it('countUnanswered bo qua cau chi co khoang trang', () => {

@@ -1,3 +1,4 @@
+export * from './components/notification-bell';
 export * from './components/parent-assignment-detail';
 export * from './components/parent-assignments';
 export * from './components/parent-bill-detail';
@@ -8,6 +9,7 @@ export * from './components/parent-schedule';
 export * from './components/parent-session-detail';
 export * from './components/parent-tuition';
 export * from './hooks/use-notification-realtime';
+export * from './hooks/use-open-parent-destination';
 export { useRefreshParentData } from './hooks/use-refresh-parent-data';
 export * from './types';
-export { getNotificationHref } from './utils';
+export { getParentGreeting, toAssignmentTab, toScheduleView } from './utils';

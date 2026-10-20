@@ -1,10 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentSchedule } from '@/features/parent-dashboard/components/parent-schedule';
-import type { LinkedStudent, ScheduleSession } from '@/features/parent-dashboard/types';
+import {
+  ParentSchedule,
+  type ParentScheduleProps,
+} from '@/features/parent-dashboard/components/parent-schedule';
+import type {
+  ScheduleView,
+  LinkedStudent,
+  ScheduleSession,
+} from '@/features/parent-dashboard/types';
 import { formatWeekRange, getWeekRange } from '@/features/parent-dashboard/utils';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay, startOfWeek, toDateKey } from '@/utils/date';
 import { formatWeekdayDate } from '@/utils/format';
@@ -88,6 +97,15 @@ function mockTwoChildren() {
   );
 }
 
+/** Route giu che do xem tren URL; o day giu bang state de bam chuyen che do nhu tren app. */
+function ScheduleWithView(props: Omit<ParentScheduleProps, 'view' | 'onChangeView'>) {
+  const [view, setView] = useState<ScheduleView>('WEEK');
+  return <ParentSchedule {...props} view={view} onChangeView={setView} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderSchedule() {
   const handlers = {
     onAddChild: jest.fn(),
@@ -100,7 +118,7 @@ async function renderSchedule() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentSchedule {...handlers} />
+      <ScheduleWithView {...handlers} />
     </QueryClientProvider>,
   );
   return { ...handlers, user: userEvent.setup() };
@@ -200,6 +218,30 @@ describe('features/parent-dashboard/ParentSchedule', () => {
       getWeekRange(nextWeekStart),
     );
     expect(dayButton(nextWeekStart)).toBeSelected();
+  });
+
+  it('mui ten doi tuan: sang tuan sau, ve tuan truoc; het pham vi thi mui ten mo', async () => {
+    mockTwoChildren();
+    const { user } = await renderSchedule();
+    await waitForTodaySession();
+    const nextWeekStart = addDays(WEEK_START, DAYS_PER_WEEK);
+
+    await user.press(screen.getByRole('button', { name: 'Tuần sau' }));
+    expect(await screen.findByText(`Tuần: ${formatWeekRange(nextWeekStart)}`)).toBeOnTheScreen();
+    expect(api.getStudentSchedule).toHaveBeenLastCalledWith(
+      MINH_ANH.id,
+      getWeekRange(nextWeekStart),
+    );
+
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    expect(await screen.findByText(`Tuần: ${formatWeekRange(WEEK_START)}`)).toBeOnTheScreen();
+    // Ve tuan hien tai thi chon lai hom nay
+    expect(dayButton(TODAY)).toBeSelected();
+
+    // Sheet chi cho xem 2 tuan truoc: toi do thi khong lui duoc nua
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    expect(screen.getByRole('button', { name: 'Tuần trước' })).toBeDisabled();
   });
 
   it('doi con tu nut tren cung thi tai lich cua con do', async () => {

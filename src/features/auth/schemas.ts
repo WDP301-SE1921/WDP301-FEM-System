@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { extractVerificationToken } from './utils';
+
 /** Gioi han theo LoginDto, RegisterParentDto va ChangePasswordDto cua BE. */
 const PASSWORD_MIN_LENGTH = 8;
 /** BE chan mat khau qua 72 byte vi bcrypt cat bo phan sau. */
@@ -33,9 +35,15 @@ const phoneSchema = z
   .trim()
   .refine((value) => value === '' || PHONE_PATTERN.test(value), 'Số điện thoại không hợp lệ');
 
+/**
+ * Cat khoang trang hai dau truoc khi kiem tra: ban phim hay tu them dau cach sau khi chon goi y, va BE
+ * cung tu cat (LoginDto, RegisterParentDto).
+ */
+const emailSchema = z.string().trim().min(1, 'Vui lòng nhập email').email('Email không hợp lệ');
+
 /** Schema dung chung cho form (react-hook-form) va validate payload. */
 export const loginSchema = z.object({
-  email: z.string().min(1, 'Vui lòng nhập email').email('Email không hợp lệ'),
+  email: emailSchema,
   password: passwordSchema,
 });
 
@@ -52,13 +60,17 @@ export const registerSchema = loginSchema
     path: ['confirmPassword'],
   });
 
-/** Body POST /auth/verify-email. Phu huynh dan ma tu email nen cat khoang trang hai dau. */
+/** Body POST /auth/verify-email. Phu huynh dan tu email, co the dan ca cau chua ma. */
 export const verifyEmailSchema = z.object({
   token: z
     .string()
-    .trim()
-    .min(1, 'Vui lòng dán mã xác minh')
-    .min(VERIFY_TOKEN_MIN_LENGTH, 'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email'),
+    .transform(extractVerificationToken)
+    .pipe(
+      z
+        .string()
+        .min(1, 'Vui lòng dán mã xác minh')
+        .min(VERIFY_TOKEN_MIN_LENGTH, 'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email'),
+    ),
 });
 
 /** Body POST /auth/forgot-password. */

@@ -14,6 +14,13 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
+/**
+ * `edges` cho man hinh nam tren thanh tab: thanh tab da tu chua safe area phia duoi. iOS lay safe
+ * area cua ca cua so chu khong tru phan thanh tab, nen giu canh duoi thi thua mot khoang trong ngay
+ * tren thanh tab.
+ */
+export const TAB_SCREEN_EDGES: readonly Edge[] = ['top'];
+
 export type ScreenProps = PropsWithChildren<{
   /** Boc noi dung trong ScrollView (mac dinh: co) */
   scrollable?: boolean;

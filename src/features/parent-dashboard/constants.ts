@@ -12,25 +12,30 @@ import type {
   BillStatus,
   CourseStatus,
   DayPeriod,
+  ImagePickProblem,
   LessonKind,
   LessonProgress,
   NotificationTargetKind,
   NotificationType,
   PaymentStatus,
   ScheduleSessionType,
+  ScheduleView,
   SessionStatus,
   TermStatus,
   TestType,
 } from './types';
 
-/** Cap mau cua mot sac thai: mau chinh cho chu/icon, mau nhat cho nen chip va icon tron. */
+/**
+ * Mau cua mot sac thai: `color` cho icon, vach va nen dac; `soft` cho nen chip va icon tron; `text`
+ * cho chu (nhan, so lieu) tren nen `soft` hoac nen trang, du tuong phan cho chu nho.
+ */
 export const TONES = {
-  primary: { color: 'primary', soft: 'primarySoft' },
-  accent: { color: 'accent', soft: 'accentSoft' },
-  success: { color: 'success', soft: 'successSoft' },
-  danger: { color: 'danger', soft: 'dangerSoft' },
-  neutral: { color: 'textSecondary', soft: 'backgroundSelected' },
-} as const satisfies Record<string, { color: ThemeColor; soft: ThemeColor }>;
+  primary: { color: 'primary', soft: 'primarySoft', text: 'primaryStrong' },
+  accent: { color: 'accent', soft: 'accentSoft', text: 'accentStrong' },
+  success: { color: 'success', soft: 'successSoft', text: 'successStrong' },
+  danger: { color: 'danger', soft: 'dangerSoft', text: 'dangerStrong' },
+  neutral: { color: 'textSecondary', soft: 'backgroundSelected', text: 'textSecondary' },
+} as const satisfies Record<string, { color: ThemeColor; soft: ThemeColor; text: ThemeColor }>;
 
 export type Tone = keyof typeof TONES;
 
@@ -218,7 +223,7 @@ type CourseStatusAppearance = StatusAppearance & {
 
 export const COURSE_STATUSES: Record<CourseStatus, CourseStatusAppearance> = {
   ACTIVE: { label: 'Đang học', tone: 'primary', progressLabel: 'Tiến độ khóa học' },
-  PAUSED: { label: 'Tạm nghỉ', tone: 'accent', progressLabel: 'Đã học trước khi bảo lưu' },
+  PAUSED: { label: 'Tạm nghỉ', tone: 'accent', progressLabel: 'Đã học trước khi tạm nghỉ' },
   ENDED: { label: 'Đã kết thúc', tone: 'neutral', progressLabel: 'Đã hoàn thành' },
 };
 
@@ -308,6 +313,14 @@ export const ASSIGNMENT_TABS: Record<AssignmentTab, AssignmentTabAppearance> = {
 /** Thu tu cac tab tren man hinh bai tap. */
 export const ASSIGNMENT_TAB_ORDER: readonly AssignmentTab[] = ['TODO', 'SUBMITTED', 'GRADED'];
 
+/** Cac che do xem cua tab Lich hoc, theo thu tu tren thanh chuyen. */
+export const SCHEDULE_VIEW_ORDER: readonly ScheduleView[] = [
+  'WEEK',
+  'COURSES',
+  'ROADMAP',
+  'ATTENDANCE',
+];
+
 /** Nhan tren the bai da nop, cho giao vien cong bo diem. */
 export const GRADING_STATUS: StatusAppearance = {
   label: 'Đang chấm bài',
@@ -333,6 +346,18 @@ export const CLOSED_ASSIGNMENT_STATUS: StatusAppearance = {
 export const ANSWER_RESULTS: Record<'correct' | 'wrong', StatusAppearance> = {
   correct: { label: 'Học sinh trả lời đúng', tone: 'success', icon: 'checkmark-circle' },
   wrong: { label: 'Học sinh trả lời chưa đúng', tone: 'danger', icon: 'close-circle' },
+};
+
+/** Gioi han `fileIds` cua SubmissionDto. */
+export const MAX_SUBMISSION_FILES = 5;
+
+/** Bao khi mo camera hoac thu vien ma khong co anh gui duoc. */
+export const IMAGE_PICK_PROBLEMS: Record<ImagePickProblem, string> = {
+  PERMISSION_DENIED:
+    'Ứng dụng chưa được phép dùng camera. Mở Cài đặt để cho phép, hoặc bấm "Chọn ảnh" để lấy ảnh có sẵn.',
+  UNSUPPORTED: 'Chỉ gửi được ảnh JPG hoặc PNG. Hãy bấm "Chụp ảnh" để chụp lại bài làm.',
+  TOO_LARGE: 'Ảnh lớn hơn 10 MB. Hãy chụp lại hoặc chọn ảnh khác.',
+  FAILED: 'Không mở được camera hoặc thư viện ảnh trên máy này.',
 };
 
 /** Bai con han nop trong chung nay ngay (ke ca hom nay) thi can nhac gap. */

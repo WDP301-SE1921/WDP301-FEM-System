@@ -30,6 +30,14 @@ describe('features/auth/schemas', () => {
       expect(firstError(result, 'email')).toBe('Email không hợp lệ');
     });
 
+    it('cat dau cach ban phim tu them sau email truoc khi kiem tra', () => {
+      const result = loginSchema.safeParse({ email: ' ph@gmail.com ', password: '12345678' });
+      expect(result.data?.email).toBe('ph@gmail.com');
+      expect(
+        firstError(loginSchema.safeParse({ email: '   ', password: '12345678' }), 'email'),
+      ).toBe('Vui lòng nhập email');
+    });
+
     it('bao loi khi mat khau ngan hon 8 ky tu nhu LoginDto', () => {
       const result = loginSchema.safeParse({ email: 'a@b.vn', password: '1234567' });
       expect(firstError(result, 'password')).toBe('Mật khẩu tối thiểu 8 ký tự');
@@ -86,6 +94,11 @@ describe('features/auth/schemas', () => {
 
     it('chap nhan ma BE gui va cat khoang trang khi dan tu email', () => {
       expect(verifyEmailSchema.safeParse({ token: ` ${token}\n` }).data).toEqual({ token });
+    });
+
+    it('lay ma khi phu huynh chep ca dong trong email', () => {
+      const line = `Mã xác minh tài khoản EduGrade: ${token}`;
+      expect(verifyEmailSchema.safeParse({ token: line }).data).toEqual({ token });
     });
 
     it('bo trong thi nhac dan ma', () => {

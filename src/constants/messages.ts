@@ -2,7 +2,7 @@
 export const ErrorMessages = {
   unknown: 'Đã có lỗi xảy ra, vui lòng thử lại.',
   timeout: 'Yêu cầu quá thời gian chờ. Vui lòng kiểm tra kết nối mạng.',
-  network: 'Không kết nối được tới máy chủ.',
+  network: 'Không có kết nối mạng. Vui lòng kiểm tra Wi-Fi hoặc 4G rồi thử lại.',
   tooManyRequests: 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.',
 } as const;
 
@@ -31,10 +31,14 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ học sinh.',
   RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
   BILL_NOT_FOUND: 'Không tìm thấy bill học phí.',
-  STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi học sinh đang có môn học tại trung tâm.',
+  STUDENT_GRADE_LOCKED: 'Không đổi được khối khi học sinh đang có môn học tại trung tâm.',
   /** Nop bai (module `academic` cua BE). */
   SUBMISSION_CLOSED: 'Bài tập đã hết hạn nộp.',
   ATTEMPTS_EXHAUSTED: 'Học sinh đã dùng hết số lần nộp bài.',
   INVALID_ANSWERS: 'Cần trả lời đủ tất cả câu hỏi trước khi nộp.',
   INVALID_CHOICE: 'Có câu trả lời không nằm trong các lựa chọn của đề.',
+  /** Ma cua POST /academic/files va ảnh gui kem bai nop. */
+  INVALID_FILE_TYPE: 'Chỉ gửi được ảnh JPG hoặc PNG.',
+  INVALID_FILE_SIZE: 'Ảnh phải nhỏ hơn 10 MB.',
+  INVALID_FILES: 'Có ảnh bài làm không còn dùng được. Hãy xoá ảnh đó và gửi lại.',
 };

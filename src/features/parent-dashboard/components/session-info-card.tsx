@@ -93,7 +93,7 @@ function AttendanceRow({ session, attendance }: AttendanceRowProps) {
 function TeacherAvatar({ name }: { name: string }) {
   return (
     <ThemedView type="primarySoft" style={styles.avatar}>
-      <ThemedText type="smallBold" themeColor="primary">
+      <ThemedText type="smallBold" themeColor="primaryStrong">
         {getInitials(name)}
       </ThemedText>
     </ThemedView>

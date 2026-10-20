@@ -69,7 +69,7 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
 
         {session.note ? (
           <ThemedView type={tone.soft} style={styles.note}>
-            <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.color} />
+            <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.text} />
             <ThemedText type="small" style={styles.noteText}>
               {session.note}
             </ThemedText>
@@ -100,7 +100,7 @@ type SessionTeacherProps = Pick<ScheduleSession, 'teacherName' | 'subjectName'> 
 
 /** Giao vien cua buoi. Chua co ten giao vien thi chi hien mon hoc. */
 function SessionTeacher({ teacherName, subjectName, tone }: SessionTeacherProps) {
-  const { color, soft } = TONES[tone];
+  const { color, soft, text } = TONES[tone];
   if (!teacherName) {
     return (
       <View style={[styles.row, styles.teacher]}>
@@ -115,7 +115,7 @@ function SessionTeacher({ teacherName, subjectName, tone }: SessionTeacherProps)
   return (
     <View style={[styles.row, styles.teacher]}>
       <ThemedView type={soft} style={styles.teacherAvatar}>
-        <ThemedText type="smallBold" themeColor={color}>
+        <ThemedText type="smallBold" themeColor={text}>
           {getInitials(teacherName)}
         </ThemedText>
       </ThemedView>

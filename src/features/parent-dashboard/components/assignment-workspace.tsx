@@ -1,7 +1,12 @@
 import { useState } from 'react';
 
 import type { AssignmentDetail, AssignmentRef, SubmissionRecord } from '../types';
-import { canSubmitAssignment, findLatestSubmission, toAnswerDraft } from '../utils';
+import {
+  canSubmitAssignment,
+  findLatestSubmission,
+  toAnswerDraft,
+  toDraftAttachments,
+} from '../utils';
 
 import { AssignmentAnswerForm } from './assignment-answer-form';
 import { AssignmentReview } from './assignment-review';
@@ -45,7 +50,12 @@ export function AssignmentWorkspace({
           assignmentId={assignmentId}
           recipientId={recipientId}
           questions={detail.questions}
-          initialDraft={latest ? toAnswerDraft(latest.answers) : undefined}
+          // Nop lai giu ca anh cua lan truoc; con xoa duoc neu muon gui anh khac
+          initialDraft={
+            latest
+              ? { answers: toAnswerDraft(latest.answers), attachments: toDraftAttachments(latest) }
+              : undefined
+          }
           remainingAttempts={remainingAttempts}
           onSubmitted={stopRetrying}
           onCancel={latest ? stopRetrying : undefined}

@@ -15,19 +15,26 @@ const STAR_ICON_SIZE = 20;
 const TREND_ICON_SIZE = 16;
 
 const TRENDS: Record<ScoreTrend, { icon: IconName; color: ThemeColor }> = {
-  UP: { icon: 'trending-up', color: 'success' },
-  DOWN: { icon: 'trending-down', color: 'danger' },
+  UP: { icon: 'trending-up', color: 'successStrong' },
+  DOWN: { icon: 'trending-down', color: 'dangerStrong' },
   FLAT: { icon: 'remove', color: 'textSecondary' },
 };
 
 export type ScoreStatCardProps = {
   score: ScoreSummary | null;
+  /** Mo cac bai da co diem cua con. */
+  onPress: () => void;
 };
 
-export function ScoreStatCard({ score }: ScoreStatCardProps) {
+export function ScoreStatCard({ score, onPress }: ScoreStatCardProps) {
   if (!score) {
     return (
-      <StatCard label={LABEL}>
+      <StatCard
+        label={LABEL}
+        onPress={onPress}
+        accessibilityLabel={`${LABEL}: chưa có điểm`}
+        accessibilityHint="Xem bài đã có điểm"
+      >
         <ThemedText type="subtitle">--</ThemedText>
         <ThemedText type="small" themeColor="textSecondary">
           Chưa có điểm
@@ -37,13 +44,25 @@ export function ScoreStatCard({ score }: ScoreStatCardProps) {
   }
 
   const level = getScoreLevel(score.average);
+  const average = formatScore(score.average);
+  // Trung binh cong deu moi bai (bai 15 phut ngang bai hoc ky): ghi ro de khong bi hieu la diem tong ket
+  const basis = `Trung bình ${score.gradedCount} bài đã chấm`;
 
   return (
-    <StatCard label={LABEL} trailing={<ToneBadge label={level.label} tone={level.tone} />}>
+    <StatCard
+      label={LABEL}
+      trailing={<ToneBadge label={level.label} tone={level.tone} />}
+      onPress={onPress}
+      accessibilityLabel={`${LABEL} ${average}, ${level.label}. ${basis}`}
+      accessibilityHint="Xem bài đã có điểm"
+    >
       <View style={styles.value}>
-        <ThemedText type="subtitle">{formatScore(score.average)}</ThemedText>
+        <ThemedText type="subtitle">{average}</ThemedText>
         <Icon name="star" size={STAR_ICON_SIZE} themeColor="accent" />
       </View>
+      <ThemedText type="small" themeColor="textSecondary">
+        {basis}
+      </ThemedText>
       <ScoreChange change={score.changeFromLastMonth} />
     </StatCard>
   );

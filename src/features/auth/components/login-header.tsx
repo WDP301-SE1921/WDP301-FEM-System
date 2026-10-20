@@ -37,7 +37,7 @@ export function LoginHeader({ onBack }: LoginHeaderProps) {
       <ThemedView type="backgroundElement" style={styles.roleTag}>
         <View style={[styles.dot, { backgroundColor: theme.primary }]} />
         <ThemedText type="smallBold" themeColor="primary" numberOfLines={1} style={styles.roleText}>
-          Phụ huynh & Giáo viên
+          Phụ huynh & Học sinh
         </ThemedText>
       </ThemedView>
 

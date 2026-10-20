@@ -45,6 +45,7 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'get', url: Endpoints.academic.assignment(ASSIGNMENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID_PARAM) },
   { method: 'post', url: Endpoints.academic.submissions },
+  { method: 'post', url: Endpoints.academic.files },
   { method: 'get', url: Endpoints.notifications.list },
   { method: 'get', url: Endpoints.notifications.unreadCount },
   { method: 'patch', url: Endpoints.notifications.read(NOTIFICATION_ID_PARAM) },

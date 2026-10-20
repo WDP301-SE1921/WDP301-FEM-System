@@ -1,32 +1,39 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
-import { EmptyState } from '@/components/common/empty-state';
-import { Screen } from '@/components/common/screen';
-import { useAuth } from '@/features/auth';
-import { ParentSchedule, useRefreshParentData } from '@/features/parent-dashboard';
+import { Screen, TAB_SCREEN_EDGES } from '@/components/common/screen';
+import { TabHeader } from '@/components/common/tab-header';
+import {
+  NotificationBell,
+  ParentSchedule,
+  toScheduleView,
+  useRefreshParentData,
+} from '@/features/parent-dashboard';
+
+type ScheduleParams = {
+  /** Che do xem (`WEEK`, `COURSES`, `ROADMAP`, `ATTENDANCE`), vd trang chu mo thang diem danh. */
+  view?: string;
+};
 
 export default function ScheduleScreen() {
-  const { user } = useAuth();
   const { isRefreshing, refresh } = useRefreshParentData();
+  const { view } = useLocalSearchParams<ScheduleParams>();
 
-  if (user?.role === 'PARENT') {
-    return (
-      <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
-        <ParentSchedule
-          onAddChild={() => router.push('/add-child')}
-          onOpenAssignments={() => router.navigate('/grades')}
-          onOpenSession={({ studentId, sessionId }) =>
-            router.push({ pathname: '/sessions/[sessionId]', params: { sessionId, studentId } })
-          }
-        />
-      </Screen>
-    );
-  }
-
-  // Chua chot giao vien, quan ly co dung app mobile hay khong: giu man hinh tam
   return (
-    <Screen>
-      <EmptyState title="Lịch học" description="Tính năng đang được phát triển." />
+    <Screen edges={TAB_SCREEN_EDGES} onRefresh={refresh} isRefreshing={isRefreshing}>
+      <TabHeader
+        title="Lịch học"
+        subtitle="Lịch tuần, môn học và điểm danh"
+        trailing={<NotificationBell onPress={() => router.navigate('/notifications')} />}
+      />
+      <ParentSchedule
+        view={toScheduleView(view)}
+        onChangeView={(nextView) => router.setParams({ view: nextView })}
+        onAddChild={() => router.push('/add-child')}
+        onOpenAssignments={() => router.navigate({ pathname: '/grades', params: { tab: 'TODO' } })}
+        onOpenSession={({ studentId, sessionId }) =>
+          router.push({ pathname: '/sessions/[sessionId]', params: { sessionId, studentId } })
+        }
+      />
     </Screen>
   );
 }

@@ -54,7 +54,7 @@ export function EnrollmentSteps({ childName, grade, parentEmail }: EnrollmentSte
       {steps.map(({ key, content }, index) => (
         <View key={key} style={styles.step}>
           <ThemedView type="primarySoft" style={styles.number}>
-            <ThemedText type="smallBold" themeColor="primary">
+            <ThemedText type="smallBold" themeColor="primaryStrong">
               {index + 1}
             </ThemedText>
           </ThemedView>

@@ -1,7 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import type { ReactElement } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
+import { NotificationBell } from '@/features/parent-dashboard/components/notification-bell';
 import { ParentDashboard } from '@/features/parent-dashboard/components/parent-dashboard';
 import type {
   AppNotification,
@@ -11,6 +13,7 @@ import type {
   StudentGrades,
   TuitionBill,
 } from '@/features/parent-dashboard/types';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { toDateKey } from '@/utils/date';
 
@@ -27,9 +30,6 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     markNotificationRead: jest.fn(),
   },
 }));
-
-// Jest khong tim thay `@/assets/*`, xem dau `src/constants/images.ts`
-jest.mock('@/constants/images', () => ({ Images: { logo: 1 } }));
 
 const api = jest.mocked(parentDashboardApi);
 
@@ -74,7 +74,7 @@ const MINH_ANH_TODAY: ScheduleSession[] = [
 ];
 
 const MINH_ANH_GRADES: StudentGrades = {
-  summary: { average: 8.2, changeFromLastMonth: 0.4 },
+  summary: { average: 8.2, gradedCount: 3, changeFromLastMonth: 0.4 },
   subjects: [{ subject: 'Toán', count: 3, averageOutOf10: 8.2 }],
 };
 const NO_GRADES: StudentGrades = { summary: null, subjects: [] };
@@ -116,14 +116,14 @@ const GRADE_NOTIFICATION: AppNotification = {
   readAt: null,
 };
 
-const MINH_ANH_BUTTON = 'Nguyễn Minh Anh, lớp 8';
-const HOANG_LONG_BUTTON = 'Nguyễn Hoàng Long, lớp 6';
 const SHEET_SUBTITLE = 'Chuyển hồ sơ để theo dõi tình hình học tập';
-/**
- * Nut them con trong sheet: icon trong Button la Text chua glyph nen ten co ky tu dung truoc chu,
- * phan biet voi o "Thêm học sinh" cua thanh chon con.
- */
+/** Nut them con trong sheet: icon trong Button la Text chua glyph nen ten co ky tu dung truoc chu. */
 const SHEET_ADD_CHILD_BUTTON_NAME = /.Thêm học sinh$/;
+
+/** Ten nut thanh chon con dau trang, mo sheet chon con. */
+function switcherName(student: LinkedStudent): string {
+  return `Chọn học sinh, đang xem ${student.fullName}`;
+}
 
 /** Minh Anh co diem, bill chua dong, bai sap het han va thong bao; Hoang Long chua co gi. */
 function mockStudentData() {
@@ -150,13 +150,7 @@ function mockStudentData() {
   );
 }
 
-async function renderDashboard() {
-  const handlers = {
-    onAddChild: jest.fn(),
-    onOpenNotifications: jest.fn(),
-    onOpenNotification: jest.fn(),
-    onOpenAssignments: jest.fn(),
-  };
+async function renderWithQueryClient(element: ReactElement) {
   // gcTime vo han de React Query khong hen gio don cache sau khi test ket thuc
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -164,12 +158,27 @@ async function renderDashboard() {
       mutations: { gcTime: Infinity },
     },
   });
-  await render(
-    <QueryClientProvider client={queryClient}>
-      <ParentDashboard parentName="Phạm Thu Hà" parentEmail="phuhuynh@example.com" {...handlers} />
-    </QueryClientProvider>,
-  );
+  await render(<QueryClientProvider client={queryClient}>{element}</QueryClientProvider>);
+}
+
+async function renderDashboard() {
+  const handlers = {
+    onAddChild: jest.fn(),
+    onOpenNotifications: jest.fn(),
+    onOpenDestination: jest.fn(),
+  };
+  await renderWithQueryClient(<ParentDashboard parentEmail="phuhuynh@example.com" {...handlers} />);
   return { ...handlers, user: userEvent.setup() };
+}
+
+/** Doi con qua thanh chon con dau trang roi chon trong sheet. */
+async function switchStudent(
+  user: ReturnType<typeof userEvent.setup>,
+  from: LinkedStudent,
+  to: LinkedStudent,
+) {
+  await user.press(screen.getByRole('button', { name: switcherName(from) }));
+  await user.press(screen.getByRole('radio', { name: `${to.fullName}, khối ${to.grade}` }));
 }
 
 /**
@@ -189,6 +198,9 @@ async function waitForMinhAnhDashboard() {
   await waitForSecondarySections();
 }
 
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 describe('features/parent-dashboard/ParentDashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -198,11 +210,10 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     mockStudentData();
   });
 
-  it('xem con dau tien, bam con khac thi tai tong quan cua con do', async () => {
+  it('xem con dau tien, doi con thi tai tong quan cua con do', async () => {
     const { user } = await renderDashboard();
 
     await waitForMinhAnhDashboard();
-    expect(screen.getByText('Chào Hà 👋')).toBeOnTheScreen();
     expect(api.getStudentSchedule).toHaveBeenCalledWith(MINH_ANH.id, {
       from: toDateKey(new Date()),
       to: toDateKey(new Date()),
@@ -217,9 +228,9 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     expect(await screen.findByText('Học phí lớp Toán nâng cao 8A2')).toBeOnTheScreen();
     expect(screen.getByText('Bài tập Toán Đại số')).toBeOnTheScreen();
     expect(await screen.findByText(GRADE_NOTIFICATION.body)).toBeOnTheScreen();
-    expect(screen.getByRole('button', { name: MINH_ANH_BUTTON })).toBeSelected();
+    expect(screen.getByRole('button', { name: switcherName(MINH_ANH) })).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: HOANG_LONG_BUTTON }));
+    await switchStudent(user, MINH_ANH, HOANG_LONG);
 
     expect(await screen.findByText('Hôm nay học sinh không có buổi học nào.')).toBeOnTheScreen();
     expect(api.getStudentSchedule).toHaveBeenLastCalledWith(HOANG_LONG.id, {
@@ -231,16 +242,14 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     expect(await screen.findByText('Chưa có thông báo mới.')).toBeOnTheScreen();
     expect(screen.queryByText('Cần chú ý')).not.toBeOnTheScreen();
     expect(api.getRecentNotifications).toHaveBeenLastCalledWith(HOANG_LONG.id);
-    expect(screen.getByRole('button', { name: HOANG_LONG_BUTTON })).toBeSelected();
+    expect(screen.getByRole('button', { name: switcherName(HOANG_LONG) })).toBeOnTheScreen();
   });
 
-  it('mo sheet tu avatar tren cung, chon con khac thi dong sheet va doi tong quan', async () => {
+  it('mo sheet tu thanh chon con, chon con khac thi dong sheet va doi tong quan', async () => {
     const { user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
-    await user.press(
-      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
-    );
+    await user.press(screen.getByRole('button', { name: switcherName(MINH_ANH) }));
 
     expect(screen.getByText(SHEET_SUBTITLE)).toBeOnTheScreen();
     expect(screen.getByRole('radio', { name: 'Nguyễn Minh Anh, khối 8' })).toBeChecked();
@@ -250,55 +259,89 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
     expect(await screen.findByText('Hôm nay học sinh không có buổi học nào.')).toBeOnTheScreen();
     expect(screen.queryByText(SHEET_SUBTITLE)).not.toBeOnTheScreen();
-    expect(
-      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Hoàng Long' }),
-    ).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: switcherName(HOANG_LONG) })).toBeOnTheScreen();
     await waitForSecondarySections();
   });
 
-  it('them con tu thanh chon con va tu sheet, sheet dong truoc khi roi trang', async () => {
+  it('them con tu sheet chon con, sheet dong truoc khi roi trang', async () => {
     const { onAddChild, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
-    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
-    expect(onAddChild).toHaveBeenCalledTimes(1);
-
-    await user.press(
-      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
-    );
+    await user.press(screen.getByRole('button', { name: switcherName(MINH_ANH) }));
     await user.press(screen.getByRole('button', { name: SHEET_ADD_CHILD_BUTTON_NAME }));
 
-    expect(onAddChild).toHaveBeenCalledTimes(2);
+    expect(onAddChild).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(SHEET_SUBTITLE)).not.toBeOnTheScreen();
   });
 
-  it('chuong bao so chua doc; cac nut tren the mo trang thong bao va bai tap', async () => {
-    api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 2 });
-    const { onOpenNotifications, onOpenAssignments, user } = await renderDashboard();
+  it('cac nut tren the mo trang thong bao va bai tap', async () => {
+    const { onOpenNotifications, onOpenDestination, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
-    await user.press(await screen.findByRole('button', { name: 'Thông báo, 2 chưa đọc' }));
     await user.press(screen.getByRole('button', { name: 'Xem tất cả thông báo' }));
-    expect(onOpenNotifications).toHaveBeenCalledTimes(2);
+    expect(onOpenNotifications).toHaveBeenCalledTimes(1);
 
     await user.press(
       screen.getByRole('button', { name: 'Chuẩn bị bài cho buổi Toán nâng cao 8A2' }),
     );
-    await user.press(await screen.findByRole('button', { name: 'Xem bài: Bài tập Toán Đại số' }));
-    expect(onOpenAssignments).toHaveBeenCalledTimes(2);
+    expect(onOpenDestination).toHaveBeenLastCalledWith({
+      kind: 'ASSIGNMENTS',
+      studentId: MINH_ANH.id,
+      tab: 'TODO',
+    });
+  });
 
-    // Hoc phi dong tai trung tam nen khong co nut thanh toan
-    expect(screen.queryByRole('button', { name: /Học phí/ })).not.toBeOnTheScreen();
+  it('bam the nao cung mo dung phan chi tiet cua con dang xem', async () => {
+    const { onOpenDestination, user } = await renderDashboard();
+    await waitForMinhAnhDashboard();
+
+    await user.press(screen.getByRole('button', { name: /^Buổi học hôm nay: Toán nâng cao 8A2/ }));
+    expect(onOpenDestination).toHaveBeenLastCalledWith({
+      kind: 'SESSION',
+      studentId: MINH_ANH.id,
+      sessionId: 'session-1',
+    });
+
+    await user.press(screen.getByRole('button', { name: 'Tỷ lệ đi học 94%' }));
+    expect(onOpenDestination).toHaveBeenLastCalledWith({
+      kind: 'SCHEDULE',
+      studentId: MINH_ANH.id,
+      view: 'ATTENDANCE',
+    });
+
+    await user.press(
+      await screen.findByRole('button', {
+        name: 'Điểm trung bình 8.2, Tốt. Trung bình 3 bài đã chấm',
+      }),
+    );
+    expect(onOpenDestination).toHaveBeenLastCalledWith({
+      kind: 'ASSIGNMENTS',
+      studentId: MINH_ANH.id,
+      tab: 'GRADED',
+    });
+    expect(screen.getByText('Trung bình 3 bài đã chấm')).toBeOnTheScreen();
+
+    // Viec can chu y mo thang bai tap va bill, khong mo danh sach chung
+    await user.press(screen.getByRole('button', { name: 'Làm bài: Bài tập Toán Đại số' }));
+    expect(onOpenDestination).toHaveBeenLastCalledWith({
+      kind: 'ASSIGNMENT',
+      studentId: MINH_ANH.id,
+      assignmentId: 'assignment-1',
+    });
+    await user.press(
+      screen.getByRole('button', { name: 'Xem bill: Học phí lớp Toán nâng cao 8A2' }),
+    );
+    expect(onOpenDestination).toHaveBeenLastCalledWith({ kind: 'BILL', registrationId: 'order-1' });
   });
 
   it('bam thong bao moi: danh dau da doc va mo bai tap cua con', async () => {
-    const { onOpenNotification, user } = await renderDashboard();
+    const { onOpenDestination, user } = await renderDashboard();
     await waitForMinhAnhDashboard();
 
     await user.press(await screen.findByRole('button', { name: /^Chưa đọc\. Cập nhật học tập/ }));
 
     expect(api.markNotificationRead).toHaveBeenCalledWith('notification-1');
-    expect(onOpenNotification).toHaveBeenCalledWith({
+    expect(onOpenDestination).toHaveBeenCalledWith({
       kind: 'ASSIGNMENT',
       studentId: MINH_ANH.id,
       assignmentId: 'assignment-1',
@@ -383,7 +426,7 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     await waitForMinhAnhDashboard();
     expect(screen.queryByText('Chưa có môn đang học')).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: HOANG_LONG_BUTTON }));
+    await switchStudent(user, MINH_ANH, HOANG_LONG);
 
     expect(await screen.findByText('Chưa có môn đang học')).toBeOnTheScreen();
     expect(screen.getByText(/^Để đăng ký môn cho Hoàng Long, đến trung tâm/)).toBeOnTheScreen();
@@ -391,14 +434,12 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     await waitForSecondarySections();
   });
 
-  it('chua co con: man hinh rong kem nut them con, dem thong bao loi khong chan trang', async () => {
+  it('chua co con: man hinh rong kem nut them con, khong co thanh chon con', async () => {
     api.getStudents.mockResolvedValue([]);
-    api.getUnreadNotificationCount.mockRejectedValue(new AppError('Lỗi máy chủ', 500));
     const { onAddChild, user } = await renderDashboard();
 
     expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
     expect(api.getStudentGrades).not.toHaveBeenCalled();
-    expect(screen.getByRole('button', { name: 'Thông báo' })).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /Chọn học sinh/ })).not.toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
@@ -415,5 +456,32 @@ describe('features/parent-dashboard/ParentDashboard', () => {
 
     expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
     expect(api.getStudents).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('features/parent-dashboard/NotificationBell', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('bao so thong bao chua doc, bam thi mo trang thong bao', async () => {
+    api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 2 });
+    const onPress = jest.fn();
+    const user = userEvent.setup();
+    await renderWithQueryClient(<NotificationBell onPress={onPress} />);
+
+    await user.press(await screen.findByRole('button', { name: 'Thông báo, 2 chưa đọc' }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
+  });
+
+  it('dem thong bao loi thi chi an so chua doc, nut van bam duoc', async () => {
+    api.getUnreadNotificationCount.mockRejectedValue(new AppError('Lỗi máy chủ', 500));
+    const onPress = jest.fn();
+    const user = userEvent.setup();
+    await renderWithQueryClient(<NotificationBell onPress={onPress} />);
+    await waitFor(() => expect(api.getUnreadNotificationCount).toHaveBeenCalled());
+
+    await user.press(screen.getByRole('button', { name: 'Thông báo' }));
+
+    expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

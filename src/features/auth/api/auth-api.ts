@@ -56,6 +56,16 @@ export const authApi = {
     await apiClient.post(Endpoints.auth.logout);
   },
 
+  /**
+   * Thu hoi phien BE vua tao nhung app khong luu (tai khoan khong dung app mobile). Token chua nam
+   * trong SecureStore nen interceptor khong gan, phai gan header o day.
+   */
+  async revokeSession(accessToken: string): Promise<void> {
+    await apiClient.post(Endpoints.auth.logout, undefined, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+  },
+
   /** Xac minh email bang ma BE gui qua email. Ma sai, da dung hoac qua 24 gio thi BE tra 400. */
   async verifyEmail(payload: VerifyEmailInput): Promise<void> {
     await apiClient.post(Endpoints.auth.verifyEmail, payload);

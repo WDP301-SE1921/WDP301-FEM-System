@@ -55,7 +55,7 @@ describe('features/children/AddChildFlow', () => {
     const { onDone, invalidateQueries, user } = await renderFlow();
 
     await user.type(screen.getByLabelText('Họ và tên học sinh'), 'Nguyễn Gia Huy');
-    await user.press(screen.getByRole('radio', { name: 'Lớp 7' }));
+    await user.press(screen.getByRole('radio', { name: 'Khối 7' }));
     // Ban phim so khong co phim `/`: o nhap tu chen dau
     await user.type(screen.getByLabelText('Ngày sinh (không bắt buộc)'), '20052014');
     expect(screen.getByDisplayValue('20/05/2014')).toBeOnTheScreen();
@@ -107,7 +107,7 @@ describe('features/children/AddChildFlow', () => {
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     ).toBeOnTheScreen();
-    expect(screen.getByText('Vui lòng chọn lớp của học sinh')).toBeOnTheScreen();
+    expect(screen.getByText('Vui lòng chọn khối của học sinh')).toBeOnTheScreen();
     expect(api.create).not.toHaveBeenCalled();
   });
 
@@ -116,7 +116,7 @@ describe('features/children/AddChildFlow', () => {
     const { onBack, user } = await renderFlow();
 
     await user.type(screen.getByLabelText('Họ và tên học sinh'), 'Nguyễn Gia Huy');
-    await user.press(screen.getByRole('radio', { name: 'Lớp 6' }));
+    await user.press(screen.getByRole('radio', { name: 'Khối 6' }));
     await user.press(screen.getByRole('button', { name: SUBMIT_BUTTON_NAME }));
 
     expect(
