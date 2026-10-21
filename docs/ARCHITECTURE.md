@@ -13,19 +13,39 @@ src/
 ├── app/                      # Route cua expo-router (file = URL)
 │   ├── _layout.tsx           # Layout goc: provider + splash + Stack
 │   ├── index.tsx             # Cong vao, dieu huong theo trang thai dang nhap
+│   ├── verify-email.tsx      # Phu huynh dan ma BE gui qua email de xac minh tai khoan
+│   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
+│   ├── children/
+│   │   └── [studentId].tsx   # Phu huynh sua ho so mot con (ho ten, lop, ngay sinh)
+│   ├── assignments/
+│   │   └── [assignmentId].tsx # Mot bai tap cua con: lam bai, nop bai, diem va dap an (query `studentId`)
+│   ├── sessions/
+│   │   └── [sessionId].tsx   # Chi tiet mot buoi hoc cua con (query `studentId`, `startsAt`)
+│   ├── receipts/
+│   │   └── [registrationId].tsx # Bien lai thu hoc phi cua mot don dang ky
+│   ├── bills/
+│   │   └── [registrationId].tsx # Bill hoc phi cua mot don dang ky (chua thu, da thu hoac da huy)
 │   ├── +not-found.tsx
 │   ├── (auth)/               # Nhom route cho nguoi chua dang nhap
 │   │   ├── _layout.tsx       # Chan nguoi da dang nhap
+│   │   ├── welcome.tsx       # Man hinh chao, cong vao khi chua dang nhap
 │   │   ├── login.tsx
-│   │   └── register.tsx
+│   │   └── register.tsx      # Phu huynh tu tao tai khoan
 │   └── (tabs)/               # Nhom route chinh, co bottom tab
 │       ├── _layout.tsx       # Chan nguoi chua dang nhap + cau hinh tab
-│       ├── index.tsx
-│       └── profile.tsx
+│       ├── index.tsx         # Trang chu (phu huynh: tong quan cua con)
+│       ├── schedule.tsx      # Lich hoc (phu huynh: lich tuan, cac mon, lo trinh bai hoc va diem danh cua con)
+│       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con)
+│       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
+│       ├── notifications.tsx # Thong bao (chua lam). Khong co nut tren thanh tab, mo tu trang chu
+│       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, danh sach ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token
 │   ├── endpoints.ts          # Tap trung duong dan API
+│   ├── wired-routes.ts       # Endpoint da noi BE that; chi cac endpoint nay ra mang
+│   ├── route-pattern.ts      # So khop method + duong dan co tham so, dung chung cho wired va mock
+│   ├── mocks/                # Server gia cho moi endpoint chua wire (xem muc BE that va Mock API)
 │   └── query-client.ts       # Cau hinh React Query + query key factory
 │
 ├── components/
@@ -41,7 +61,7 @@ src/
 │       ├── types.ts
 │       └── index.ts          # Cong public cua feature, noi khac chi import tu day
 │
-├── constants/                # theme.ts (token), config.ts (env), messages.ts, storage-keys.ts
+├── constants/                # theme.ts (token), config.ts (env), messages.ts, storage-keys.ts, images.ts
 ├── hooks/                    # Hook dung chung toan app
 ├── lib/                      # Ha tang: storage, logger
 ├── providers/                # app-providers.tsx, noi duy nhat khai bao provider toan cuc
@@ -84,22 +104,30 @@ Luat bo sung:
 
 Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai cho dung that, va cap nhat bang nay.
 
-| Can gi                                      | Dung                                                      | O dau                |
-| ------------------------------------------- | --------------------------------------------------------- | -------------------- |
-| Khung man hinh (safe area, scroll, padding) | `Screen`                                                  | `components/common`  |
-| Trang thai dang tai / loi / rong            | `LoadingState`, `ErrorState`, `EmptyState`                | `components/common`  |
-| O nhap noi voi react-hook-form              | `FormInput`                                               | `components/common`  |
-| Loi chung cua form (loi tu server)          | `FormError`                                               | `components/common`  |
-| Nut, o nhap, chu, khung theo theme          | `Button`, `Input`, `ThemedText`, `ThemedView`             | `components/ui`      |
-| Link mo trinh duyet trong app               | `ExternalLink`                                            | `components/ui`      |
-| Mau theo che do sang / toi                  | `useTheme()`                                              | `hooks`              |
-| Tri hoan gia tri (o tim kiem)               | `useDebounce()`                                           | `hooks`              |
-| Format tien, ngay, cat chuoi, chu cai dau   | `formatCurrency`, `formatDate`, `truncate`, `getInitials` | `utils/format`       |
-| Thong bao loi hien cho nguoi dung           | `getErrorMessage()`                                       | `utils/error`        |
-| Chuoi loi chung (mat mang, qua thoi gian)   | `ErrorMessages`                                           | `constants/messages` |
-| Luu token / du lieu thuong                  | `secureStorage`, `storage`                                | `lib/storage`        |
-| Ghi log                                     | `logger`                                                  | `lib/logger`         |
-| Duong dan API, query key                    | `Endpoints`, `queryKeys`                                  | `api/`               |
+| Can gi                                        | Dung                                                                                      | O dau                |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
+| Khung man hinh (safe area, scroll, ban phim)  | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`; tu nang noi dung khoi ban phim) | `components/common`  |
+| Trang thai dang tai / loi / rong              | `LoadingState`, `ErrorState`, `EmptyState`                                                | `components/common`  |
+| O nhap noi voi react-hook-form                | `FormInput`                                                                               | `components/common`  |
+| Loi chung cua form (loi tu server)            | `FormError`                                                                               | `components/common`  |
+| Nut hien / an mat khau (dat o `trailing`)     | `PasswordVisibilityToggle`                                                                | `components/common`  |
+| Sheet truot tu duoi len (chon con, chon tuan) | `BottomSheet`                                                                             | `components/common`  |
+| Nut, o nhap, chu, khung theo theme            | `Button`, `Input`, `ThemedText`, `ThemedView`                                             | `components/ui`      |
+| Icon theo theme (boc Ionicons)                | `Icon`, kieu `IconName`                                                                   | `components/ui`      |
+| Link mo trinh duyet trong app                 | `ExternalLink`                                                                            | `components/ui`      |
+| Mau theo che do sang / toi                    | `useTheme()`                                                                              | `hooks`              |
+| Tri hoan gia tri (o tim kiem)                 | `useDebounce()`                                                                           | `hooks`              |
+| Format tien, ngay, cat chuoi, chu cai dau     | `formatCurrency`, `formatDate`, `truncate`, `getInitials`                                 | `utils/format`       |
+| Format gio, thu, thoi gian tuong doi, ten     | `formatTime`, `formatWeekdayDate`, `formatRelativeTime`, `getShortName`                   | `utils/format`       |
+| Format ngay/thang, thu viet tat (`T2`, `CN`)  | `formatDayMonth`, `formatShortWeekday`, `formatIsoWeekday` (thu ISO 1-7)                  | `utils/format`       |
+| Format thang/nam (`10/2026`)                  | `formatMonthYear`                                                                         | `utils/format`       |
+| Tinh ngay, tuan (Thu Hai), khoa `YYYY-MM-DD`  | `startOfDay`, `startOfWeek`, `addDays`, `diffInCalendarDays`, `toDateKey`, `parseDateKey` | `utils/date`         |
+| Thong bao loi hien cho nguoi dung             | `getErrorMessage()`                                                                       | `utils/error`        |
+| Chuoi loi chung (mat mang, qua thoi gian)     | `ErrorMessages`                                                                           | `constants/messages` |
+| Thong bao theo `error.code` cua BE            | `ApiErrorMessages`, `getApiErrorMessage()`                                                | `constants`, `utils` |
+| Luu token / du lieu thuong                    | `secureStorage`, `storage`                                                                | `lib/storage`        |
+| Ghi log                                       | `logger`                                                                                  | `lib/logger`         |
+| Duong dan API, query key                      | `Endpoints`, `queryKeys`                                                                  | `api/`               |
 
 ## Chon cong cu cho tung loai state
 
@@ -120,7 +148,12 @@ Mo app
        ├─ doc accessToken tu SecureStore + user tu AsyncStorage
        └─ isHydrated = true  ->  an splash screen
             ├─ isAuthenticated = true   -> (tabs)
-            └─ isAuthenticated = false  -> (auth)/login
+            └─ isAuthenticated = false  -> (auth)/welcome
+
+Dang nhap / dang ky xong
+  └─ luu phien, roi theo getPostSignInHref(user)
+       ├─ phu huynh chua xac minh email -> verify-email (bo qua duoc)
+       └─ con lai                        -> (tabs)
 
 Moi request
   └─ interceptor gan header Authorization
@@ -132,6 +165,8 @@ Gap 401
 ```
 
 Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong nam trong AsyncStorage. Tren web SecureStore khong ton tai nen `src/lib/storage.ts` tu dong fallback ve AsyncStorage.
+
+BE chi cho phu huynh tao va sua ho so con khi email da xac minh. `user` trong store la ban chup luc dang nhap: man `verify-email` doc lai `GET /auth/me` roi ghi vao store qua `setUser`, va man `add-child` thay form bang loi nhac khi `needsEmailVerification(user)`.
 
 ## Them mot feature moi
 
@@ -147,8 +182,25 @@ Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong na
 
 Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-fast neu thieu).
 
+| Bien                  | Bat buoc | Y nghia                                                                                                                                                            |
+| --------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `EXPO_PUBLIC_ENV`     | Khong    | `development` (mac dinh), `staging`. `production` bi chan vi con man hinh dung mock                                                                                |
+| `EXPO_PUBLIC_API_URL` | Co       | Dia chi BE kem prefix, vd `http://192.168.1.10:3000/api/v1`. Dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost` |
+
 > `EXPO_PUBLIC_*` bi **inline thang vao file bundle** va ai cung doc duoc.
 > Khong bao gio dat API key rieng tu, secret, hay chuoi ket noi DB o day.
+
+## BE that va Mock API
+
+Mot phan endpoint da noi BE that, phan con lai chay bang mock. Ca hai nam o tang HTTP, feature khong biet request cua minh di dau:
+
+- `src/api/wired-routes.ts` liet ke cac endpoint da noi BE that (`WIRED_ROUTES`). Adapter cua `apiClient` va `refreshClient` (`createApiAdapter`) chi cho request khop danh sach nay ra mang, toi `EXPO_PUBLIC_API_URL`. Khong co co bat/tat.
+- Moi request khac do `src/api/mocks/` (server gia) tra loi. Request khong co route mock nhan 404 `HTTP_ERROR` nhu Nest va log canh bao, khong ra mang. `config.ts` bao loi neu `EXPO_PUBLIC_ENV=production`.
+- Mock tra dung envelope, HTTP status va `error.code` cua BE (lay tu DTO hoac `EDUGRADE_BACKEND_FLOW.md`), va gia lap `ValidationPipe` (thua hoac thieu field thi 400). Nho vay `features/<ten>/api/`, interceptor va `normalizeError` chay y nhu voi BE that.
+- Dang nhap da noi BE that nen token la JWT cua BE. `mocks/mock-guard.ts` chi doc `sub` va `role` trong payload de gia lap guard; mock khong con tai khoan mau. Ho so con cung do BE quan ly: route mock nhan `studentId` khong co trong du lieu mau thi coi la con that va tra du lieu rong, nen cac man hinh con dung mock hien trang thai rong voi tai khoan that. Du lieu mau trong `mocks/mock-*.ts` chi con test goi toi.
+- Them endpoint moi thi them route mock trong cung task: tao `src/api/mocks/<module>.ts` export mang `MockRoute` dung URL tu `Endpoints`, them vao `MOCK_ROUTES` trong `src/api/mocks/index.ts`, ghi ma/du lieu dung thu o dau file.
+- BE xong endpoint van giu mock. Chi khi nguoi dung yeu cau wire mot endpoint cu the moi them endpoint do vao `WIRED_ROUTES`, xoa route mock cua no, khong sua feature. Doi chieu DTO that, lech thi sua `types.ts` cua feature. `src/__tests__/wired-routes.test.ts` bao loi neu mot endpoint vua wire vua con route mock.
+- BE tra du lieu khac dang man hinh can (vd buoi hoc va bai tap chung cho moi con cua phu huynh, khong kem id cua con) thi ghep trong `features/<ten>/api/`: ham cua `<ten>Api` goi cac route that roi dua qua ham thuan trong `api/parent-data-mappers.ts` (co test rieng). Hook va component van nhan kieu cua man hinh, khong biet du lieu ghep tu may route. Field BE chua co thi de null va UI an di, khong dien gia tri gia.
 
 ## Cau hinh theo moi truong
 

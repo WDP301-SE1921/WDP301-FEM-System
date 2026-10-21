@@ -1,8 +1,10 @@
+import { router } from 'expo-router';
+
 import { Screen } from '@/components/common/screen';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
-import { useAuth, useLogout } from '@/features/auth';
-import { getInitials } from '@/utils/format';
+import { AccountSummary, useAuth, useLogout } from '@/features/auth';
+import { ChildrenSection } from '@/features/children';
 
 export default function ProfileScreen() {
   const { user } = useAuth();
@@ -10,11 +12,20 @@ export default function ProfileScreen() {
 
   return (
     <Screen>
-      <ThemedText type="title">{user ? getInitials(user.fullName) : '--'}</ThemedText>
-      <ThemedText type="default">{user?.fullName ?? 'Chưa có thông tin'}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {user?.email}
+      <ThemedText type="heading" accessibilityRole="header">
+        Tài khoản
       </ThemedText>
+      {user ? <AccountSummary user={user} /> : null}
+
+      {/* Chi phu huynh co ho so con; role khac chua chot co dung app mobile hay khong */}
+      {user?.role === 'PARENT' ? (
+        <ChildrenSection
+          onAddChild={() => router.push('/add-child')}
+          onEditChild={(studentId) =>
+            router.push({ pathname: '/children/[studentId]', params: { studentId } })
+          }
+        />
+      ) : null}
 
       <Button
         title="Đăng xuất"

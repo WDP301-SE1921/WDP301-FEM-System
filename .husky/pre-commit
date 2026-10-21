@@ -1,1 +1,2 @@
-npx lint-staged
+# cmd.exe gioi han 8191 ky tu moi dong lenh; lint-staged uoc tinh thieu phan ngoac kep va shim .cmd
+npx lint-staged --max-arg-length 6000

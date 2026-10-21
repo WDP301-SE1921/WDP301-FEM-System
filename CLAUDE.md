@@ -2,15 +2,34 @@
 
 Huong dan cho Claude Code (claude.ai/code) khi lam viec trong repo nay.
 
-App mobile cua he thong FEM: Expo SDK 57, React Native 0.86, React 19.2, TypeScript strict, expo-router, React Query, Zustand, React Hook Form + Zod, Axios.
+App mobile cua EduGrade (repo nay goi la "he thong FEM"), danh cho phu huynh: Expo SDK 57, React Native 0.86, React 19.2, TypeScript strict, expo-router, React Query, Zustand, React Hook Form + Zod, Axios.
 
-`docs/ARCHITECTURE.md` va `docs/CODING_CONVENTIONS.md` la luat bat buoc va duoc nap tu dong o cuoi file nay. File nay chi bo sung nhung gi hai tai lieu do chua noi: lenh, cho de lam sai, design pattern va chuan clean code.
+**App goi BE that cho dung cac endpoint trong `src/api/wired-routes.ts`** (dang nhap, dang ky, xac minh email, ho so con, ghi danh, bien lai: noi ngay 2026-10-05; buoi hoc, don bao luu, bai tap, bai nop cua module `academic` va bill hoc phi (`GET /me/bills`): noi ngay 2026-10-06; dia chi BE lay tu `EXPO_PUBLIC_API_URL`). **Moi endpoint khac van chi dung mock** (`src/api/mocks/`: tong quan trang chu, diem danh, thong bao) va khong ra mang. Chi noi them endpoint khi nguoi dung bao "wire" dung endpoint do; khong them co bat/tat mock, khong cho request chua wire roi ra mang.
+
+`docs/ARCHITECTURE.md` va `docs/CODING_CONVENTIONS.md` la luat bat buoc va duoc nap tu dong o cuoi file nay. File nay chi bo sung nhung gi hai tai lieu do chua noi: pham vi san pham, lenh, cho de lam sai, design pattern va chuan clean code.
+
+## San pham va pham vi mobile
+
+Nguon: `docs/SRS.md` (dac ta yeu cau, ban ngay 2026-10-03, khong nap tu dong). Doc file do truoc khi lam task dung toi nghiep vu. Duoi day la phan anh huong truc tiep toi code mobile:
+
+- **EduGrade** la nen tang quan ly hoc tap cua mot trung tam day them (Toan, Ly, Hoa, Sinh, khoi 6-9), single-tenant. Web phuc vu 4 vai tro nhan su: Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien; code web nam o repo rieng `WDP301-FE-System` (Next.js), khong nam trong repo nay va co luat rieng cua no. **Mobile chi phuc vu Phu huynh.** Giao vien co dung mobile hay khong con la van de mo (SRS muc 9, tam theo Web-only): khong lam man hinh cho vai tro khac phu huynh khi chua duoc yeu cau.
+- **Khong co tai khoan hoc sinh.** Tai khoan dang nhap la cua phu huynh. Mot tai khoan quan ly nhieu ho so con va chuyen doi giua cac con trong cung phien dang nhap. Con nhan bai, nop bai va xem ket qua qua phien dang nhap cua phu huynh.
+- **Phu huynh tu tao tai khoan (email + mat khau) va tu tao ho so con ngay tren app.** Khong co link hay ma kich hoat trong bat ky truong hop nao, khong them lai luong ma lien ket.
+- **Theo tung con, phu huynh xem:** mon hoc, lop, lich hoc, lich hoc bu, goi hoc phi, diem kem dap an dung, lich su diem, ty le di hoc, tien do hoc tap. Phu huynh nhan va nop bai tap ve nha tren app.
+- **Phu huynh khong tu dang ky hay huy lop, khong thanh toan tren app.** Nhan vien dang ky mon/lop va xac nhan da thu hoc phi tai trung tam. Ngay sau do Enrollment gan vao ho so con: phu huynh mo app la thay mon moi, khong co buoc xac nhan nao tu phu huynh.
+- **Thong bao gui qua email** cua tai khoan phu huynh (cung la email dang nhap), khong dung SMS.
+- **Diem danh co 4 trang thai:** `present`, `absent`, `made_up`, `excused`. Ty le di hoc = (`present` + `made_up`) / tong so buoi phai hoc. Buoi `excused` trong thoi gian tam nghi khong tinh la buoi phai hoc. Di hoc bu thi buoi goc thanh `made_up`, khong di thi giu `absent`. Web va mobile dung cung du lieu va cung cach tinh.
+- **Diem chi hien sau khi giao vien duyet va cong bo.** Ket qua AI cham chi la de xuat, khong bao gio hien cho phu huynh khi chua cong bo. Bao cao Excel/PDF chi giao vien xem va tai, mobile khong co.
+
+Thuat ngu dung trong code va tai lieu: `StudentProfile` la ho so con duoi mot tai khoan phu huynh; `Enrollment` la mot luot dang ky hoc (1 hoc sinh, 1 mon, 1 lop, so thang tu 1 den 12); `ClassSession` la mot buoi hoc cu the, sinh tu lich co dinh cua lop.
+
+Code hien tai chua khop het cac diem tren: enum diem danh va cach tinh ty le di hoc dang theo BE, bai tu luan moi nop duoc bang chu (chua dinh kem anh), con nut chuong va route thong bao trong app. Lich hoc, chi tiet buoi, mon hoc, lo trinh va bai tap lay tu BE that nen thieu nhung gi BE chua tra cho phu huynh: ten giao vien, phong hoc, ket qua diem danh, nhan xet cua buoi, buoi hoc bu o lop khac, bai chua xep buoi (xem `docs/BE_FIX_REQUESTS.md`, file viet de gui nhom BE). Nghiep vu theo SRS, con ten field va enum cua API van theo contract BE. Gap cho SRS va BE lech nhau thi bao lai de nguoi dung quyet dinh, khong tu chon mot ben va khong tu sua hang loat ngoai pham vi task.
 
 ## Lenh
 
 ```bash
 npm install                  # lan dau (cai luon husky hook)
-cp .env.example .env         # bat buoc, thieu EXPO_PUBLIC_API_URL la app throw luc khoi dong
+cp .env.example .env         # bat buoc: dien EXPO_PUBLIC_API_URL (dia chi BE), thieu thi app bao loi luc mo
 npm start                    # Metro + Expo Go (npm run start:clear neu Metro loi la)
 
 npm run validate             # typecheck + lint + test:ci
@@ -32,8 +51,10 @@ PowerShell doi variant: `$env:APP_VARIANT = 'preview'; npx expo start` (cu phap 
 - **Typed routes dang bat.** `href` cua `Link`, `Redirect`, `router.*` duoc kiem tra kieu. Them hoac doi ten route ma typecheck bao sai `href` thi chay `npx expo start` mot lan de sinh lai `.expo/types`.
 - **File route bat buoc `export default`** (expo-router). Moi file khac dung named export.
 - **Expo SDK 57 / RN 0.86 moi hon phan lon tai lieu cu.** Truoc khi dung API la, doc docs.expo.dev dung version. Them thu vien qua `npx expo install` de lay version khop SDK.
-- **Env.** Moi bien `EXPO_PUBLIC_*` bi inline vao bundle nen khong dat secret. Doi `.env` phai tat Metro roi chay lai.
-- **Envelope API.** Backend tra `ApiResponse<T> = { success, message, data }`. Ham trong `features/<ten>/api/` tra ve `data.data` da unwrap, hook va UI khong bao gio thay envelope. Moi loi den UI deu la `AppError` (`message`, `status`, `fieldErrors`) do interceptor trong `api/client.ts` chuan hoa.
+- **Env.** Moi bien `EXPO_PUBLIC_*` bi inline vao bundle nen khong dat secret. Doi `.env` phai tat Metro roi chay lai. `EXPO_PUBLIC_API_URL` la bat buoc (`http://<host>:3000/api/v1`): dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost`. Test dat san gia tri nay trong `jest.setup.js`.
+- **Envelope API.** Backend tra `ApiResponse<T> = { success: true, data }`, loi la `{ success: false, error: { code, message, requestId, details? } }` voi `message` tieng Anh. Ham trong `features/<ten>/api/` tra ve `data.data` da unwrap, hook va UI khong bao gio thay envelope. Moi loi den UI deu la `AppError` (`message` tieng Viet, `status`, `code`) do interceptor trong `api/client.ts` chuan hoa theo `ApiErrorMessages`. Can thong bao theo ngu canh thi feature doi theo `error.code` trong tang `api/` cua minh.
+- **BE that va mock.** Chi request khop `WIRED_ROUTES` (`src/api/wired-routes.ts`) ra BE that; moi request khac do `src/api/mocks/` tra loi, khong co route mock thi bi chan voi 404 chu khong ra mang. Them endpoint thi them route mock trong cung task (xem muc "BE that va Mock API" trong `docs/ARCHITECTURE.md`), khong viet ham gia trong feature, va khong tu them vao `WIRED_ROUTES`: chi wire khi nguoi dung bao "wire" dung endpoint do. Dang nhap la tai khoan that cua BE nen mock khong con tai khoan mau; man hinh con dung mock hien trang thai rong voi tai khoan that.
+- **Xac minh email.** BE chi cho phu huynh tao va sua ho so con khi email da xac minh (`PARENT_EMAIL_UNVERIFIED`); SRS khong co buoc nay. `User.emailVerifiedAt` trong phien la ban chup luc dang nhap, man `verify-email` doc lai tu `GET /auth/me`. Dung `needsEmailVerification()` cua feature `auth`, khong tu so sanh field.
 - **Auth.** Token chi doc/ghi qua `secureStorage` (`@/lib/storage`) voi key tu `StorageKeys`. Refresh khi gap 401 da nam trong interceptor (gom request dong thoi vao mot lan refresh), khong viet lai o feature. `api/` khong duoc import `store/`: store dang ky callback qua `setUnauthorizedHandler`.
 - **Ngon ngu.** Ten bien, ham, file: tieng Anh. Comment va tai lieu: tieng Viet khong dau nhu code hien co. Chuoi UI: tieng Viet co dau. Chuoi loi dung chung nam trong `ErrorMessages` (`@/constants/messages`).
 - **Gap code vi pham luat** thi code moi van theo luat, khong bat chuoc. Khong tu sua hang loat ngoai pham vi task; bao lai de nguoi dung quyet dinh.
@@ -48,7 +69,7 @@ Day la cac pattern repo da dung. Code moi di theo dung cac pattern nay, khong tu
 - **Custom hook = mot use case** (`useLogin`, `useLogout`). Hook boc `useQuery`/`useMutation` va side effect di kem (luu phien, dieu huong, invalidate query). Screen chi goi hook, khong tu ghep logic nghiep vu.
 - **Container / Presentational.** Component trong `features/<ten>/components/` la container: lay data tu hook, xu ly loading / error / empty. File route chi lap ghep cac container nay va dieu huong. `components/ui` va `components/common` la presentational: nhan props, phat su kien qua callback `onX`, khong goi API, khong doc store.
 - **Singleton cap module** (`apiClient`, `queryClient`, `useAuthStore`). Dung lai instance co san, khong tao axios instance hay `QueryClient` moi.
-- **Factory cho key va URL** (`queryKeys`, `Endpoints.users.detail(id)`). Moi query key va URL co tham so deu tao qua factory, khong viet mang hay chuoi tay.
+- **Factory cho key va URL** (`queryKeys`, `Endpoints.parent.studentDashboard(id)`). Moi query key va URL co tham so deu tao qua factory, khong viet mang hay chuoi tay.
 - **Adapter cho thu vien ngoai** (`lib/storage.ts`, `lib/logger.ts`, `normalizeError`). Thu vien native hoac third-party dung o nhieu noi thi boc trong `lib/`, de doi thu vien chi phai sua mot file.
 - **Dependency inversion bang callback** (`setUnauthorizedHandler`). Tang duoi can bao cho tang tren thi nhan callback, khong import nguoc.
 - **Strategy / lookup map** (map `variant` trong `components/ui/button.tsx`). Re nhanh theo mot gia tri enum thi dung object `Record<Variant, ...>`, khong dung chuoi `if` hay ternary long nhau.

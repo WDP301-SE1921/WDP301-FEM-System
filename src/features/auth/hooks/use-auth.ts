@@ -3,10 +3,11 @@ import { router } from 'expo-router';
 
 import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/store/auth-store';
+import type { AuthSession } from '@/types/auth';
 
 import { authApi } from '../api/auth-api';
 import type { LoginInput, RegisterInput } from '../schemas';
-import type { LoginResponse } from '../types';
+import { getPostSignInHref } from '../utils';
 
 /** Doc trang thai dang nhap hien tai. */
 export function useAuth() {
@@ -16,13 +17,16 @@ export function useAuth() {
   return { user, isAuthenticated, isHydrated };
 }
 
-/** Luu phien roi vao man hinh chinh. Dung chung cho dang nhap va dang ky. */
+/**
+ * Luu phien roi vao man hinh dau tien cua tai khoan: phu huynh chua xac minh email (luon dung voi
+ * tai khoan vua dang ky) qua buoc xac minh truoc. Dung chung cho dang nhap va dang ky.
+ */
 function useStartSession() {
   const signIn = useAuthStore((s) => s.signIn);
 
-  return async (session: LoginResponse) => {
+  return async (session: AuthSession) => {
     await signIn(session);
-    router.replace('/(tabs)');
+    router.replace(getPostSignInHref(session.user));
   };
 }
 
@@ -39,8 +43,8 @@ export function useRegister() {
   const startSession = useStartSession();
 
   return useMutation({
-    mutationFn: ({ confirmPassword: _confirmPassword, ...input }: RegisterInput) =>
-      authApi.register(input),
+    mutationFn: ({ confirmPassword: _confirmPassword, phone, ...input }: RegisterInput) =>
+      authApi.register(phone ? { ...input, phone } : input),
     onSuccess: startSession,
   });
 }

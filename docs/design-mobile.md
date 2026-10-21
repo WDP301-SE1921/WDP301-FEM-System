@@ -1,6 +1,6 @@
 # Design System (Mobile — React Native/Expo)
 
-Applies to every screen/component in the mobile app. Keep it consistent with the web version (design.md); only the implementation differs to fit React Native.
+Applies to every screen/component in the mobile app. Keep it consistent with the web version (`docs/DESIGN.md` in the web repo `WDP301-FE-System`); only the implementation differs to fit React Native.
 
 ## Overall Style
 
@@ -27,7 +27,7 @@ const colors = {
 ```
 
 - Light background as the base; do not use dark mode as the default.
-- Clear semantic colors for status (present/absent/made_up/excused, if applicable).
+- Clear semantic colors for the four attendance statuses defined in the SRS: present, absent, made_up, excused.
 
 ## Typography
 
@@ -70,4 +70,6 @@ Rule of thumb: minimum radius 12px, never use square corners (`borderRadius: 0`)
 
 ## Target Audience
 
-Parents, teachers, and middle/junior-high school students — prioritize fast, low-step interactions and clear text that isn't cluttered on small screens.
+Parents. The mobile app only serves the parent role (see `docs/SRS.md`, sections 1.2 and 1.3): a parent signs in and manages one or more child profiles. There are no student accounts, so middle/junior-high school students (grades 6–9) use the app through their parent's signed-in session to receive and submit homework and to view results. Teachers and other centre staff use the web app; whether teachers also get mobile access is still open (SRS section 9).
+
+Prioritize fast, low-step interactions and clear text that isn't cluttered on small screens.
