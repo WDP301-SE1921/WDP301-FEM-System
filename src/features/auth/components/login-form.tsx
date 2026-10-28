@@ -1,11 +1,10 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { FormError } from '@/components/common/form-error';
 import { FormInput } from '@/components/common/form-input';
-import { PasswordVisibilityToggle } from '@/components/common/password-visibility-toggle';
+import { FormPasswordInput } from '@/components/common/form-password-input';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
@@ -16,17 +15,16 @@ import { loginSchema, type LoginInput } from '../schemas';
 /** Noi rong vung cham cua link chu (cao 20) cho du 44 ma khong day nhan ra xa o nhap. */
 const LINK_HIT_SLOP = 12;
 
-/** BE chua co luong quen mat khau (chi co register/login/refresh/logout/me): phai nho trung tam. */
-function showForgotPasswordHelp() {
-  Alert.alert('Quên mật khẩu?', 'Vui lòng liên hệ trung tâm EduGrade để được đặt lại mật khẩu.');
-}
+export type LoginFormProps = {
+  /** Mo man quen mat khau, kem email dang nhap da nhap (co the rong). */
+  onForgotPassword: (email: string) => void;
+};
 
 /** Form dang nhap: validate bang Zod, dang nhap xong tu chuyen sang (tabs). */
-export function LoginForm() {
+export function LoginForm({ onForgotPassword }: LoginFormProps) {
   const login = useLogin();
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
-  const { control, handleSubmit, setFocus } = useForm<LoginInput>({
+  const { control, handleSubmit, setFocus, getValues } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: '', password: '' },
   });
@@ -59,29 +57,22 @@ export function LoginForm() {
           <Pressable
             accessibilityRole="button"
             hitSlop={LINK_HIT_SLOP}
-            onPress={showForgotPasswordHelp}
+            onPress={() => onForgotPassword(getValues('email').trim())}
           >
             <ThemedText type="smallBold" themeColor="primary">
               Quên mật khẩu?
             </ThemedText>
           </Pressable>
         </View>
-        <FormInput
+        <FormPasswordInput
           control={control}
           name="password"
           accessibilityLabel="Mật khẩu"
           placeholder="Nhập mật khẩu của bạn"
           leadingIcon="lock-closed-outline"
-          secureTextEntry={!isPasswordVisible}
           autoComplete="password"
           returnKeyType="go"
           onSubmitEditing={onSubmit}
-          trailing={
-            <PasswordVisibilityToggle
-              isVisible={isPasswordVisible}
-              onToggle={() => setIsPasswordVisible((isVisible) => !isVisible)}
-            />
-          }
         />
       </View>
 

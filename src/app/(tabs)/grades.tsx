@@ -1,34 +1,41 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
-import { EmptyState } from '@/components/common/empty-state';
-import { Screen } from '@/components/common/screen';
-import { useAuth } from '@/features/auth';
-import { ParentAssignments, useRefreshParentData } from '@/features/parent-dashboard';
+import { Screen, TAB_SCREEN_EDGES } from '@/components/common/screen';
+import { TabHeader } from '@/components/common/tab-header';
+import {
+  NotificationBell,
+  ParentAssignments,
+  toAssignmentTab,
+  useRefreshParentData,
+} from '@/features/parent-dashboard';
+
+type GradesParams = {
+  /** Tab bai tap (`TODO`, `SUBMITTED`, `GRADED`), vd trang chu mo thang bai da co diem. */
+  tab?: string;
+};
 
 export default function GradesScreen() {
-  const { user } = useAuth();
   const { isRefreshing, refresh } = useRefreshParentData();
+  const { tab } = useLocalSearchParams<GradesParams>();
 
-  if (user?.role === 'PARENT') {
-    return (
-      <Screen onRefresh={refresh} isRefreshing={isRefreshing}>
-        <ParentAssignments
-          onAddChild={() => router.push('/add-child')}
-          onOpenAssignment={({ studentId, assignmentId }) =>
-            router.push({
-              pathname: '/assignments/[assignmentId]',
-              params: { assignmentId, studentId },
-            })
-          }
-        />
-      </Screen>
-    );
-  }
-
-  // Chua chot giao vien, quan ly co dung app mobile hay khong: giu man hinh tam
   return (
-    <Screen>
-      <EmptyState title="Điểm & Bài tập" description="Tính năng đang được phát triển." />
+    <Screen edges={TAB_SCREEN_EDGES} onRefresh={refresh} isRefreshing={isRefreshing}>
+      <TabHeader
+        title="Điểm & Bài tập"
+        subtitle="Bài cần làm, bài đã nộp và điểm"
+        trailing={<NotificationBell onPress={() => router.navigate('/notifications')} />}
+      />
+      <ParentAssignments
+        tab={toAssignmentTab(tab)}
+        onChangeTab={(nextTab) => router.setParams({ tab: nextTab })}
+        onAddChild={() => router.push('/add-child')}
+        onOpenAssignment={({ studentId, assignmentId }) =>
+          router.push({
+            pathname: '/assignments/[assignmentId]',
+            params: { assignmentId, studentId },
+          })
+        }
+      />
     </Screen>
   );
 }

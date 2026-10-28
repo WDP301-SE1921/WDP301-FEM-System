@@ -34,7 +34,7 @@ export function ResendVerification({ email }: ResendVerificationProps) {
       {resend.data ? (
         <ThemedText
           type="small"
-          themeColor={resend.data.sent ? 'success' : 'danger'}
+          themeColor={resend.data.sent ? 'successStrong' : 'danger'}
           accessibilityRole="alert"
           style={styles.center}
         >

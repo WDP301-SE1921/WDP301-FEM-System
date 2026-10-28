@@ -1,5 +1,5 @@
 import type { PropsWithChildren } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
@@ -12,13 +12,22 @@ const HIGHLIGHT_WIDTH = 6;
 export type AssignmentCardFrameProps = PropsWithChildren<{
   /** Vach mau ben trai de lam noi bai can chu y, vd bai sap het han. */
   highlightTone?: Tone;
+  /** Co thi ca the la nut mo bai; chip trong the chi la nhan cho biet bam thi lam gi. */
+  onPress?: () => void;
+  /** Ten nut cho trinh doc man hinh, vd `Làm bài: Bài tập chương 2`. */
+  accessibilityLabel?: string;
 }>;
 
-/** Khung chung cua the bai tap o ca ba tab. */
-export function AssignmentCardFrame({ highlightTone, children }: AssignmentCardFrameProps) {
+/** Khung chung cua the bai tap o ca ba tab va dau man chi tiet bai. */
+export function AssignmentCardFrame({
+  highlightTone,
+  onPress,
+  accessibilityLabel,
+  children,
+}: AssignmentCardFrameProps) {
   const theme = useTheme();
 
-  return (
+  const card = (
     <ThemedView type="backgroundElement" style={[styles.card, { borderColor: theme.border }]}>
       {highlightTone ? (
         <View style={[styles.highlight, { backgroundColor: theme[TONES[highlightTone].color] }]} />
@@ -26,9 +35,22 @@ export function AssignmentCardFrame({ highlightTone, children }: AssignmentCardF
       {children}
     </ThemedView>
   );
+  if (!onPress) return card;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      onPress={onPress}
+      style={({ pressed }) => [pressed && styles.pressed]}
+    >
+      {card}
+    </Pressable>
+  );
 }
 
 const styles = StyleSheet.create({
+  pressed: { opacity: 0.75 },
   card: {
     borderWidth: 1,
     borderRadius: Radius.lg,

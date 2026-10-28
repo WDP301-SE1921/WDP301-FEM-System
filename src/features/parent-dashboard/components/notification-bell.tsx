@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { Radius } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
-import { useUnreadNotificationCount } from '../hooks/use-parent-dashboard';
+import { useUnreadNotificationCount } from '../hooks/use-notifications';
 
 /** Vung cham toi thieu 44x44 (design-mobile.md). */
 const BUTTON_SIZE = 44;

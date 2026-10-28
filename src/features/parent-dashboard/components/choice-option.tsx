@@ -33,7 +33,7 @@ const APPEARANCES: Record<ChoiceState, Appearance> = {
     background: 'primarySoft',
     icon: 'radio-button-on',
     iconColor: 'primary',
-    note: 'con đã chọn',
+    note: 'học sinh đã chọn',
   },
   CORRECT: {
     border: 'success',
@@ -47,7 +47,7 @@ const APPEARANCES: Record<ChoiceState, Appearance> = {
     background: 'dangerSoft',
     icon: 'close-circle',
     iconColor: 'danger',
-    note: 'con đã chọn, chưa đúng',
+    note: 'học sinh đã chọn, chưa đúng',
   },
 };
 

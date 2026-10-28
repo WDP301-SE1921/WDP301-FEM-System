@@ -31,6 +31,7 @@ const current = variants[variant];
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: current.name,
+  owner: 'nhanle6',
   slug: 'wdp301-fem-system',
   version: '1.0.0',
   orientation: 'portrait',
@@ -60,6 +61,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     'expo-secure-store',
     [
+      // Hoc sinh chup hoac chon anh bai tu luan de nop kem bai (POST /academic/files)
+      'expo-image-picker',
+      {
+        photosPermission: 'EduGrade cần xem ảnh để học sinh chọn ảnh bài làm gửi giáo viên.',
+        cameraPermission: 'EduGrade cần dùng camera để học sinh chụp bài làm gửi giáo viên.',
+        microphonePermission: false,
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         backgroundColor: '#208AEF',
@@ -75,8 +85,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     variant,
     eas: {
-      // Dien projectId sau khi chay: eas init
-      projectId: process.env.EAS_PROJECT_ID,
+      // Project EAS @nhanle6/wdp301-fem-system, tao bang `eas init` ngay 2026-10-21.
+      // Config dong nen eas init khong tu ghi duoc, phai dien tay.
+      projectId: '78cf9028-7e15-443a-a58e-587d73060803',
     },
   },
 });

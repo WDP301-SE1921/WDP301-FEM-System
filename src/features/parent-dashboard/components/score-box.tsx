@@ -19,7 +19,7 @@ export type ScoreBoxProps = {
 
 /** O diem lon de doc nhanh, vd `8.5 / 10.0`, dung o the bai da co diem va man chi tiet bai. */
 export function ScoreBox({ totalScore, maxScore, tone }: ScoreBoxProps) {
-  const { color, soft } = TONES[tone];
+  const { text, soft } = TONES[tone];
   const score = formatScore(totalScore);
   const max = formatScore(maxScore);
 
@@ -30,10 +30,10 @@ export function ScoreBox({ totalScore, maxScore, tone }: ScoreBoxProps) {
       accessibilityLabel={`Điểm ${score} trên ${max}`}
       style={styles.scoreBox}
     >
-      <ThemedText type="subtitle" themeColor={color} style={styles.score}>
+      <ThemedText type="subtitle" themeColor={text} style={styles.score}>
         {score}
       </ThemedText>
-      <ThemedText type="small" themeColor={color}>
+      <ThemedText type="small" themeColor={text}>
         / {max}
       </ThemedText>
     </ThemedView>

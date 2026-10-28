@@ -1,4 +1,11 @@
-import { loginSchema, registerSchema, verifyEmailSchema } from '@/features/auth/schemas';
+import {
+  accountProfileSchema,
+  changePasswordSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  verifyEmailSchema,
+} from '@/features/auth/schemas';
 
 type ParseResult = { error?: { issues: { path: PropertyKey[]; message: string }[] } };
 
@@ -21,6 +28,14 @@ describe('features/auth/schemas', () => {
     it('bao loi khi email sai dinh dang', () => {
       const result = loginSchema.safeParse({ email: 'abc', password: '12345678' });
       expect(firstError(result, 'email')).toBe('Email không hợp lệ');
+    });
+
+    it('cat dau cach ban phim tu them sau email truoc khi kiem tra', () => {
+      const result = loginSchema.safeParse({ email: ' ph@gmail.com ', password: '12345678' });
+      expect(result.data?.email).toBe('ph@gmail.com');
+      expect(
+        firstError(loginSchema.safeParse({ email: '   ', password: '12345678' }), 'email'),
+      ).toBe('Vui lòng nhập email');
     });
 
     it('bao loi khi mat khau ngan hon 8 ky tu nhu LoginDto', () => {
@@ -81,6 +96,11 @@ describe('features/auth/schemas', () => {
       expect(verifyEmailSchema.safeParse({ token: ` ${token}\n` }).data).toEqual({ token });
     });
 
+    it('lay ma khi phu huynh chep ca dong trong email', () => {
+      const line = `Mã xác minh tài khoản EduGrade: ${token}`;
+      expect(verifyEmailSchema.safeParse({ token: line }).data).toEqual({ token });
+    });
+
     it('bo trong thi nhac dan ma', () => {
       const result = verifyEmailSchema.safeParse({ token: '   ' });
       expect(firstError(result, 'token')).toBe('Vui lòng dán mã xác minh');
@@ -91,6 +111,70 @@ describe('features/auth/schemas', () => {
       expect(firstError(result, 'token')).toBe(
         'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email',
       );
+    });
+  });
+
+  describe('forgotPasswordSchema', () => {
+    it('chi can email hop le', () => {
+      expect(forgotPasswordSchema.safeParse({ email: 'a@b.vn' }).success).toBe(true);
+      expect(firstError(forgotPasswordSchema.safeParse({ email: '' }), 'email')).toBe(
+        'Vui lòng nhập email',
+      );
+    });
+  });
+
+  describe('changePasswordSchema', () => {
+    const valid = {
+      currentPassword: 'MatKhauCu1',
+      newPassword: 'MatKhauMoi1',
+      confirmPassword: 'MatKhauMoi1',
+    };
+
+    it('chap nhan du lieu hop le', () => {
+      expect(changePasswordSchema.safeParse(valid).success).toBe(true);
+    });
+
+    it('mat khau moi theo gioi han cua ChangePasswordDto (8-72 ky tu)', () => {
+      const short = changePasswordSchema.safeParse({
+        ...valid,
+        newPassword: '1234567',
+        confirmPassword: '1234567',
+      });
+      const long = 'a'.repeat(73);
+      const tooLong = changePasswordSchema.safeParse({
+        ...valid,
+        newPassword: long,
+        confirmPassword: long,
+      });
+
+      expect(firstError(short, 'newPassword')).toBe('Mật khẩu tối thiểu 8 ký tự');
+      expect(firstError(tooLong, 'newPassword')).toBe('Mật khẩu tối đa 72 ký tự');
+    });
+
+    it('bao loi khi nhap lai khong khop hoac mat khau moi trung mat khau cu', () => {
+      const mismatch = changePasswordSchema.safeParse({ ...valid, confirmPassword: 'KhacNhau1' });
+      const unchanged = changePasswordSchema.safeParse({
+        ...valid,
+        newPassword: valid.currentPassword,
+        confirmPassword: valid.currentPassword,
+      });
+
+      expect(firstError(mismatch, 'confirmPassword')).toBe('Mật khẩu xác nhận không khớp');
+      expect(firstError(unchanged, 'newPassword')).toBe('Mật khẩu mới phải khác mật khẩu hiện tại');
+    });
+  });
+
+  describe('accountProfileSchema', () => {
+    it('so dien thoai bo trong duoc, nhap thi phai hop le', () => {
+      expect(
+        accountProfileSchema.safeParse({ displayName: 'Phạm Thu Hà', phone: '' }).success,
+      ).toBe(true);
+      expect(
+        firstError(accountProfileSchema.safeParse({ displayName: 'Hà', phone: 'abc' }), 'phone'),
+      ).toBe('Số điện thoại không hợp lệ');
+      expect(
+        firstError(accountProfileSchema.safeParse({ displayName: ' ', phone: '' }), 'displayName'),
+      ).toBe('Vui lòng nhập họ tên');
     });
   });
 });

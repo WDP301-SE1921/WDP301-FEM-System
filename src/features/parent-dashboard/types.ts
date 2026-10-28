@@ -1,9 +1,11 @@
 /**
- * Kieu cua man hinh phu huynh. Lich hoc, chi tiet buoi, mon hoc, lo trinh va bai tap ghep tu cac
- * endpoint that cua BE (xem `./api/parent-data-mappers.ts`); tong quan trang chu, diem danh va thong
- * bao van la hop dong TAM chay bang mock (xem dau file `src/api/mocks/parent.ts`).
+ * Kieu cua man hinh phu huynh. Moi du lieu lay tu endpoint that cua BE; man hinh can du lieu cua nhieu
+ * route (lich hoc, mon hoc, lo trinh, diem danh, bai tap, tong quan trang chu) thi ghep trong
+ * `./api/parent-data-mappers.ts`.
  */
 import type { IconName } from '@/components/ui/icon';
+import type { PickImageProblem } from '@/lib/image-picker';
+import type { Page, PageQuery, PaginatedQuery } from '@/types/api';
 
 /**
  * Mot phan tu cua GET /me/students (module `registration-flow` cua BE, da noi BE that): ban ghi
@@ -22,7 +24,7 @@ export type LinkedStudent = StudentProfile & {
   subjectNames: string[];
 };
 
-/** Response GET /parent/notifications/unread-count: tinh chung moi con cua phu huynh. */
+/** Response GET /notifications/unread-count: tinh tren ca hop thu, chung moi con cua phu huynh. */
 export type UnreadNotificationCount = {
   unreadCount: number;
 };
@@ -33,40 +35,36 @@ export type ClassSession = {
   subjectName: string;
   startsAt: string;
   endsAt: string;
-  /** null khi khong co phong. BE chua co phong hoc nen buoi tu BE luon null. */
+  /** Ten phong do quan ly dat, vd `Phòng A101`. null khi buoi chua xep phong. */
   room: string | null;
-  /** null khi app chua co ten giao vien: BE chi tra `teacherId`, phu huynh khong doc duoc ten. */
+  /** null khi giao vien chua dat ten hien thi. */
   teacherName: string | null;
 };
 
 export type SessionStatus = 'UPCOMING' | 'IN_PROGRESS' | 'FINISHED';
 
-/** Buoi co dinh, buoi hoc bu hoac buoi da doi lich. */
-export type ScheduleSessionType = 'REGULAR' | 'MAKEUP' | 'RESCHEDULED';
+/** Buoi co dinh, buoi hoc bu, buoi da doi lich hoac buoi trung tam da huy. */
+export type ScheduleSessionType = 'REGULAR' | 'MAKEUP' | 'RESCHEDULED' | 'CANCELLED';
 
 /**
- * Mot buoi trong lich hoc cua con, ghep tu GET /academic/scheduled-sessions. BE chua tra buoi hoc bu
- * cua con o lop khac va ghi chu cua trung tam, nen buoi tu BE luon la `REGULAR`, `note` null.
+ * Mot buoi trong lich hoc cua con, ghep tu GET /academic/scheduled-sessions. BE chua danh dau buoi doi
+ * lich, nen buoi la `REGULAR`, `MAKEUP` hoac `CANCELLED` (van hien de phu huynh biet buoi bi huy).
  */
 export type ScheduleSession = ClassSession & {
   type: ScheduleSessionType;
   /** Ten bai hoc cua buoi, vd `Đại số`. */
   topic: string | null;
-  /** Ghi chu cua trung tam, vd ly do hoc bu. */
+  /** Ghi chu cua trung tam: ly do huy buoi. */
   note: string | null;
 };
 
-/** Buoi can mo chi tiet: id buoi va gio bat dau (de tim buoi trong lich cua ngay do). */
+/** Buoi hien tren the (buoi tiep theo cua mon, bai tren lo trinh): id buoi va gio bat dau. */
 export type SessionLink = Pick<ClassSession, 'id' | 'startsAt'>;
 
-/**
- * Buoi hoc can mo chi tiet: id buoi chi co nghia trong lich cua mot con. BE khong co route doc mot
- * buoi cho phu huynh, nen man chi tiet tim buoi trong lich cua ngay `startsAt`.
- */
+/** Buoi hoc can mo chi tiet: phu huynh doc mot buoi theo con, nen luon di kem id cua con. */
 export type SessionRef = {
   studentId: string;
   sessionId: string;
-  startsAt: string;
 };
 
 /**
@@ -94,18 +92,18 @@ export type SessionMaterial = {
 };
 
 /**
- * Chi tiet mot buoi trong lich cua con, ghep tu GET /academic/scheduled-sessions cua ngay hoc. BE chua
- * cho phu huynh doc diem danh, gio vao lop, nhan xet hay tai lieu cua buoi.
+ * Chi tiet mot buoi cua con, tu GET /academic/scheduled-sessions/:id. BE chua tra gio vao lop, nhan
+ * xet rieng cho tung con va tai lieu cua buoi.
  */
 export type SessionDetail = ScheduleSession & {
   status: ClassSessionStatus;
   /** null khi buoi chua gan bai hoc. */
   lesson: SessionLesson | null;
-  /** null khi app chua co ket qua diem danh cua con (BE chua tra cho phu huynh). */
+  /** null khi con chua co trong danh sach diem danh cua buoi (giao vien chua chuan bi). */
   attendance: AttendanceStatus | null;
   /** Gio con vao lop. null khi chua diem danh hoac con khong co mat. */
   checkedInAt: string | null;
-  /** Nhan xet rieng cho con sau buoi hoc. */
+  /** Nhan xet chung cua giao vien ve buoi hoc, ghi khi chot diem danh. */
   teacherComment: string | null;
   materials: SessionMaterial[];
 };
@@ -113,49 +111,42 @@ export type SessionDetail = ScheduleSession & {
 /** `ParticipantKind` cua BE: con hoc buoi co dinh cua lop hay buoi hoc bu. */
 export type ParticipantKind = 'REGULAR' | 'MAKEUP';
 
-/** `MakeupStatus` cua BE. Buoi hoc bu da huy (`CANCELLED`) khong tra ve. */
-export type MakeupStatus = 'BOOKED' | 'COMPLETED' | 'MISSED';
+/** `MakeupStatus` cua BE. */
+export type MakeupStatus = 'BOOKED' | 'COMPLETED' | 'MISSED' | 'CANCELLED';
 
-/** Buoi hoc bu (MakeupBooking) da xep cho mot buoi vang. */
+/** Buoi hoc bu (MakeupBooking) da xep cho mot buoi vang. Lich hoc bu da huy khong hien. */
 export type AttendanceMakeup = {
-  status: MakeupStatus;
+  status: Exclude<MakeupStatus, 'CANCELLED'>;
   /** Gio bat dau cua buoi hoc bu. */
   startsAt: string;
 };
 
 /**
- * Mot phan tu cua response GET /parent/students/:studentId/attendance: mot buoi da ket thuc cua
- * con (SessionParticipant), moi nhat truoc.
+ * Ket qua diem danh sau khi tinh hoc bu (`effectiveStatus` cua BE), dung 4 trang thai cua SRS muc 5.5:
+ * buoi vang da hoc bu xong la `MADE_UP`, buoi nghi trong thoi gian tam nghi la `EXCUSED`.
+ */
+export type AttendanceResult = 'PRESENT' | 'ABSENT' | 'MADE_UP' | 'EXCUSED';
+
+/**
+ * Mot buoi trong lich su diem danh cua con, tu GET /academic/me/students/:id/attendance (BE tra kem
+ * lop, don nghi da duyet va lich hoc bu cua buoi). Chi gom buoi co dinh da chot diem danh: buoi hoc
+ * bu nam o buoi vang ma no bu cho.
  */
 export type AttendanceRecord = Pick<
   ClassSession,
-  'className' | 'subjectName' | 'startsAt' | 'endsAt' | 'room'
+  'className' | 'subjectName' | 'startsAt' | 'endsAt'
 > & {
   /** Id buoi hoc, dung de mo chi tiet buoi. */
   sessionId: string;
-  kind: ParticipantKind;
-  attendance: AttendanceStatus;
-  /** Ly do trong don xin nghi da duyet (LeaveRequest `SINGLE_ABSENCE`). Chi co khi `EXCUSED`. */
+  status: AttendanceResult;
+  /** Ly do trong don nghi da duyet cua buoi (nghi mot buoi hoac tam nghi). Khong co khi co mat. */
   leaveReason: string | null;
-  /** Buoi hoc bu cua buoi vang. null khi con co mat hoac chua xep buoi bu. */
+  /** Lich hoc bu moi nhat cua buoi vang. null khi con co mat hoac chua xep hoc bu. */
   makeup: AttendanceMakeup | null;
-  /** Buoi vang ma buoi hoc bu nay bu cho. Chi co khi `kind` la `MAKEUP`. */
-  originalSession: { startsAt: string } | null;
 };
 
 /** So buoi theo ket qua diem danh. */
-export type AttendanceCounts = {
-  /** Buoi co dinh con co mat. */
-  present: number;
-  /** Buoi hoc bu con co mat. */
-  madeUp: number;
-  /** Buoi con vang, ke ca nghi co phep va vang buoi hoc bu. */
-  absent: number;
-  /** Trong so `absent`, buoi nghi co phep. */
-  excused: number;
-  /** Buoi da ket thuc nhung giao vien chua chot diem danh. */
-  unmarked: number;
-};
+export type AttendanceCounts = Record<'present' | 'absent' | 'madeUp' | 'excused', number>;
 
 /** Cac buoi trong mot thang cua lich su diem danh. */
 export type AttendanceMonth = {
@@ -191,7 +182,8 @@ export type WeeklySlot = {
 
 /**
  * Mot mon con da ghi danh, ghep tu GET /me/students/:id/enrollments, don bao luu
- * (GET /academic/leaves) va buoi sap toi (GET /academic/scheduled-sessions).
+ * (GET /academic/leaves), buoi sap toi (GET /academic/scheduled-sessions), phong (GET /rooms) va diem
+ * trung binh mon (GET /academic/me/students/:id/grades).
  */
 export type StudentEnrollment = {
   id: string;
@@ -199,21 +191,24 @@ export type StudentEnrollment = {
   status: EnrollmentStatus;
   /** null khi khong bao luu. Chi co o ghi danh `ACTIVE`. */
   pause: EnrollmentPause | null;
+  /** Chuong trinh cua lop con dang hoc, dung de doc muc tieu khoa hoc. */
+  programId: string;
   /** `Program.name`, vd `Toán 8 – Chuyên đề nâng cao`. */
   programName: string;
   /** `Program.subject`, vd `Toán`. */
   subjectName: string;
   /** `Class.name` cua lop con dang hoc, trung voi `className` trong lich hoc. */
   className: string;
-  /** null khi app chua co ten giao vien (BE chi tra `teacherId`). */
+  /** Giao vien cua lop con dang hoc. null khi lop chua co giao vien hoac giao vien chua dat ten. */
   teacherName: string | null;
+  /** Ten phong cua lop, null khi lop chua xep phong. */
   room: string | null;
   /** Lich co dinh cua lop, rong khi lop chua xep lich. */
   weeklySlots: WeeklySlot[];
   /** So buoi theo lich co dinh tu dau ky toi hom nay, xem `countTermSessions`. */
   completedSessions: number;
   totalSessions: number;
-  /** Diem trung binh mon, thang diem 10. null khi chua co diem (BE chua tinh). */
+  /** Diem trung binh mon do BE tinh, thang diem 10. null khi mon chua co diem cong bo. */
   averageScore: number | null;
   /** Buoi sap toi trong lich cua con. null khi da ket thuc, dang bao luu hoac chua co lich. */
   nextSession: SessionLink | null;
@@ -248,12 +243,13 @@ export type LessonAssignment = {
 };
 
 /**
- * Mot bai tren lo trinh cua lop con dang hoc. BE chua cho phu huynh doc giao trinh, nen lo trinh
- * ghep tu cac buoi trong ky ghi danh (GET /academic/scheduled-sessions): moi buoi mot bai, theo gio
- * hoc. Bai chua xep buoi va bai tap gan voi bai thi chua co.
+ * Mot bai tren lo trinh cua lop con dang hoc: bai cua hoc phan da duyet
+ * (GET /academic/me/students/:id/curriculum) kem buoi day bai trong ky ghi danh
+ * (GET /academic/scheduled-sessions). Lop chua co hoc phan nao (vd ky hoc chua bat dau) thi moi buoi
+ * la mot bai, theo gio hoc. Bai tap gan voi bai thi chua co.
  */
 export type EnrollmentLesson = Omit<SessionLesson, 'sequence'> & {
-  /** Id cua buoi day bai: mot bai co the day o nhieu buoi. */
+  /** Id bai hoc cua hoc phan, hoac id buoi khi lo trinh ghep tu cac buoi. */
   id: string;
   /** Thu tu tren lo trinh, tinh tu 1. */
   sequence: number;
@@ -302,13 +298,15 @@ export type AssignmentGrade = {
 };
 
 /**
- * Mot bai tap giao cho con, ghep tu GET /academic/assignments, de bai va bai nop cua tung bai. Lop va
- * mon lay tu ghi danh cua con.
+ * Mot bai tap giao cho con, tu GET /academic/assignments?studentId (BE tra kem lop, so cau, lan nop
+ * gan nhat va diem da cong bo). Ten giao vien lay tu ghi danh cua con. Danh sach khong co de bai: xem
+ * o man chi tiet bai.
  */
 export type StudentAssignment = {
   id: string;
+  /** Loai bai kiem tra, null voi bai tap ve nha. */
+  testType: TestType | null;
   title: string;
-  instructions: string;
   subjectName: string;
   /** `Class.name`, trung voi `className` trong lich hoc. */
   className: string;
@@ -337,24 +335,47 @@ export type AssignmentTab = 'TODO' | 'SUBMITTED' | 'GRADED';
  * Prisma, o day chi khai bao field app dung.
  */
 
-/** Query phan trang cua module `academic` (PageDto): `limit` tu 1 toi 100. */
-export type PageQuery = {
-  page: number;
-  limit: number;
-};
-
 /** `CurriculumItemKind` cua BE: bai hoc thuong hay bai kiem tra thang. */
 export type CurriculumItemKind = 'LESSON' | 'MONTHLY_TEST';
 
-/** Query GET /academic/scheduled-sessions (SessionQueryDto), ngay dang `YYYY-MM-DD`. */
-export type ScheduledSessionQuery = PageQuery & {
+/**
+ * Query GET /academic/scheduled-sessions (SessionQueryDto), ngay dang `YYYY-MM-DD`. Phu huynh gui
+ * `studentId` de chi lay buoi cua mot con.
+ */
+export type ScheduledSessionQuery = PaginatedQuery & {
+  studentId: string;
   fromDate: string;
   toDate: string;
 };
 
 /**
- * Mot phan tu cua response GET /academic/scheduled-sessions voi role PARENT: buoi khong bi huy cua
- * moi con trong ky ghi danh, theo gio tang dan. Khong co id cua con hay ghi danh.
+ * Cho cua con trong mot buoi (SessionParticipant). Chi co khi giao vien da chuan bi danh sach diem
+ * danh, con xin nghi buoi do, hoac con duoc xep hoc bu vao buoi do. BE chi tra cho chua bi huy.
+ */
+export type SessionParticipation = {
+  enrollmentId: string;
+  kind: ParticipantKind;
+  attendance: AttendanceStatus;
+};
+
+/** Giao vien cua lop hoac cua buoi (`User` chi gom id va ten hien thi). */
+export type TeacherRef = {
+  id: string;
+  /** null khi giao vien chua dat ten hien thi. */
+  displayName: string | null;
+};
+
+/** Mot phan tu cua response GET /rooms, cung la `room` cua buoi hoc. */
+export type Room = {
+  id: string;
+  /** Ten do quan ly dat, vd `Phòng A101`. */
+  name: string;
+};
+
+/**
+ * Mot phan tu cua response GET /academic/scheduled-sessions voi role PARENT va `studentId`: buoi cua
+ * con, ca buoi trung tam da huy (gom buoi hoc bu o lop khac va buoi cua ghi danh da ket thuc), theo
+ * gio tang dan. Buoi ma cho cua con da bi huy (chuyen lop, huy hoc bu) thi BE khong tra.
  */
 export type ScheduledSession = {
   id: string;
@@ -362,8 +383,37 @@ export type ScheduledSession = {
   startsAt: string;
   endsAt: string;
   status: ClassSessionStatus;
+  /** Ly do huy cua trung tam, chi co voi buoi `CANCELLED`. */
+  cancelReason: string | null;
   class: { name: string; program: { grade: number; subject: string } };
+  teacher: TeacherRef;
+  /** null khi buoi chua xep phong. */
+  room: Room | null;
   lesson: { id: string; title: string; kind: CurriculumItemKind };
+  /** Cho cua con trong buoi, rong khi chua co. */
+  participations: SessionParticipation[];
+};
+
+/**
+ * Response GET /academic/scheduled-sessions/:id voi role PARENT: ban rut gon danh rieng cho phu huynh
+ * (khong co giao an `lesson.content`), kem lop, giao vien, phong, bai hoc va cho cua con. Ca buoi da
+ * huy cung tra ve.
+ */
+export type ScheduledSessionDetail = {
+  id: string;
+  classId: string;
+  startsAt: string;
+  endsAt: string;
+  status: ClassSessionStatus;
+  /** Ghi chu chung cua giao vien khi chot diem danh. */
+  summary: string | null;
+  cancelReason: string | null;
+  class: { name: string; program: { subject: string } };
+  teacher: TeacherRef;
+  /** Phong cua buoi, chep tu lop luc sinh buoi. null khi buoi chua xep phong. */
+  room: Room | null;
+  lesson: { id: string; title: string; kind: CurriculumItemKind };
+  participation: SessionParticipation | null;
 };
 
 /** `LeaveKind` cua BE: nghi mot buoi hay bao luu mot khoang thoi gian. */
@@ -372,13 +422,16 @@ export type LeaveKind = 'SINGLE_ABSENCE' | 'PERIOD_PAUSE';
 /** `RequestStatus` cua BE. */
 export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
-/** Query GET /academic/leaves (LeaveFilterDto). Khoang ngay loc don giao voi `[fromDate, toDate]`. */
-export type LeaveQuery = PageQuery & {
+/**
+ * Query GET /academic/leaves (LeaveFilterDto) cua mot con. Khoang ngay loc don giao voi
+ * `[fromDate, toDate]`; bo trong thi khong loc theo field do.
+ */
+export type LeaveQuery = PaginatedQuery & {
   studentId: string;
-  kind: LeaveKind;
-  status: RequestStatus;
-  fromDate: string;
-  toDate: string;
+  kind?: LeaveKind;
+  status?: RequestStatus;
+  fromDate?: string;
+  toDate?: string;
 };
 
 /** Mot phan tu cua response GET /academic/leaves: ban ghi LeaveRequest. */
@@ -386,10 +439,45 @@ export type LeaveRequest = {
   id: string;
   enrollmentId: string;
   kind: LeaveKind;
+  /** Buoi xin nghi, chi co voi `SINGLE_ABSENCE`. */
+  sessionId: string | null;
   /** Cot ngay cua Prisma: 00:00 UTC cua ngay do. Ca hai ngay deu thuoc don. */
   fromDate: string;
   toDate: string;
+  reason: string;
   status: RequestStatus;
+};
+
+/** Lich hoc bu chua huy moi nhat cua mot buoi vang, trong lich su diem danh. */
+export type AttendanceMakeupBooking = {
+  id: string;
+  status: Exclude<MakeupStatus, 'CANCELLED'>;
+  /** Buoi con den hoc bu. */
+  replacement: { sessionId: string; session: { id: string; startsAt: string; endsAt: string } };
+};
+
+/** Mot phan tu cua `history` trong response GET /academic/me/students/:id/attendance. */
+export type AttendanceHistoryItem = {
+  enrollmentId: string;
+  effectiveStatus: AttendanceResult;
+  session: { id: string; classId: string; startsAt: string; endsAt: string };
+  /** Lop cua buoi. */
+  class: { name: string; program: { subject: string } };
+  /** Don nghi da duyet ap cho buoi: don nghi dung buoi do, hoac don tam nghi chua ngay hoc. */
+  approvedLeave: { id: string; kind: LeaveKind; reason: string } | null;
+  /** null khi buoi chua xep hoc bu hoac lich hoc bu da huy. */
+  latestMakeup: AttendanceMakeupBooking | null;
+};
+
+/**
+ * Response GET /academic/me/students/:id/attendance (query `page`, `limit`). BE dung chung cong thuc
+ * voi web: ty le = (co mat + hoc bu) / buoi phai hoc, buoi nghi co phep khong tinh vao buoi phai hoc
+ * (xem `toAttendanceSummary`). `counts` tinh tren ca ky; phan trang chi ap cho `history`.
+ */
+export type AttendanceReport = Omit<Page<AttendanceHistoryItem>, 'items'> & {
+  counts: AttendanceCounts;
+  /** Buoi co dinh da chot diem danh cua con, cu nhat truoc. */
+  history: AttendanceHistoryItem[];
 };
 
 /** Bai tap can mo chi tiet: mot bai co the giao cho nhieu con nen luon di kem id cua con. */
@@ -401,14 +489,58 @@ export type AssignmentRef = {
 /** `AssignmentStatus` cua BE. Phu huynh khong thay bai `DRAFT`; `CLOSED`: giao vien da dong nhan bai. */
 export type AssignmentStatus = 'PUBLISHED' | 'CLOSED';
 
-/** Mot phan tu cua response GET /academic/assignments voi role PARENT: bai cua moi con, moi tao truoc. */
-export type AssignmentSummary = {
+/** `kind` cua bai o BE: bai tap ve nha, hay bai kiem tra gan voi mot buoi hoc. */
+export type AssessmentKind = 'HOMEWORK' | 'TEST';
+
+/** `testType` cua bai kiem tra o BE. */
+export type TestType = 'FIFTEEN_MINUTES' | 'ONE_PERIOD' | 'MIDTERM' | 'FINAL';
+
+/** Query GET /academic/assignments (StudentPageDto) cua mot con. */
+export type AssignmentQuery = PaginatedQuery & { studentId: string };
+
+/** Diem da cong bo cua lan nop (ban sua moi nhat cua GradeReview `PUBLISHED`). */
+export type PublishedGrade = {
+  totalScore: number;
+  /** Chuoi rong khi giao vien khong nhan xet. */
+  feedback: string;
+  publishedAt: string | null;
+};
+
+/** Con duoc giao bai trong danh sach bai tap, kem lan nop gan nhat cua con. */
+export type AssignmentListRecipient = {
+  id: string;
+  enrollmentId: string;
+  studentId: string;
+  /** Lan nop moi nhat. null khi con chua nop. */
+  latestSubmission: {
+    id: string;
+    attemptNo: number;
+    submittedAt: string;
+    /** null khi giao vien chua cong bo diem cua lan nop nay. */
+    publishedGrade: PublishedGrade | null;
+  } | null;
+};
+
+/**
+ * Mot phan tu cua response GET /academic/assignments voi role PARENT va `studentId`: bai cua con, moi
+ * tao truoc. Khong co de bai, dap an hay diem chua cong bo.
+ */
+export type AssignmentListItem = {
   id: string;
   classId: string;
+  kind: AssessmentKind;
+  /** null voi bai tap ve nha. */
+  testType: TestType | null;
   title: string;
   dueAt: string;
   status: AssignmentStatus;
   maxAttempts: number;
+  class: { id: string; name: string; program: { subject: string; grade: number } };
+  questionCounts: { multipleChoice: number; essay: number; total: number };
+  /** Tong diem toi da cua cac cau. */
+  maxScore: number;
+  /** Chi gom con dang xem. */
+  recipients: AssignmentListRecipient[];
 };
 
 /** Mot cau cua de (AssignmentQuestion), theo thu tu trong de. */
@@ -421,6 +553,18 @@ export type AssignmentQuestion = {
   maxScore: number;
   /** Lua chon dung hoac loi giai mau. Chi co sau khi giao vien cong bo dap an. */
   correctAnswer?: string | null;
+  /** Muc tieu (CLO) cau nay do, mot trong `AssignmentDetail.learningTargets`. null voi bai cu. */
+  outcomeId: string | null;
+};
+
+/** Mot muc tieu bai (CLO trong bo chuan dau ra cua khoa hoc). */
+export type LearningTarget = {
+  id: string;
+  /** Ma CLO trong bo, vd `MATH-6-01`. */
+  code: string;
+  title: string;
+  /** Mo ta day du muc tieu. */
+  statement: string;
 };
 
 /** Con duoc giao bai (AssignmentRecipient): mot ghi danh cua con trong lop cua bai. */
@@ -433,6 +577,9 @@ export type AssignmentRecipient = {
 export type AssignmentDetail = {
   id: string;
   classId: string;
+  kind: AssessmentKind;
+  /** null voi bai tap ve nha. */
+  testType: TestType | null;
   title: string;
   instructions: string;
   dueAt: string;
@@ -441,6 +588,13 @@ export type AssignmentDetail = {
   /** Chi gom con cua phu huynh dang dang nhap. */
   recipients: AssignmentRecipient[];
   questions: AssignmentQuestion[];
+  /** Bo CLO giao vien chon cho bai. null voi bai cu hoac khoa hoc chua co bo CLO da duyet. */
+  outcomeSetId: string | null;
+  /**
+   * Ca bo CLO cua bai, khong chi cac CLO bai do: muc tieu that cua bai la cac CLO co cau hoi gan
+   * `outcomeId` (xem `getMeasuredTargets`). Rong voi bai cu.
+   */
+  learningTargets: LearningTarget[];
 };
 
 export type SubmissionAnswer = {
@@ -473,6 +627,8 @@ export type SubmissionRecord = {
   attemptNo: number;
   answers: SubmissionAnswer[];
   submittedAt: string;
+  /** Anh bai lam gui kem lan nop. BE chi tra id; link xem anh lay qua `GET /academic/files/:id/preview`. */
+  files: { fileId: string }[];
   /** Chi gom diem da cong bo, ban sua moi nhat truoc. Rong khi giao vien chua cong bo. */
   grades: SubmissionGrade[];
 };
@@ -480,7 +636,39 @@ export type SubmissionRecord = {
 /** Body POST /academic/submissions (SubmissionDto): dung mot cau tra loi cho moi cau hoi. */
 export type SubmitAssignmentPayload = {
   recipientId: string;
+  /** Cau tu luan duoc de trong khi co anh bai lam (BE cho `answer` rong). */
   answers: SubmissionAnswer[];
+  /**
+   * Id anh bai lam (`POST /academic/files`), toi da `MAX_SUBMISSION_FILES`, phai do chinh phu huynh
+   * tai len (`INVALID_FILES`). Khong co anh thi khong gui.
+   */
+  fileIds?: string[];
+};
+
+/** Response POST /academic/files: tep phu huynh da tai len, gui kem bai nop qua `fileIds`. */
+export type UploadedFile = {
+  id: string;
+  name: string;
+  mimeType: string;
+  size: number;
+};
+
+/**
+ * Response GET /academic/files/:id/preview: link xem tep ky co han (`expiresIn` giay, BE ky 300 giay).
+ * Moi lan goi tra link moi cho cung mot tep.
+ */
+export type SignedFileUrl = {
+  url: string;
+  expiresIn: number;
+};
+
+/**
+ * Anh bai lam gui kem lan nop. `uri` la anh tren may de xem truoc; null voi anh lay lai tu lan nop
+ * truoc khi con nop lai, app tai anh do tu BE theo `fileId`.
+ */
+export type SubmissionAttachment = {
+  fileId: string;
+  uri: string | null;
 };
 
 /** Response POST /academic/submissions. */
@@ -493,6 +681,15 @@ export type SubmissionReceipt = {
 
 /** Cau tra loi con dang lam, key la id cau hoi. Cau chua lam thi khong co key. */
 export type AnswerDraft = Partial<Record<string, string>>;
+
+/** Ly do khong co anh de gui sau khi mo camera hoac thu vien (nguoi dung tu huy thi khong bao). */
+export type ImagePickProblem = PickImageProblem;
+
+/** Bai lam dang do luu tren may: cau tra loi va anh bai lam da tai len. */
+export type AssignmentDraft = {
+  answers: AnswerDraft;
+  attachments: SubmissionAttachment[];
+};
 
 /** Trang thai mot lua chon khi xem lai bai: chua chon, con chon (chua biet dung sai), dung, sai. */
 export type ChoiceState = 'IDLE' | 'SELECTED' | 'CORRECT' | 'WRONG';
@@ -523,12 +720,18 @@ export type PaymentStatus = 'CONFIRMED';
 export type RegistrationStatus =
   'DRAFT' | 'COMPLETED' | 'PAYMENT_CONFIRMED' | 'LINKED' | 'CANCELLED';
 
-/** Lop cua ghi danh, xep lop va don dang ky (`Class` kem `program`, `weeklySchedules`). */
+/** Lop cua ghi danh, xep lop va don dang ky (`Class` kem `program`, `weeklySchedules`, `teacher`). */
 export type TuitionClass = {
   id: string;
   name: string;
+  /** Chuong trinh (khoa hoc) cua lop, dung de doc muc tieu khoa hoc. */
+  programId: string;
+  /** Phong cua lop (xem GET /rooms), null khi lop chua xep phong. */
+  roomId: string | null;
   program: { name: string; subject: string; grade: number };
   weeklySchedules: WeeklySlot[];
+  /** Giao vien hien tai cua lop, null khi lop chua co giao vien. */
+  teacher: TeacherRef | null;
 };
 
 /** `Payment` cua don dang ky. */
@@ -624,12 +827,7 @@ export type TuitionBillDetail = TuitionBill & {
 };
 
 /** Response GET /me/bills: bill cua moi con, moi lap truoc. */
-export type BillPage = {
-  items: TuitionBill[];
-  page: number;
-  limit: number;
-  total: number;
-};
+export type BillPage = Page<TuitionBill>;
 
 /** Response GET /registrations/:id/receipt (`receiptResponse` cua BE). */
 export type TuitionReceipt = {
@@ -701,37 +899,202 @@ export type AttendanceSummary = {
 
 export type ScoreTrend = 'UP' | 'DOWN' | 'FLAT';
 
-/** Diem trung binh thang nay, thang diem 10. */
+/**
+ * Diem trung binh cac bai da cong bo cua con, thang diem 10, cung cach BE tinh diem trung binh mon:
+ * trung binh cong khong trong so, khong phai diem tong ket chinh thuc.
+ */
 export type ScoreSummary = {
+  /** Trung binh cong moi bai da cong bo diem (thang 10), khong trong so theo loai bai. */
   average: number;
-  /** null khi thang truoc chua co diem. */
+  /** So bai da cong bo diem dung de tinh `average`. */
+  gradedCount: number;
+  /** Chenh lech so voi diem trung binh tinh toi het thang truoc. null khi thang truoc chua co diem. */
   changeFromLastMonth: number | null;
 };
 
+/** Mot bai da co diem cong bo trong GET /academic/me/students/:id/grades. */
+export type GradeHistoryItem = {
+  recipientId: string;
+  assignment: {
+    id: string;
+    title: string;
+    kind: AssessmentKind;
+    testType: TestType | null;
+    class: { id: string; name: string; program: { subject: string } };
+  };
+  submissionId: string;
+  attemptNo: number;
+  totalScore: number;
+  maxScore: number;
+  /** `totalScore / maxScore * 10`, null khi de khong co diem toi da. */
+  scoreOutOf10: number | null;
+  feedback: string;
+  publishedAt: string | null;
+};
+
+/** Diem trung binh mot mon (theo `Program.subject`) cua con. */
+export type SubjectGradeAverage = {
+  subject: string;
+  count: number;
+  /** null khi mon chua co bai nao quy ra duoc thang diem 10. */
+  averageOutOf10: number | null;
+};
+
+/**
+ * Response GET /academic/me/students/:id/grades. `subjects` tinh tren toan bo lich su; phan trang chi
+ * ap cho `history` (moi cong bo truoc).
+ */
+export type GradeReport = Omit<Page<GradeHistoryItem>, 'items'> & {
+  studentId: string;
+  subjects: SubjectGradeAverage[];
+  history: GradeHistoryItem[];
+};
+
+/** Diem cua con dung o trang chu va the mon hoc. */
+export type StudentGrades = {
+  /** null khi con chua co diem nao. */
+  summary: ScoreSummary | null;
+  subjects: SubjectGradeAverage[];
+};
+
+/** Mot bai cua hoc phan trong GET /academic/me/students/:id/curriculum, khong co noi dung bai. */
+export type CurriculumLesson = {
+  id: string;
+  title: string;
+  /** Thu tu trong hoc phan, khong phai thu tu trong ca khoa. */
+  sequence: number;
+  kind: CurriculumItemKind;
+  /** Thang cua bai kiem tra thang, vd `2026-10`. */
+  monthKey: string | null;
+};
+
+/** Hoc phan da duyet cua chuong trinh con dang hoc, giao voi ky ghi danh. */
+export type CurriculumUnit = {
+  id: string;
+  title: string;
+  programId: string;
+  fromDate: string;
+  toDate: string;
+  version: number;
+  program: { subject: string; grade: number };
+  /** Lop dang hoc cua con dung hoc phan nay. */
+  classes: { id: string; name: string }[];
+  /** Bai da duyet, theo thu tu trong hoc phan. Gom ca bai chua xep buoi. */
+  lessons: CurriculumLesson[];
+};
+
+/** Response GET /academic/me/students/:id/curriculum. Con khong co ghi danh dang hoc thi rong. */
+export type CurriculumPage = Page<CurriculumUnit> & { studentId: string };
+
+/** Mot muc tieu (CLO) trong chuan dau ra cua khoa hoc. */
+export type CourseOutcome = LearningTarget & {
+  /** false: muc tieu mo rong, khong bat buoc voi moi hoc sinh. */
+  required: boolean;
+};
+
+/**
+ * Mot phan tu cua GET /academic/programs/:id/outcome-sets voi role PARENT: bo chuan dau ra (CLO) da
+ * duyet cua khoa hoc ma con dang hoc hoac da hoc, phien ban moi nhat truoc, CLO theo ma. BE chua tinh
+ * muc dat CLO cua hoc sinh nen app khong ghi "đạt chuẩn".
+ */
+export type CourseOutcomeSet = {
+  id: string;
+  programId: string;
+  /** Nhan cap do do trung tam dat, vd `Lớp 6 - cơ bản`. */
+  level: string;
+  version: number;
+  outcomes: CourseOutcome[];
+};
+
+/** `NotificationType` cua BE (`NOTIFICATION_TYPES` trong `notifications.dto.ts`). */
+export type NotificationType =
+  | 'ANNOUNCEMENT'
+  | 'ASSIGNMENT_PUBLISHED'
+  | 'ASSIGNMENT_REOPENED'
+  | 'ANSWERS_PUBLISHED'
+  | 'SUBMISSION_RECEIVED'
+  | 'GRADE_PUBLISHED'
+  | 'ATTENDANCE_FINALIZED'
+  | 'SESSIONS_GENERATED'
+  | 'SESSION_RESCHEDULED'
+  | 'SESSION_CANCELLED'
+  | 'TEACHER_CHANGED'
+  | 'SUBSTITUTE_ASSIGNED'
+  | 'LEAVE_REQUESTED'
+  | 'LEAVE_APPROVED'
+  | 'LEAVE_REJECTED'
+  | 'LEAVE_CANCELLED'
+  | 'LEAVE_ENDED_EARLY'
+  | 'MAKEUP_BOOKED'
+  | 'MAKEUP_CANCELLED'
+  | 'MAKEUP_RESCHEDULED'
+  | 'MAKEUP_COMPLETED'
+  | 'MAKEUP_MISSED'
+  | 'ENROLLMENT_TRANSFERRED'
+  | 'ENROLLMENT_ENDED'
+  | 'BILL_CREATED'
+  | 'BILL_CANCELLED'
+  | 'PAYMENT_CONFIRMED'
+  | 'TUITION_REMINDER'
+  | 'CURRICULUM_SUBMITTED'
+  | 'CURRICULUM_CHANGES_REQUESTED'
+  | 'CURRICULUM_APPROVED'
+  | 'FEEDBACK_CREATED'
+  | 'FEEDBACK_RESOLVED';
+
+/** Loai ban ghi ma thong bao tro toi. App tu chon man hinh theo loai nay. */
+export type NotificationTargetKind =
+  | 'ASSIGNMENT'
+  | 'SUBMISSION'
+  | 'SESSION'
+  | 'CLASS'
+  | 'LEAVE'
+  | 'MAKEUP'
+  | 'ENROLLMENT'
+  | 'REGISTRATION'
+  | 'CURRICULUM_UNIT'
+  | 'FEEDBACK';
+
+/** Mot thong bao trong hop thu (GET /notifications, PATCH /notifications/:id/read). */
+export type AppNotification = {
+  id: string;
+  type: NotificationType;
+  title: string;
+  body: string;
+  target: { kind: NotificationTargetKind; id: string };
+  /** Cac con lien quan luc BE tao thong bao; thong bao lop chung co the gom nhieu con. */
+  context: { classId?: string; studentIds: string[] };
+  createdAt: string;
+  /** null khi chua doc. */
+  readAt: string | null;
+};
+
+/** Query GET /notifications (NotificationQueryDto). */
+export type NotificationQuery = PageQuery & { studentId?: string };
+
+/** Response POST /notifications/read-all. */
+export type ReadAllNotificationsResult = UnreadNotificationCount & { updatedCount: number };
+
+/**
+ * Man hinh mo khi phu huynh bam mot thong bao hoac mot nut o trang chu. `SCHEDULE` va `ASSIGNMENTS`
+ * la tab (Lich hoc, Diem & Bai): mo thi chon con trong dich roi chuyen tab, mo dung che do xem. Ban ghi
+ * co the khong con mo duoc (con da chuyen lop): man hinh dich tu bao khong tim thay.
+ */
+export type ParentDestination =
+  | { kind: 'ASSIGNMENT'; studentId: string; assignmentId: string }
+  | { kind: 'SESSION'; studentId: string; sessionId: string }
+  | { kind: 'BILL'; registrationId: string }
+  | { kind: 'SCHEDULE'; studentId: string; view: ScheduleView }
+  | { kind: 'ASSIGNMENTS'; studentId: string; tab: AssignmentTab };
+
 export type AttentionItemType = 'TUITION' | 'ASSIGNMENT';
 
+/** Viec phu huynh can xu ly o trang chu, ghep tu bill chua thanh toan va bai tap sap het han. */
 export type AttentionItem = {
   id: string;
   type: AttentionItemType;
   title: string;
   description: string;
-};
-
-export type NotificationType = 'ATTENDANCE' | 'GRADE';
-
-export type DashboardNotification = {
-  id: string;
-  type: NotificationType;
-  title: string;
-  message: string;
-  createdAt: string;
-};
-
-/** Response GET /parent/students/:studentId/dashboard. Buoi hoc hom nay lay tu lich hoc. */
-export type StudentDashboard = {
-  attendance: AttendanceSummary;
-  /** null khi con chua co diem nao. */
-  scoreSummary: ScoreSummary | null;
-  attentionItems: AttentionItem[];
-  recentNotifications: DashboardNotification[];
+  /** Bam viec thi mo bill hoac bai tap do. */
+  destination: ParentDestination;
 };

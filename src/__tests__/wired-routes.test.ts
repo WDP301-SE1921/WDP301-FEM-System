@@ -12,6 +12,9 @@ jest.mock('@/lib/logger', () => ({
 
 const STUDENT_ID = 'cmg2x1abc0001student';
 const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
+const SESSION_ID = 'cmg2x1abc0005session';
+const NOTIFICATION_ID = 'cmg2x1abc0006notification';
+const FILE_ID = 'cmg2x1abc0007file';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -21,8 +24,14 @@ describe('api/wired-routes', () => {
       ['post', Endpoints.auth.refresh],
       ['post', Endpoints.auth.logout],
       ['get', Endpoints.auth.me],
+      ['patch', Endpoints.auth.me],
       ['post', Endpoints.auth.verifyEmail],
       ['post', Endpoints.auth.resendVerification],
+      ['post', Endpoints.auth.changePassword],
+      ['post', Endpoints.auth.forgotPassword],
+      ['get', Endpoints.auth.avatar],
+      ['put', Endpoints.auth.avatar],
+      ['delete', Endpoints.auth.avatar],
       ['get', Endpoints.me.students],
       ['post', Endpoints.me.students],
       ['patch', Endpoints.me.student(STUDENT_ID)],
@@ -30,19 +39,39 @@ describe('api/wired-routes', () => {
       ['get', Endpoints.me.bills],
       ['get', Endpoints.registrations.receipt('cmg2x1abc0003order')],
       ['get', Endpoints.registrations.bill('cmg2x1abc0003order')],
+      ['get', Endpoints.rooms],
       ['get', Endpoints.academic.scheduledSessions],
+      ['get', Endpoints.academic.scheduledSession(SESSION_ID)],
+      ['get', Endpoints.academic.studentAttendance(STUDENT_ID)],
+      ['get', Endpoints.academic.studentGrades(STUDENT_ID)],
+      ['get', Endpoints.academic.studentCurriculum(STUDENT_ID)],
+      ['get', Endpoints.academic.makeups],
       ['get', Endpoints.academic.leaves],
       ['get', Endpoints.academic.assignments],
       ['get', Endpoints.academic.assignment(ASSIGNMENT_ID)],
       ['get', Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID)],
       ['post', Endpoints.academic.submissions],
+      ['post', Endpoints.academic.files],
+      ['get', Endpoints.academic.filePreview(FILE_ID)],
+      ['get', Endpoints.notifications.list],
+      ['get', Endpoints.notifications.unreadCount],
+      ['patch', Endpoints.notifications.read(NOTIFICATION_ID)],
+      ['post', Endpoints.notifications.readAll],
     ])('%s %s ra BE that', (method, url) => {
       expect(isWiredRequest(method, url)).toBe(true);
     });
 
     it.each([
-      ['BE chua co route nay', 'get', Endpoints.parent.studentDashboard(STUDENT_ID)],
-      ['BE chua co route nay', 'get', Endpoints.parent.studentAttendance(STUDENT_ID)],
+      ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/dashboard`],
+      ['route TAM da bo', 'get', '/parent/notifications/unread-count'],
+      ['sai method', 'get', Endpoints.notifications.readAll],
+      ['sai method', 'post', Endpoints.notifications.read(NOTIFICATION_ID)],
+      ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/attendance`],
+      ['dat lai mat khau lam tren web', 'post', '/auth/reset-password'],
+      ['tai tep ve may chua wire', 'get', `/academic/files/${FILE_ID}/download`],
+      ['sai method', 'post', Endpoints.auth.avatar],
+      ['sai method', 'delete', Endpoints.academic.filePreview(FILE_ID)],
+      ['route cua quan ly', 'post', `${Endpoints.academic.scheduledSession(SESSION_ID)}/cancel`],
       ['route TAM da bo', 'get', `${Endpoints.me.student(STUDENT_ID)}/registrations`],
       ['route cua nhan vien', 'post', '/registrations/cmg2x1abc0003order/confirm-payment'],
       ['sai method', 'post', Endpoints.academic.assignments],
@@ -99,7 +128,7 @@ describe('api/wired-routes', () => {
 
     it('endpoint chua wire do server gia tra loi, khong lay adapter mang', async () => {
       const { adapter, mockAdapter, resolveNetworkAdapter } = setup();
-      const config = request('get', Endpoints.parent.studentDashboard(STUDENT_ID));
+      const config = request('get', '/users');
 
       await expect(adapter(config)).resolves.toMatchObject({ data: 'mock' });
       expect(mockAdapter).toHaveBeenCalledWith(config);

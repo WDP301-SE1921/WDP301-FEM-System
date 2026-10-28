@@ -38,7 +38,7 @@ export function BrandHeader() {
 
       <ThemedView type="backgroundElement" style={styles.tagline}>
         <View style={[styles.dot, { backgroundColor: theme.accent }]} />
-        <ThemedText type="small" themeColor="textSecondary">
+        <ThemedText type="small" themeColor="textSecondary" style={styles.taglineText}>
           Trung tâm bồi dưỡng kiến thức
         </ThemedText>
       </ThemedView>
@@ -68,5 +68,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     borderRadius: Radius.full,
   },
+  // Chu phong to lam khau hieu dai hon be ngang man hinh: xuong dong trong nhan
+  taglineText: { flexShrink: 1, textAlign: 'center' },
   dot: { width: DOT_SIZE, height: DOT_SIZE, borderRadius: Radius.full },
 });

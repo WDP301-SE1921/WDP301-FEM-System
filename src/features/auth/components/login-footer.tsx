@@ -15,8 +15,8 @@ export type LoginFooterProps = {
 };
 
 /**
- * Loi vao cho phu huynh moi. BE chi cho tu dang ky tai khoan PARENT, tai khoan giao vien do
- * trung tam cap.
+ * Loi vao cho phu huynh moi. BE chi cho tu dang ky tai khoan PARENT; hoc sinh khong co tai khoan rieng,
+ * giao vien va nhan su trung tam khong dung app mobile.
  */
 export function LoginFooter({ onRegister }: LoginFooterProps) {
   const theme = useTheme();
@@ -41,7 +41,8 @@ export function LoginFooter({ onRegister }: LoginFooterProps) {
         </ThemedText>
       </Pressable>
       <ThemedText type="small" themeColor="textSecondary" style={styles.center}>
-        Dành cho Phụ huynh. Tài khoản Giáo viên do trung tâm cấp.
+        Học sinh dùng chung tài khoản của phụ huynh. Giáo viên và nhân viên trung tâm dùng EduGrade
+        trên web.
       </ThemedText>
     </View>
   );

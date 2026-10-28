@@ -9,6 +9,7 @@ import { useEnrollmentLessons } from '../hooks/use-parent-dashboard';
 import type { SessionLink, StudentEnrollment } from '../types';
 import { getAssessmentMarkers, getRoadmapLessons, summarizeRoadmap } from '../utils';
 
+import { CourseOutcomesCard } from './course-outcomes-card';
 import { RoadmapSummaryCard } from './roadmap-summary-card';
 import { RoadmapTimeline } from './roadmap-timeline';
 
@@ -19,7 +20,7 @@ export type EnrollmentRoadmapProps = {
   onOpenAssignments: () => void;
 };
 
-/** Lo trinh mot mon cua con: tong quan tien do va cac bai theo thu tu. */
+/** Lo trinh mot mon cua con: tong quan tien do, muc tieu khoa hoc va cac bai theo thu tu. */
 export function EnrollmentRoadmap({
   studentId,
   enrollment,
@@ -50,6 +51,7 @@ export function EnrollmentRoadmap({
         summary={summarizeRoadmap(roadmap)}
         markers={getAssessmentMarkers(roadmap)}
       />
+      <CourseOutcomesCard programId={enrollment.programId} />
       <RoadmapTimeline
         lessons={roadmap}
         enrollment={enrollment}

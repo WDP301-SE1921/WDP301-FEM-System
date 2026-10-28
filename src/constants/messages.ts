@@ -2,7 +2,7 @@
 export const ErrorMessages = {
   unknown: 'Đã có lỗi xảy ra, vui lòng thử lại.',
   timeout: 'Yêu cầu quá thời gian chờ. Vui lòng kiểm tra kết nối mạng.',
-  network: 'Không kết nối được tới máy chủ.',
+  network: 'Không có kết nối mạng. Vui lòng kiểm tra Wi-Fi hoặc 4G rồi thử lại.',
   tooManyRequests: 'Bạn thao tác quá nhiều lần. Vui lòng thử lại sau ít phút.',
 } as const;
 
@@ -15,6 +15,11 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
   RESOURCE_NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu.',
+  /**
+   * Moi danh sach loc theo ngay: ngay khong ton tai, hoac ngay bat dau sau ngay ket thuc. App tu tinh
+   * khoang ngay nen nguoi dung khong tu sua duoc.
+   */
+  INVALID_DATE_RANGE: 'Khoảng ngày xem không hợp lệ. Vui lòng chọn tuần khác hoặc thử lại.',
   INTERNAL_ERROR: ErrorMessages.unknown,
   /** JwtAuthGuard tra ma nay khi thieu, sai hoac het han access token. */
   AUTH_UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -25,15 +30,22 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   /** Ma xac minh email sai, da dung hoac qua 24 gio. */
   AUTH_INVALID_EMAIL_TOKEN:
     'Mã xác minh không đúng hoặc đã hết hạn. Hãy gửi lại mã để nhận mã mới.',
+  AUTH_CURRENT_PASSWORD_INVALID: 'Mật khẩu hiện tại không đúng.',
   /** Module `registration-flow` cua BE. */
-  PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ của con.',
-  STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ của con.',
+  PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ học sinh.',
+  STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ học sinh.',
   RECEIPT_NOT_FOUND: 'Không tìm thấy biên lai.',
   BILL_NOT_FOUND: 'Không tìm thấy bill học phí.',
-  STUDENT_GRADE_LOCKED: 'Không đổi được lớp khi con đang có môn học tại trung tâm.',
+  STUDENT_GRADE_LOCKED: 'Không đổi được khối khi học sinh đang có môn học tại trung tâm.',
   /** Nop bai (module `academic` cua BE). */
   SUBMISSION_CLOSED: 'Bài tập đã hết hạn nộp.',
-  ATTEMPTS_EXHAUSTED: 'Con đã dùng hết số lần nộp bài.',
+  ATTEMPTS_EXHAUSTED: 'Học sinh đã dùng hết số lần nộp bài.',
   INVALID_ANSWERS: 'Cần trả lời đủ tất cả câu hỏi trước khi nộp.',
   INVALID_CHOICE: 'Có câu trả lời không nằm trong các lựa chọn của đề.',
+  /** Ma cua POST /academic/files va ảnh gui kem bai nop. */
+  INVALID_FILE_TYPE: 'Chỉ gửi được ảnh JPG hoặc PNG.',
+  INVALID_FILE_SIZE: 'Ảnh phải nhỏ hơn 10 MB.',
+  INVALID_FILES: 'Có ảnh bài làm không còn dùng được. Hãy xoá ảnh đó và gửi lại.',
+  /** Hai lan doi anh dai dien cung luc (vd tren hai may): lan den sau bi tu choi. */
+  AVATAR_CONFLICT: 'Ảnh đại diện vừa được đổi ở nơi khác. Vui lòng thử lại.',
 };

@@ -23,7 +23,7 @@ export function SessionNoticeCard({ type, note }: SessionNoticeCardProps) {
     <ThemedView type={tone.soft} style={styles.card}>
       <ToneIcon name={appearance.noteIcon} tone={appearance.tone} variant="solid" />
       <View style={styles.content}>
-        <ThemedText type="smallBold" themeColor={tone.color}>
+        <ThemedText type="smallBold" themeColor={tone.text}>
           {appearance.noteTitle}
         </ThemedText>
         <ThemedText type="small">{note}</ThemedText>

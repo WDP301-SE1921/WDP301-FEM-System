@@ -16,9 +16,11 @@ const PERCENT_MAX = 100;
 
 export type AttendanceStatCardProps = {
   attendance: AttendanceSummary;
+  /** Mo lich su diem danh cua con. */
+  onPress: () => void;
 };
 
-export function AttendanceStatCard({ attendance }: AttendanceStatCardProps) {
+export function AttendanceStatCard({ attendance, onPress }: AttendanceStatCardProps) {
   const theme = useTheme();
   const rate = getAttendanceRate(attendance);
   const progress = rate ?? 0;
@@ -27,6 +29,11 @@ export function AttendanceStatCard({ attendance }: AttendanceStatCardProps) {
     <StatCard
       label="Tỷ lệ đi học"
       trailing={<Icon name="shield-checkmark-outline" size={ICON_SIZE} themeColor="primary" />}
+      onPress={onPress}
+      accessibilityLabel={
+        rate === null ? 'Tỷ lệ đi học: chưa có buổi học' : `Tỷ lệ đi học ${rate}%`
+      }
+      accessibilityHint="Xem lịch sử điểm danh"
     >
       <ThemedText type="subtitle">{rate === null ? '--' : `${rate}%`}</ThemedText>
       <View

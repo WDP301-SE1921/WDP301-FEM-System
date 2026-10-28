@@ -18,12 +18,12 @@ export type ToneBadgeProps = {
 
 /** Nhan dang vien thuoc: trang thai buoi hoc, xep loai diem, lop cua con. */
 export function ToneBadge({ label, tone, icon }: ToneBadgeProps) {
-  const { color, soft } = TONES[tone];
+  const { text, soft } = TONES[tone];
 
   return (
     <ThemedView type={soft} style={styles.badge}>
-      {icon ? <Icon name={icon} size={ICON_SIZE} themeColor={color} /> : null}
-      <ThemedText type="smallBold" themeColor={color} numberOfLines={1}>
+      {icon ? <Icon name={icon} size={ICON_SIZE} themeColor={text} /> : null}
+      <ThemedText type="smallBold" themeColor={text} numberOfLines={1} style={styles.label}>
         {label}
       </ThemedText>
     </ThemedView>
@@ -39,4 +39,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.half,
     borderRadius: Radius.full,
   },
+  // Nhan dai hon cho trong (ten cac con, loai bai kiem tra canh nhan han nop) thi cat bot chu, khong
+  // de icon day nhan tran ra ngoai hang
+  label: { flexShrink: 1 },
 });

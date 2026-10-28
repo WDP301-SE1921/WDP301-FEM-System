@@ -23,13 +23,15 @@ export type ChildRowProps = {
 export function ChildRow({ child, onPress }: ChildRowProps) {
   const theme = useTheme();
   const birthDate = formatBirthDate(child.dateOfBirth);
-  const details = birthDate ? `Lớp ${child.grade} · Sinh ngày ${birthDate}` : `Lớp ${child.grade}`;
+  const details = birthDate
+    ? `Khối ${child.grade} · Sinh ngày ${birthDate}`
+    : `Khối ${child.grade}`;
 
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${child.fullName}, ${details}`}
-      accessibilityHint="Sửa hồ sơ của con"
+      accessibilityHint="Sửa hồ sơ học sinh"
       onPress={onPress}
       style={({ pressed }) => [
         styles.row,
@@ -38,7 +40,7 @@ export function ChildRow({ child, onPress }: ChildRowProps) {
       ]}
     >
       <ThemedView type="primarySoft" style={styles.avatar}>
-        <ThemedText type="smallBold" themeColor="primary">
+        <ThemedText type="smallBold" themeColor="primaryStrong">
           {getInitials(child.fullName)}
         </ThemedText>
       </ThemedView>

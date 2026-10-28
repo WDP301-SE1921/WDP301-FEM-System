@@ -52,7 +52,7 @@ export function ChildForm({
       <FormInput
         control={control}
         name="fullName"
-        label="Họ và tên của con"
+        label="Họ và tên học sinh"
         placeholder="Nguyễn Minh Anh"
         autoCapitalize="words"
         // Tat goi y de may khong dien ten cua chinh phu huynh
@@ -80,7 +80,7 @@ export function ChildForm({
           <Input
             ref={field.ref}
             label="Ngày sinh (không bắt buộc)"
-            placeholder="dd/mm/yyyy"
+            placeholder="VD: 15/08/2013"
             leadingIcon="calendar-outline"
             keyboardType="number-pad"
             maxLength={BIRTH_DATE_LENGTH}

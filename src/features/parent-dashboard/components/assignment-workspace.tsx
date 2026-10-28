@@ -1,9 +1,17 @@
 import { useState } from 'react';
 
 import type { AssignmentDetail, AssignmentRef, SubmissionRecord } from '../types';
-import { canSubmitAssignment, findLatestSubmission, toAnswerDraft } from '../utils';
+import {
+  canSubmitAssignment,
+  findLatestSubmission,
+  getMeasuredTargets,
+  getQuestionOutcomeCodes,
+  toAnswerDraft,
+  toDraftAttachments,
+} from '../utils';
 
 import { AssignmentAnswerForm } from './assignment-answer-form';
+import { AssignmentLearningTargets } from './assignment-learning-targets';
 import { AssignmentReview } from './assignment-review';
 import { AssignmentSummaryCard } from './assignment-summary-card';
 
@@ -34,18 +42,26 @@ export function AssignmentWorkspace({
   const attemptsUsed = latest?.attemptNo ?? 0;
   const canSubmit = canSubmitAssignment(detail, attemptsUsed);
   const remainingAttempts = canSubmit ? detail.maxAttempts - attemptsUsed : 0;
+  const outcomeCodes = getQuestionOutcomeCodes(detail);
   const stopRetrying = () => setIsRetrying(false);
 
   return (
     <>
       <AssignmentSummaryCard detail={detail} className={className} latest={latest} />
+      <AssignmentLearningTargets targets={getMeasuredTargets(detail)} />
       {canSubmit && (!latest || isRetrying) ? (
         <AssignmentAnswerForm
           studentId={studentId}
           assignmentId={assignmentId}
           recipientId={recipientId}
           questions={detail.questions}
-          initialDraft={latest ? toAnswerDraft(latest.answers) : undefined}
+          outcomeCodes={outcomeCodes}
+          // Nop lai giu ca anh cua lan truoc; con xoa duoc neu muon gui anh khac
+          initialDraft={
+            latest
+              ? { answers: toAnswerDraft(latest.answers), attachments: toDraftAttachments(latest) }
+              : undefined
+          }
           remainingAttempts={remainingAttempts}
           onSubmitted={stopRetrying}
           onCancel={latest ? stopRetrying : undefined}
@@ -53,6 +69,7 @@ export function AssignmentWorkspace({
       ) : (
         <AssignmentReview
           questions={detail.questions}
+          outcomeCodes={outcomeCodes}
           submission={latest}
           remainingAttempts={remainingAttempts}
           onRetry={() => setIsRetrying(true)}

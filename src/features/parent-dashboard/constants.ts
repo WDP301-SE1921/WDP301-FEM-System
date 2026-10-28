@@ -6,27 +6,36 @@ import type {
   AssignmentState,
   AssignmentTab,
   AttendanceCounts,
+  AttendanceMakeup,
+  AttendanceResult,
   AttendanceStatus,
   BillStatus,
   CourseStatus,
   DayPeriod,
+  ImagePickProblem,
   LessonKind,
   LessonProgress,
-  MakeupStatus,
+  NotificationTargetKind,
+  NotificationType,
   PaymentStatus,
   ScheduleSessionType,
+  ScheduleView,
   SessionStatus,
   TermStatus,
+  TestType,
 } from './types';
 
-/** Cap mau cua mot sac thai: mau chinh cho chu/icon, mau nhat cho nen chip va icon tron. */
+/**
+ * Mau cua mot sac thai: `color` cho icon, vach va nen dac; `soft` cho nen chip va icon tron; `text`
+ * cho chu (nhan, so lieu) tren nen `soft` hoac nen trang, du tuong phan cho chu nho.
+ */
 export const TONES = {
-  primary: { color: 'primary', soft: 'primarySoft' },
-  accent: { color: 'accent', soft: 'accentSoft' },
-  success: { color: 'success', soft: 'successSoft' },
-  danger: { color: 'danger', soft: 'dangerSoft' },
-  neutral: { color: 'textSecondary', soft: 'backgroundSelected' },
-} as const satisfies Record<string, { color: ThemeColor; soft: ThemeColor }>;
+  primary: { color: 'primary', soft: 'primarySoft', text: 'primaryStrong' },
+  accent: { color: 'accent', soft: 'accentSoft', text: 'accentStrong' },
+  success: { color: 'success', soft: 'successSoft', text: 'successStrong' },
+  danger: { color: 'danger', soft: 'dangerSoft', text: 'dangerStrong' },
+  neutral: { color: 'textSecondary', soft: 'backgroundSelected', text: 'textSecondary' },
+} as const satisfies Record<string, { color: ThemeColor; soft: ThemeColor; text: ThemeColor }>;
 
 export type Tone = keyof typeof TONES;
 
@@ -67,11 +76,12 @@ export const CANCELLED_SESSION_STATUS: StatusAppearance = {
   icon: 'ban',
 };
 
-/** Buoi vang da hoc bu xong: hien thay ket qua diem danh tren the lich su diem danh. */
-export const MADE_UP_STATUS: StatusAppearance = {
-  label: 'Đã học bù',
-  tone: 'primary',
-  icon: 'swap-horizontal',
+/** Nhan tren the lich su diem danh: ket qua sau khi tinh hoc bu, theo 4 trang thai cua SRS. */
+export const ATTENDANCE_RESULTS: Record<AttendanceResult, StatusAppearance> = {
+  PRESENT: ATTENDANCE_STATUSES.PRESENT,
+  ABSENT: ATTENDANCE_STATUSES.ABSENT,
+  MADE_UP: { label: 'Đã học bù', tone: 'primary', icon: 'swap-horizontal' },
+  EXCUSED: ATTENDANCE_STATUSES.EXCUSED,
 };
 
 /**
@@ -90,27 +100,33 @@ export const LOW_ATTENDANCE_LEVEL: StatusAppearance = {
   icon: 'warning',
 };
 
-/** Thu tu va nhan cac loai buoi trong dong tom tat cua moi thang, vd `5 có mặt, 1 vắng`. */
+/**
+ * Thu tu va nhan tung loai buoi o the ty le di hoc va dong tom tat cua moi thang, vd `5 có mặt, 1
+ * vắng`. `counter` la nhan ngan tren the ty le di hoc.
+ */
 export const ATTENDANCE_BREAKDOWN = [
-  { count: 'present', label: 'có mặt' },
-  { count: 'absent', label: 'vắng' },
-  { count: 'madeUp', label: 'học bù' },
-  { count: 'unmarked', label: 'chưa điểm danh' },
-] as const satisfies readonly { count: keyof AttendanceCounts; label: string }[];
+  { count: 'present', label: 'có mặt', counter: 'Có mặt', tone: 'success' },
+  { count: 'madeUp', label: 'học bù', counter: 'Học bù', tone: 'primary' },
+  { count: 'absent', label: 'vắng', counter: 'Vắng', tone: 'danger' },
+  { count: 'excused', label: 'nghỉ có phép', counter: 'Có phép', tone: 'accent' },
+] as const satisfies readonly {
+  count: keyof AttendanceCounts;
+  label: string;
+  counter: string;
+  tone: Tone;
+}[];
 
 type NoteAppearance = { icon: IconName; tone: Tone };
 
 export const LEAVE_REASON_NOTE: NoteAppearance = { icon: 'document-text-outline', tone: 'accent' };
 
-/** Ghi chu o buoi hoc bu, tro ve buoi vang duoc bu. */
-export const ORIGINAL_SESSION_NOTE: NoteAppearance = { icon: 'swap-horizontal', tone: 'primary' };
-
 /** Ghi chu o buoi vang theo trang thai buoi hoc bu, `label` dung truoc ngay gio buoi bu. */
-export const MAKEUP_NOTES: Record<MakeupStatus, NoteAppearance & { label: string }> = {
-  BOOKED: { label: 'Lịch học bù', icon: 'calendar-outline', tone: 'primary' },
-  COMPLETED: { label: 'Đã hoàn thành học bù', icon: 'checkmark-done-outline', tone: 'primary' },
-  MISSED: { label: 'Vắng buổi học bù', icon: 'alert-circle-outline', tone: 'danger' },
-};
+export const MAKEUP_NOTES: Record<AttendanceMakeup['status'], NoteAppearance & { label: string }> =
+  {
+    BOOKED: { label: 'Lịch học bù', icon: 'calendar-outline', tone: 'primary' },
+    COMPLETED: { label: 'Đã hoàn thành học bù', icon: 'checkmark-done-outline', tone: 'primary' },
+    MISSED: { label: 'Vắng buổi học bù', icon: 'alert-circle-outline', tone: 'danger' },
+  };
 
 /** Gia tri chip "Tất cả môn" o lich su diem danh va bai tap, cac chip con lai la `subjectName`. */
 export const ALL_SUBJECTS = 'ALL';
@@ -144,7 +160,55 @@ export const SESSION_TYPES: Record<ScheduleSessionType, SessionTypeAppearance> =
     noteIcon: 'megaphone-outline',
     noteTitle: 'Thông báo đổi lịch',
   },
+  CANCELLED: {
+    tone: 'danger',
+    badge: { label: 'Đã huỷ', icon: 'ban' },
+    noteIcon: 'ban',
+    noteTitle: 'Lý do huỷ buổi',
+  },
 };
+
+/** Icon va mau cua mot thong bao trong hop thu. */
+export type NotificationAppearance = { icon: IconName; tone: Tone };
+
+/** Theo loai ban ghi thong bao tro toi; `NOTIFICATION_TYPE_APPEARANCES` ghi de cho loai can noi. */
+export const NOTIFICATION_TARGET_APPEARANCES: Record<
+  NotificationTargetKind,
+  NotificationAppearance
+> = {
+  ASSIGNMENT: { icon: 'create-outline', tone: 'primary' },
+  SUBMISSION: { icon: 'create-outline', tone: 'primary' },
+  SESSION: { icon: 'calendar-outline', tone: 'primary' },
+  CLASS: { icon: 'megaphone-outline', tone: 'accent' },
+  LEAVE: { icon: 'document-text-outline', tone: 'accent' },
+  MAKEUP: { icon: 'swap-horizontal', tone: 'primary' },
+  ENROLLMENT: { icon: 'school-outline', tone: 'primary' },
+  REGISTRATION: { icon: 'wallet-outline', tone: 'accent' },
+  CURRICULUM_UNIT: { icon: 'book-outline', tone: 'neutral' },
+  FEEDBACK: { icon: 'chatbubble-outline', tone: 'neutral' },
+};
+
+export const NOTIFICATION_TYPE_APPEARANCES: Partial<
+  Record<NotificationType, NotificationAppearance>
+> = {
+  GRADE_PUBLISHED: { icon: 'star-outline', tone: 'accent' },
+  ANSWERS_PUBLISHED: { icon: 'checkmark-done-outline', tone: 'primary' },
+  ATTENDANCE_FINALIZED: { icon: 'checkmark-circle-outline', tone: 'success' },
+  SESSION_CANCELLED: { icon: 'ban', tone: 'danger' },
+  SESSION_RESCHEDULED: { icon: 'repeat', tone: 'accent' },
+  MAKEUP_MISSED: { icon: 'alert-circle-outline', tone: 'danger' },
+  LEAVE_REJECTED: { icon: 'close-circle-outline', tone: 'danger' },
+  PAYMENT_CONFIRMED: { icon: 'checkmark-circle-outline', tone: 'success' },
+  BILL_CANCELLED: { icon: 'close-circle-outline', tone: 'neutral' },
+};
+
+/** Nhan o diem trung binh o trang chu, dung chung cho luc dang tai, loi va da co diem. */
+export const SCORE_STAT_LABEL = 'Điểm trung bình';
+
+/** So thong bao moi nhat cua con hien o trang chu. */
+export const RECENT_NOTIFICATION_COUNT = 3;
+/** So thong bao moi lan tai o man thong bao. */
+export const NOTIFICATION_PAGE_SIZE = 20;
 
 export const DAY_PERIOD_LABELS: Record<DayPeriod, string> = {
   MORNING: 'Sáng',
@@ -159,7 +223,7 @@ type CourseStatusAppearance = StatusAppearance & {
 
 export const COURSE_STATUSES: Record<CourseStatus, CourseStatusAppearance> = {
   ACTIVE: { label: 'Đang học', tone: 'primary', progressLabel: 'Tiến độ khóa học' },
-  PAUSED: { label: 'Tạm nghỉ', tone: 'accent', progressLabel: 'Đã học trước khi bảo lưu' },
+  PAUSED: { label: 'Tạm nghỉ', tone: 'accent', progressLabel: 'Đã học trước khi tạm nghỉ' },
   ENDED: { label: 'Đã kết thúc', tone: 'neutral', progressLabel: 'Đã hoàn thành' },
 };
 
@@ -211,6 +275,14 @@ export const ASSIGNMENT_FORMATS: Record<AssignmentFormat, StatusAppearance> = {
   MIXED: { label: 'Trắc nghiệm & tự luận', tone: 'primary' },
 };
 
+/** Nhan bai kiem tra tren the bai tap, cung chu voi web (`TEST_TYPE_TEXT`). */
+export const TEST_TYPE_LABELS: Record<TestType, string> = {
+  FIFTEEN_MINUTES: 'Kiểm tra 15 phút',
+  ONE_PERIOD: 'Kiểm tra một tiết',
+  MIDTERM: 'Kiểm tra giữa kỳ',
+  FINAL: 'Kiểm tra học kỳ',
+};
+
 type AssignmentTabAppearance = {
   label: string;
   /** Man hinh rong khi tab (sau khi loc theo mon) khong co bai nao. */
@@ -241,6 +313,14 @@ export const ASSIGNMENT_TABS: Record<AssignmentTab, AssignmentTabAppearance> = {
 /** Thu tu cac tab tren man hinh bai tap. */
 export const ASSIGNMENT_TAB_ORDER: readonly AssignmentTab[] = ['TODO', 'SUBMITTED', 'GRADED'];
 
+/** Cac che do xem cua tab Lich hoc, theo thu tu tren thanh chuyen. */
+export const SCHEDULE_VIEW_ORDER: readonly ScheduleView[] = [
+  'WEEK',
+  'COURSES',
+  'ROADMAP',
+  'ATTENDANCE',
+];
+
 /** Nhan tren the bai da nop, cho giao vien cong bo diem. */
 export const GRADING_STATUS: StatusAppearance = {
   label: 'Đang chấm bài',
@@ -264,8 +344,26 @@ export const CLOSED_ASSIGNMENT_STATUS: StatusAppearance = {
 
 /** Ket qua cau trac nghiem khi giao vien da cong bo dap an. */
 export const ANSWER_RESULTS: Record<'correct' | 'wrong', StatusAppearance> = {
-  correct: { label: 'Con trả lời đúng', tone: 'success', icon: 'checkmark-circle' },
-  wrong: { label: 'Con trả lời chưa đúng', tone: 'danger', icon: 'close-circle' },
+  correct: { label: 'Học sinh trả lời đúng', tone: 'success', icon: 'checkmark-circle' },
+  wrong: { label: 'Học sinh trả lời chưa đúng', tone: 'danger', icon: 'close-circle' },
+};
+
+/** Gioi han `fileIds` cua SubmissionDto. */
+export const MAX_SUBMISSION_FILES = 5;
+
+/**
+ * Link xem anh bai lam BE ky 300 giay: lay link moi truoc khi het han mot phut, de anh chua co trong
+ * cache van tai duoc.
+ */
+export const FILE_PREVIEW_STALE_MS = 4 * 60_000;
+
+/** Bao khi mo camera hoac thu vien ma khong co anh gui duoc. */
+export const IMAGE_PICK_PROBLEMS: Record<ImagePickProblem, string> = {
+  PERMISSION_DENIED:
+    'Ứng dụng chưa được phép dùng camera. Mở Cài đặt để cho phép, hoặc bấm "Chọn ảnh" để lấy ảnh có sẵn.',
+  UNSUPPORTED: 'Chỉ gửi được ảnh JPG hoặc PNG. Hãy bấm "Chụp ảnh" để chụp lại bài làm.',
+  TOO_LARGE: 'Ảnh lớn hơn 10 MB. Hãy chụp lại hoặc chọn ảnh khác.',
+  FAILED: 'Không mở được camera hoặc thư viện ảnh trên máy này.',
 };
 
 /** Bai con han nop trong chung nay ngay (ke ca hom nay) thi can nhac gap. */

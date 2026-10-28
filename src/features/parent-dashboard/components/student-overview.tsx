@@ -5,52 +5,68 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 import { toDateKey } from '@/utils/date';
 
-import { useStudentDashboard, useStudentSchedule } from '../hooks/use-parent-dashboard';
+import { useAttendanceSummary, useStudentSchedule } from '../hooks/use-parent-dashboard';
+import type { ParentDestination } from '../types';
 
 import { AttendanceStatCard } from './attendance-stat-card';
-import { AttentionList } from './attention-list';
-import { RecentNotifications } from './recent-notifications';
-import { ScoreStatCard } from './score-stat-card';
+import { StudentAttention } from './student-attention';
+import { StudentRecentNotifications } from './student-recent-notifications';
+import { StudentScoreStat } from './student-score-stat';
 import { TodaySessions } from './today-sessions';
 
 export type StudentOverviewProps = {
   studentId: string;
-  onOpenAssignments: () => void;
   onOpenNotifications: () => void;
+  /** Mo man hinh cua the duoc bam, theo con dang xem. */
+  onOpenDestination: (destination: ParentDestination) => void;
 };
 
-/** Tong quan hom nay cua con dang chon. */
+/**
+ * Tong quan hom nay cua con dang chon, ghep tu cac route that cua BE (BE khong co route tong quan).
+ * Phan chinh (buoi hom nay, ty le di hoc) tai loi thi ca khoi bao loi. Phan phu (diem trung binh, viec
+ * can chu y, thong bao moi) tu tai va tu bao loi trong the cua minh, de mot route phu loi khong che mat
+ * lich hoc cua con. The nao cung bam duoc de mo phan chi tiet tuong ung.
+ */
 export function StudentOverview({
   studentId,
-  onOpenAssignments,
   onOpenNotifications,
+  onOpenDestination,
 }: StudentOverviewProps) {
-  const dashboard = useStudentDashboard(studentId);
-  // Buoi hom nay lay tu lich hoc cua BE; cac phan con lai cua tong quan BE chua co nen con la mock
   const today = toDateKey(new Date());
   const todaySessions = useStudentSchedule(studentId, { from: today, to: today });
+  const attendance = useAttendanceSummary(studentId);
 
-  if (dashboard.isPending || todaySessions.isPending) return <LoadingState />;
-  if (dashboard.isError) {
-    return <ErrorState error={dashboard.error} onRetry={() => void dashboard.refetch()} />;
-  }
+  if (todaySessions.isPending || attendance.isPending) return <LoadingState />;
   if (todaySessions.isError) {
     return <ErrorState error={todaySessions.error} onRetry={() => void todaySessions.refetch()} />;
   }
-
-  const { attendance, scoreSummary, attentionItems, recentNotifications } = dashboard.data;
+  if (attendance.isError) {
+    return <ErrorState error={attendance.error} onRetry={() => void attendance.refetch()} />;
+  }
 
   return (
     <View style={styles.sections}>
-      <TodaySessions sessions={todaySessions.data} onPrepare={onOpenAssignments} />
+      <TodaySessions
+        sessions={todaySessions.data}
+        onOpenSession={(sessionId) => onOpenDestination({ kind: 'SESSION', studentId, sessionId })}
+        onPrepare={() => onOpenDestination({ kind: 'ASSIGNMENTS', studentId, tab: 'TODO' })}
+      />
       <View style={styles.stats}>
-        <AttendanceStatCard attendance={attendance} />
-        <ScoreStatCard score={scoreSummary} />
+        <AttendanceStatCard
+          attendance={attendance.data}
+          onPress={() => onOpenDestination({ kind: 'SCHEDULE', studentId, view: 'ATTENDANCE' })}
+        />
+        <StudentScoreStat
+          studentId={studentId}
+          onPress={() => onOpenDestination({ kind: 'ASSIGNMENTS', studentId, tab: 'GRADED' })}
+        />
       </View>
-      {attentionItems.length > 0 ? (
-        <AttentionList items={attentionItems} onOpenAssignments={onOpenAssignments} />
-      ) : null}
-      <RecentNotifications notifications={recentNotifications} onSeeAll={onOpenNotifications} />
+      <StudentAttention studentId={studentId} onOpenDestination={onOpenDestination} />
+      <StudentRecentNotifications
+        studentId={studentId}
+        onOpenNotification={onOpenDestination}
+        onSeeAll={onOpenNotifications}
+      />
     </View>
   );
 }

@@ -1,15 +1,22 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentSchedule } from '@/features/parent-dashboard/components/parent-schedule';
+import {
+  ParentSchedule,
+  type ParentScheduleProps,
+} from '@/features/parent-dashboard/components/parent-schedule';
 import type {
+  CourseOutcomeSet,
+  ScheduleView,
   EnrollmentLesson,
   LessonAssignment,
   LessonSession,
   LinkedStudent,
   StudentEnrollment,
 } from '@/features/parent-dashboard/types';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay } from '@/utils/date';
 
@@ -19,6 +26,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     getStudentSchedule: jest.fn(),
     getStudentEnrollments: jest.fn(),
     getEnrollmentLessons: jest.fn(),
+    getCourseOutcomeSet: jest.fn(),
   },
 }));
 
@@ -40,11 +48,12 @@ function enrollment(
   return {
     status: 'ACTIVE',
     pause: null,
+    programId: 'program-math',
     programName: 'Toán 8 – Chuyên đề nâng cao',
     subjectName: 'Toán',
     className: 'Toán nâng cao 8A2',
     teacherName: 'Đặng Hải Yến',
-    room: 'P.203',
+    room: 'Phòng P.203',
     weeklySlots: [],
     completedSessions: 2,
     totalSessions: 8,
@@ -58,6 +67,7 @@ function enrollment(
 const MATH_ACTIVE = enrollment({ id: 'enrollment-math' });
 const PHYSICS_ACTIVE = enrollment({
   id: 'enrollment-physics',
+  programId: 'program-physics',
   subjectName: 'Vật lý',
   className: 'Vật lý 8 chuyên sâu',
   programName: 'Vật lý 8 – Chuyên sâu và thí nghiệm',
@@ -142,7 +152,18 @@ function mockMinhAnh(enrollments: StudentEnrollment[]) {
   api.getEnrollmentLessons.mockImplementation(async (_studentId, enrollmentId) =>
     enrollmentId === PHYSICS_ACTIVE.id ? PHYSICS_LESSONS : MATH_LESSONS,
   );
+  // Khoa chua co bo CLO da duyet, test muc tieu khoa hoc tu dat bo CLO
+  api.getCourseOutcomeSet.mockResolvedValue(null);
 }
+
+/** Route giu che do xem tren URL; o day giu bang state de bam chuyen che do nhu tren app. */
+function ScheduleWithView(props: Omit<ParentScheduleProps, 'view' | 'onChangeView'>) {
+  const [view, setView] = useState<ScheduleView>('WEEK');
+  return <ParentSchedule {...props} view={view} onChangeView={setView} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
 
 async function renderRoadmap() {
   const handlers = {
@@ -156,7 +177,7 @@ async function renderRoadmap() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentSchedule {...handlers} />
+      <ScheduleWithView {...handlers} />
     </QueryClientProvider>,
   );
   const user = userEvent.setup();
@@ -213,14 +234,12 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
     expect(onOpenSession).toHaveBeenLastCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session--7',
-      startsAt: atDay(-7),
     });
 
     await user.press(screen.getByRole('button', { name: /Xem chi tiết buổi học$/ }));
     expect(onOpenSession).toHaveBeenLastCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session-1',
-      startsAt: atDay(1),
     });
 
     await user.press(screen.getByRole('button', { name: /^Bài tập về nhà bài 3, .*Chưa nộp$/ }));
@@ -254,6 +273,69 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
     await renderRoadmap();
 
     expect(await screen.findByText('Chưa có lộ trình')).toBeOnTheScreen();
+  });
+
+  describe('muc tieu khoa hoc', () => {
+    const outcome = (index: number, required = true) => ({
+      id: `clo-${index}`,
+      code: `MATH-8-0${index}`,
+      title: `Mục tiêu ${index}`,
+      statement: '…',
+      required,
+    });
+    const OUTCOME_SET: CourseOutcomeSet = {
+      id: 'set-2',
+      programId: 'program-math',
+      level: 'Lớp 8 - cơ bản',
+      version: 2,
+      outcomes: [outcome(1), outcome(2), outcome(3), outcome(4, false)],
+    };
+
+    it('hien bo CLO moi nhat cua khoa, thu gon 3 muc, bam xem ca', async () => {
+      mockMinhAnh([MATH_ACTIVE]);
+      api.getCourseOutcomeSet.mockResolvedValue(OUTCOME_SET);
+      const { user } = await renderRoadmap();
+
+      expect(await screen.findByText('Mục tiêu khóa học')).toBeOnTheScreen();
+      expect(api.getCourseOutcomeSet).toHaveBeenCalledWith('program-math');
+      expect(screen.getByLabelText('MATH-8-03: Mục tiêu 3')).toBeOnTheScreen();
+      expect(screen.queryByText('Mục tiêu 4')).not.toBeOnTheScreen();
+      // BE chua tinh muc dat CLO nen khong ghi "đạt chuẩn"
+      expect(screen.queryByText(/đạt chuẩn/i)).not.toBeOnTheScreen();
+
+      await user.press(screen.getByRole('button', { name: /Xem cả 4 mục tiêu$/ }));
+
+      expect(
+        screen.getByLabelText('MATH-8-04: Mục tiêu 4. Mục tiêu mở rộng, không bắt buộc'),
+      ).toBeOnTheScreen();
+      expect(screen.getByRole('button', { name: /Thu gọn$/ })).toBeOnTheScreen();
+    });
+
+    it('khoa chua co bo CLO da duyet thi khong hien khoi', async () => {
+      mockMinhAnh([MATH_ACTIVE]);
+      await renderRoadmap();
+
+      await screen.findByText('Đã học 2/8 bài');
+      await waitFor(() => expect(api.getCourseOutcomeSet).toHaveBeenCalled());
+      expect(screen.queryByText('Mục tiêu khóa học')).not.toBeOnTheScreen();
+    });
+
+    it('loi tai muc tieu thi chi khoi do bao loi, lo trinh van hien', async () => {
+      mockMinhAnh([MATH_ACTIVE]);
+      api.getCourseOutcomeSet
+        .mockRejectedValueOnce(new AppError('Không kết nối được tới máy chủ.'))
+        .mockResolvedValueOnce(OUTCOME_SET);
+      const { user } = await renderRoadmap();
+
+      await user.press(
+        await screen.findByRole('button', {
+          name: 'Thử lại: Không tải được mục tiêu khóa học.',
+        }),
+      );
+
+      expect(await screen.findByLabelText('MATH-8-01: Mục tiêu 1')).toBeOnTheScreen();
+      expect(screen.getByText('Đã học 2/8 bài')).toBeOnTheScreen();
+    });
   });
 
   it('loi tai lo trinh thi hien thu lai, bam thu lai tai lai', async () => {

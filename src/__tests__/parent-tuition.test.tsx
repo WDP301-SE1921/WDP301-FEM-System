@@ -9,6 +9,7 @@ import type {
   TuitionClass,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay, toDateKey } from '@/utils/date';
 import { formatCurrency, formatDate } from '@/utils/format';
@@ -54,7 +55,10 @@ function classroom(name: string, subject: string, slotsPerWeek: number): Tuition
   return {
     id: `class-${name}`,
     name,
+    programId: `program-${subject}`,
+    roomId: null,
     program: { name: `Chương trình ${subject}`, subject, grade: 8 },
+    teacher: null,
     weeklySchedules: Array.from({ length: slotsPerWeek }, (_, index) => ({
       weekday: index + 1,
       startTime: '18:00',
@@ -168,6 +172,9 @@ function mockTwoChildren() {
   );
 }
 
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderTuition() {
   const onAddChild = jest.fn();
   const onOpenReceipt = jest.fn();
@@ -212,7 +219,7 @@ describe('features/parent-dashboard/ParentTuition', () => {
     expect(api.getTuitionEnrollments).toHaveBeenCalledWith(MINH_ANH.id);
     expect(api.getStudentBills).toHaveBeenCalledWith(MINH_ANH.id);
     expect(
-      screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }),
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
     ).toBeOnTheScreen();
 
     // Chi bill UNPAID la dang cho trung tam xac nhan thu hoc phi
@@ -297,7 +304,9 @@ describe('features/parent-dashboard/ParentTuition', () => {
       { timeout: FIRST_RENDER_TIMEOUT_MS },
     );
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(
@@ -350,9 +359,9 @@ describe('features/parent-dashboard/ParentTuition', () => {
     const { onAddChild, user } = await renderTuition();
 
     expect(
-      await screen.findByText('Chưa có hồ sơ của con', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+      await screen.findByText('Chưa có hồ sơ học sinh', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
 
     expect(onAddChild).toHaveBeenCalledTimes(1);
     expect(api.getTuitionEnrollments).not.toHaveBeenCalled();

@@ -105,7 +105,7 @@ function ClassTimetable({ slotLines, room }: ClassTimetableProps) {
       ) : null}
       {room ? (
         <DetailRow icon="location-outline">
-          <ThemedText type="small">Phòng {room}</ThemedText>
+          <ThemedText type="small">{room}</ThemedText>
         </DetailRow>
       ) : null}
     </>

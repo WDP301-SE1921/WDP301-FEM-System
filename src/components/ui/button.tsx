@@ -17,6 +17,8 @@ type Variant = 'primary' | 'secondary' | 'ghost' | 'danger';
 type Size = 'sm' | 'md' | 'lg';
 
 const ICON_SIZE = 20;
+/** Vung cham toi thieu 44x44 (design-mobile.md), ke ca nut nho. */
+const MIN_TOUCH_HEIGHT = 44;
 
 export type ButtonProps = Omit<PressableProps, 'style'> & {
   title: string;
@@ -79,7 +81,7 @@ export function Button({
       ) : (
         <>
           {icon ? <Icon name={icon} size={ICON_SIZE} color={textColor} /> : null}
-          <ThemedText type="default" style={{ color: textColor }}>
+          <ThemedText type="default" style={[styles.title, { color: textColor }]}>
             {title}
           </ThemedText>
           {trailingIcon ? <Icon name={trailingIcon} size={ICON_SIZE} color={textColor} /> : null}
@@ -97,12 +99,19 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     borderRadius: Radius.md,
   },
+  // Nut hep (trong the, man hinh 360dp, chu he thong phong to) thi chu xuong dong thay vi day icon
+  // va chu tran ra ngoai nut
+  title: { flexShrink: 1, textAlign: 'center' },
   pressed: { opacity: 0.75 },
   disabled: { opacity: 0.5 },
 });
 
 const sizeStyles = StyleSheet.create({
-  sm: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, minHeight: 36 },
+  sm: {
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    minHeight: MIN_TOUCH_HEIGHT,
+  },
   md: { paddingVertical: Spacing.three, paddingHorizontal: Spacing.four, minHeight: 48 },
   lg: { paddingVertical: Spacing.four, paddingHorizontal: Spacing.five, minHeight: 56 },
 });

@@ -1,10 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentSchedule } from '@/features/parent-dashboard/components/parent-schedule';
-import type { LinkedStudent, ScheduleSession } from '@/features/parent-dashboard/types';
+import {
+  ParentSchedule,
+  type ParentScheduleProps,
+} from '@/features/parent-dashboard/components/parent-schedule';
+import type {
+  ScheduleView,
+  LinkedStudent,
+  ScheduleSession,
+} from '@/features/parent-dashboard/types';
 import { formatWeekRange, getWeekRange } from '@/features/parent-dashboard/utils';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay, startOfWeek, toDateKey } from '@/utils/date';
 import { formatWeekdayDate } from '@/utils/format';
@@ -55,7 +64,7 @@ const MATH_TODAY: ScheduleSession = {
   subjectName: 'Toán',
   startsAt: at(TODAY, 18),
   endsAt: at(TODAY, 19, 30),
-  room: 'P.203',
+  room: 'Phòng P.203',
   teacherName: 'Đặng Hải Yến',
   type: 'REGULAR',
   topic: 'Đại số',
@@ -67,7 +76,7 @@ const PHYSICS_MAKEUP: ScheduleSession = {
   subjectName: 'Vật lý',
   startsAt: at(OTHER_DAY, 8, 30),
   endsAt: at(OTHER_DAY, 10),
-  room: 'Lab 102',
+  room: 'Phòng Lab 102',
   teacherName: 'Trần Quang Huy',
   type: 'MAKEUP',
   topic: null,
@@ -88,6 +97,15 @@ function mockTwoChildren() {
   );
 }
 
+/** Route giu che do xem tren URL; o day giu bang state de bam chuyen che do nhu tren app. */
+function ScheduleWithView(props: Omit<ParentScheduleProps, 'view' | 'onChangeView'>) {
+  const [view, setView] = useState<ScheduleView>('WEEK');
+  return <ParentSchedule {...props} view={view} onChangeView={setView} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderSchedule() {
   const handlers = {
     onAddChild: jest.fn(),
@@ -100,7 +118,7 @@ async function renderSchedule() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentSchedule {...handlers} />
+      <ScheduleWithView {...handlers} />
     </QueryClientProvider>,
   );
   return { ...handlers, user: userEvent.setup() };
@@ -152,7 +170,6 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: MATH_TODAY.id,
-      startsAt: MATH_TODAY.startsAt,
     });
   });
 
@@ -171,7 +188,7 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     if (!FREE_DAY) throw new Error('Tuan phai con ngay nghi');
     await user.press(dayButton(FREE_DAY));
 
-    expect(screen.getByText('Ngày này con không có buổi học')).toBeOnTheScreen();
+    expect(screen.getByText('Ngày này học sinh không có buổi học')).toBeOnTheScreen();
     expect(screen.getByText('0 buổi học')).toBeOnTheScreen();
     // Ten nut co ky tu icon dung truoc chu
     await user.press(screen.getByRole('button', { name: /Xem bài tập về nhà$/ }));
@@ -195,7 +212,7 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     await user.press(screen.getByRole('radio', { name: `Tuần sau, ${nextWeekRange}` }));
 
     expect(await screen.findByText(`Tuần: ${nextWeekRange}`)).toBeOnTheScreen();
-    expect(screen.queryByText('Xem lịch học của con theo từng tuần')).not.toBeOnTheScreen();
+    expect(screen.queryByText('Xem lịch học của học sinh theo từng tuần')).not.toBeOnTheScreen();
     expect(api.getStudentSchedule).toHaveBeenLastCalledWith(
       MINH_ANH.id,
       getWeekRange(nextWeekStart),
@@ -203,22 +220,48 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     expect(dayButton(nextWeekStart)).toBeSelected();
   });
 
+  it('mui ten doi tuan: sang tuan sau, ve tuan truoc; het pham vi thi mui ten mo', async () => {
+    mockTwoChildren();
+    const { user } = await renderSchedule();
+    await waitForTodaySession();
+    const nextWeekStart = addDays(WEEK_START, DAYS_PER_WEEK);
+
+    await user.press(screen.getByRole('button', { name: 'Tuần sau' }));
+    expect(await screen.findByText(`Tuần: ${formatWeekRange(nextWeekStart)}`)).toBeOnTheScreen();
+    expect(api.getStudentSchedule).toHaveBeenLastCalledWith(
+      MINH_ANH.id,
+      getWeekRange(nextWeekStart),
+    );
+
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    expect(await screen.findByText(`Tuần: ${formatWeekRange(WEEK_START)}`)).toBeOnTheScreen();
+    // Ve tuan hien tai thi chon lai hom nay
+    expect(dayButton(TODAY)).toBeSelected();
+
+    // Sheet chi cho xem 2 tuan truoc: toi do thi khong lui duoc nua
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    await user.press(screen.getByRole('button', { name: 'Tuần trước' }));
+    expect(screen.getByRole('button', { name: 'Tuần trước' })).toBeDisabled();
+  });
+
   it('doi con tu nut tren cung thi tai lich cua con do', async () => {
     mockTwoChildren();
     const { user } = await renderSchedule();
     await waitForTodaySession();
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
-    expect(await screen.findByText('Hôm nay con không có buổi học')).toBeOnTheScreen();
+    expect(await screen.findByText('Hôm nay học sinh không có buổi học')).toBeOnTheScreen();
     expect(screen.getByText(/^Hoàng Long có thể dành thời gian nghỉ ngơi/)).toBeOnTheScreen();
     expect(api.getStudentSchedule).toHaveBeenLastCalledWith(
       HOANG_LONG.id,
       getWeekRange(WEEK_START),
     );
     expect(
-      screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Hoàng Long' }),
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Hoàng Long' }),
     ).toBeOnTheScreen();
   });
 
@@ -226,11 +269,11 @@ describe('features/parent-dashboard/ParentSchedule', () => {
     api.getStudents.mockResolvedValue([]);
     const { onAddChild, user } = await renderSchedule();
 
-    expect(await screen.findByText('Chưa có hồ sơ của con')).toBeOnTheScreen();
+    expect(await screen.findByText('Chưa có hồ sơ học sinh')).toBeOnTheScreen();
     expect(screen.queryByRole('button', { name: /^Chọn tuần/ })).not.toBeOnTheScreen();
     expect(api.getStudentSchedule).not.toHaveBeenCalled();
 
-    await user.press(screen.getByRole('button', { name: 'Thêm con' }));
+    await user.press(screen.getByRole('button', { name: 'Thêm học sinh' }));
     expect(onAddChild).toHaveBeenCalledTimes(1);
   });
 

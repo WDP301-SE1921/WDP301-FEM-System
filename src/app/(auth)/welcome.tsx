@@ -31,7 +31,7 @@ export default function WelcomeScreen() {
           onPress={() => router.push('/(auth)/login')}
         />
         <ThemedText type="small" themeColor="textSecondary" style={styles.footer}>
-          Dành cho Phụ huynh & Giáo viên EduGrade
+          Dành cho Phụ huynh & Học sinh EduGrade
         </ThemedText>
       </View>
     </Screen>

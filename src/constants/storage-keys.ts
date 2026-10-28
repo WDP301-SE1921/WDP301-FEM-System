@@ -6,4 +6,13 @@ export const StorageKeys = {
   onboardingDone: 'fem.app.onboarding_done',
 } as const;
 
-export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys];
+/** Bai lam dang do cua mot con cho mot bai tap, luu tren may de khong mat khi roi man hinh. */
+export type AssignmentDraftKey = `fem.assignment_draft.${string}.${string}`;
+
+/** Key co tham so. */
+export const StorageKeyFactory = {
+  assignmentDraft: (studentId: string, assignmentId: string): AssignmentDraftKey =>
+    `fem.assignment_draft.${studentId}.${assignmentId}`,
+} as const;
+
+export type StorageKey = (typeof StorageKeys)[keyof typeof StorageKeys] | AssignmentDraftKey;

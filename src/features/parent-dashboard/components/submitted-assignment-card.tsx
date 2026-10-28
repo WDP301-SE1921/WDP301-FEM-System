@@ -31,7 +31,10 @@ export function SubmittedAssignmentCard({
   const remainingAttempts = getRemainingAttempts(assignment);
 
   return (
-    <AssignmentCardFrame>
+    <AssignmentCardFrame
+      onPress={onOpen}
+      accessibilityLabel={`Xem bài đã nộp: ${assignment.title}`}
+    >
       <AssignmentCardHeader assignment={assignment} trailing={<ToneBadge {...GRADING_STATUS} />} />
       <ThemedText type="default" accessibilityRole="header" style={styles.title}>
         {assignment.title}
@@ -45,13 +48,7 @@ export function SubmittedAssignmentCard({
         trailing={remainingAttempts > 0 ? `Còn ${remainingAttempts} lần nộp lại` : undefined}
       />
       <View style={styles.actions}>
-        <ActionChip
-          label="Xem bài đã nộp"
-          variant="soft"
-          trailingIcon="arrow-forward"
-          accessibilityLabel={`Xem bài đã nộp: ${assignment.title}`}
-          onPress={onOpen}
-        />
+        <ActionChip label="Xem bài đã nộp" variant="soft" trailingIcon="arrow-forward" />
       </View>
     </AssignmentCardFrame>
   );

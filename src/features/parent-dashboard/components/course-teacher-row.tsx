@@ -22,7 +22,7 @@ export type CourseTeacherRowProps = {
 
 /** Giao vien cua lop va diem trung binh mon cua con. Thieu ca hai thi khong hien gi. */
 export function CourseTeacherRow({ teacherName, averageScore, tone }: CourseTeacherRowProps) {
-  const { color, soft } = TONES[tone];
+  const { text, soft } = TONES[tone];
   if (!teacherName && averageScore === null) return null;
 
   return (
@@ -30,7 +30,7 @@ export function CourseTeacherRow({ teacherName, averageScore, tone }: CourseTeac
       {teacherName ? (
         <View style={styles.teacher}>
           <ThemedView type={soft} style={styles.avatar}>
-            <ThemedText type="smallBold" themeColor={color}>
+            <ThemedText type="smallBold" themeColor={text}>
               {getInitials(teacherName)}
             </ThemedText>
           </ThemedView>

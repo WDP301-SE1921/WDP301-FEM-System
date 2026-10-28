@@ -4,7 +4,7 @@ App mobile cua **EduGrade**, nen tang quan ly hoc tap cua mot trung tam day them
 
 ## San pham
 
-EduGrade co hai nen tang dung chung du lieu: Web cho nhan su trung tam (Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien) va **Mobile cho phu huynh** (repo nay). Khong co tai khoan hoc sinh: phu huynh dang nhap, quan ly mot hoac nhieu ho so con, con nhan bai va nop bai qua phien dang nhap cua phu huynh.
+EduGrade co hai nen tang dung chung du lieu: Web cho nhan su trung tam (Quan ly trung tam, Thiet ke giao trinh, Nhan vien, Giao vien) va **Mobile cho phu huynh va hoc sinh** (repo nay; giao vien va nhan su trung tam khong dung mobile, app chan dang nhap bang tai khoan cua ho). Khong co tai khoan hoc sinh: phu huynh dang nhap, quan ly mot hoac nhieu ho so con, con nhan bai va nop bai qua phien dang nhap cua phu huynh.
 
 Pham vi cua app theo SRS (mot so phan chua lam, vi du nop bai va xem dap an dung):
 
@@ -125,14 +125,29 @@ Chi tiet: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Build ban cai dat (EAS)
 
+Project EAS la `@nhanle6/wdp301-fem-system` (`owner` va `extra.eas.projectId` trong `app.config.ts`). Phai dang nhap dung tai khoan do, hoac duoc moi vao project, moi build duoc.
+
 ```bash
 npm i -g eas-cli
 eas login
-eas init                                    # ghi projectId, dat vao EAS_PROJECT_ID
-eas build --profile preview --platform android   # ra file APK de test noi bo
+eas build --profile preview --platform android   # APK cai thu, link tai nam tren expo.dev
+eas build:list                                   # xem cac ban da build
 ```
 
-Ba profile trong `eas.json`: `development` (dev client), `preview` (APK noi bo), `production` (ban phat hanh).
+| Profile       | Ra gi                                                          | Environment tren EAS |
+| ------------- | -------------------------------------------------------------- | -------------------- |
+| `development` | Dev client thay Expo Go. Can cai `expo-dev-client` (chua cai)  | `development`        |
+| `preview`     | APK cai noi bo, ten app "FEM Staging", cai song song ban chinh | `preview`            |
+| `production`  | Ban phat hanh (AAB cho Google Play), tu tang `versionCode`     | `production`         |
+
+Ban build tren EAS **khong doc `.env`** (file bi gitignore nen khong duoc upload). `EXPO_PUBLIC_API_URL` cua ban build dat tren EAS theo environment cua profile, hien tro toi BE tren Render cho `preview` va `production`:
+
+```bash
+eas env:list preview
+eas env:update preview --variable-name EXPO_PUBLIC_API_URL --value https://<be>/api/v1
+```
+
+Bien `EXPO_PUBLIC_*` duoc inline vao bundle luc build: doi bien thi phai build lai. Ban release cua Android chan `http://`, nen BE cua ban build phai la `https://`.
 
 ## Xu ly su co
 

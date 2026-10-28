@@ -3,12 +3,13 @@ import { useState } from 'react';
 
 import { queryKeys } from '@/api/query-client';
 
-/** Moi nhom du lieu phu huynh xem: con, lich hoc, diem danh, bai tap, hoc phi, bien lai. */
-const REFRESH_QUERY_KEYS = [
+/** Moi nhom du lieu phu huynh xem: con, lich hoc, diem danh, bai tap, hoc phi, bien lai, thong bao. */
+export const PARENT_DATA_QUERY_KEYS = [
   queryKeys.parent.all,
   queryKeys.me.all,
   queryKeys.registrations.all,
   queryKeys.academic.all,
+  queryKeys.notifications.all,
 ] as const;
 
 /**
@@ -25,7 +26,7 @@ export function useRefreshParentData() {
     try {
       // Query loi tu hien loi o cho cua no, o day chi can doi tai xong
       await Promise.all(
-        REFRESH_QUERY_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+        PARENT_DATA_QUERY_KEYS.map((queryKey) => queryClient.invalidateQueries({ queryKey })),
       );
     } finally {
       setIsRefreshing(false);

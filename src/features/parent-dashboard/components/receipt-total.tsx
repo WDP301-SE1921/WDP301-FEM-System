@@ -10,6 +10,8 @@ import { formatAmountInWords } from '../utils';
 
 import { ReceiptStamp } from './receipt-stamp';
 
+const CONFIRMATION_TEXT_MIN_WIDTH = 120;
+
 export type ReceiptTotalProps = {
   payment: TuitionReceipt['payment'];
 };
@@ -69,7 +71,20 @@ const styles = StyleSheet.create({
   },
   amount: { fontVariant: ['tabular-nums'] },
   amountInWords: { fontStyle: 'italic' },
-  confirmation: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  confirmationText: { flex: 1, gap: Spacing.half },
+  // Man hinh 320dp chi con khoang 95dp cho chu canh con dau: chua du CONFIRMATION_TEXT_MIN_WIDTH thi
+  // con dau roi xuong hang duoi, can phai
+  confirmation: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: Spacing.three,
+  },
+  confirmationText: {
+    flexGrow: 1,
+    flexShrink: 1,
+    flexBasis: CONFIRMATION_TEXT_MIN_WIDTH,
+    gap: Spacing.half,
+  },
   note: { textAlign: 'center' },
 });

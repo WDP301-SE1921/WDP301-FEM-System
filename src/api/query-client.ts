@@ -26,6 +26,8 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
+    /** Link xem anh dai dien cua tai khoan dang dang nhap. */
+    avatar: ['auth', 'avatar'] as const,
   },
   parent: {
     /** Tien to cua moi key `parent`, dung khi tai lai toan bo du lieu cua phu huynh. */
@@ -33,8 +35,8 @@ export const queryKeys = {
     students: ['parent', 'students'] as const,
     /** Tien to cua moi du lieu hoc tap cua mot con. */
     student: (studentId: string) => ['parent', 'students', studentId] as const,
-    studentDashboard: (studentId: string) =>
-      ['parent', 'students', studentId, 'dashboard'] as const,
+    /** Diem da cong bo va diem trung binh cua mot con. */
+    studentGrades: (studentId: string) => ['parent', 'students', studentId, 'grades'] as const,
     studentSchedule: (studentId: string, range: { from: string; to: string }) =>
       ['parent', 'students', studentId, 'schedule', range] as const,
     studentSession: (studentId: string, sessionId: string) =>
@@ -45,9 +47,20 @@ export const queryKeys = {
       ['parent', 'students', studentId, 'enrollments', enrollmentId, 'lessons'] as const,
     studentAttendance: (studentId: string) =>
       ['parent', 'students', studentId, 'attendance'] as const,
+    /** Chi ty le di hoc, cho trang chu: khong doc them ghi danh, lich hoc bu, don nghi. */
+    studentAttendanceSummary: (studentId: string) =>
+      ['parent', 'students', studentId, 'attendance', 'summary'] as const,
     studentAssignments: (studentId: string) =>
       ['parent', 'students', studentId, 'assignments'] as const,
-    unreadNotificationCount: ['parent', 'notifications', 'unread-count'] as const,
+  },
+  /** Hop thu thong bao cua tai khoan dang dang nhap, chung moi con. */
+  notifications: {
+    /** Tien to cua moi key thong bao, dung khi BE bao co thong bao moi hoac da doc. */
+    all: ['notifications'] as const,
+    list: ['notifications', 'list'] as const,
+    /** Vai thong bao moi nhat lien quan toi mot con, cho trang chu. */
+    recent: (studentId: string) => ['notifications', 'recent', studentId] as const,
+    unreadCount: ['notifications', 'unread-count'] as const,
   },
   me: {
     all: ['me'] as const,
@@ -66,5 +79,10 @@ export const queryKeys = {
     assignment: (assignmentId: string) => ['academic', 'assignments', assignmentId] as const,
     assignmentSubmissions: (assignmentId: string) =>
       ['academic', 'assignments', assignmentId, 'submissions'] as const,
+    /** Bo chuan dau ra moi nhat cua mot khoa hoc. */
+    programOutcomeSet: (programId: string) =>
+      ['academic', 'programs', programId, 'outcome-set'] as const,
+    /** Link xem mot anh bai lam da nop. */
+    filePreview: (fileId: string) => ['academic', 'files', fileId, 'preview'] as const,
   },
 } as const;

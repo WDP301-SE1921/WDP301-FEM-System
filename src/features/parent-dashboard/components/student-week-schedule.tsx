@@ -70,13 +70,7 @@ export function StudentWeekSchedule({
             key={session.id}
             session={session}
             isToday={isToday}
-            onPress={() =>
-              onOpenSession({
-                studentId: student.id,
-                sessionId: session.id,
-                startsAt: session.startsAt,
-              })
-            }
+            onPress={() => onOpenSession({ studentId: student.id, sessionId: session.id })}
           />
         ))}
         {nextFreeDay ? (

@@ -20,10 +20,15 @@ export function WelcomeHero() {
         contentFit="cover"
         accessibilityLabel="Mẹ và con gái cùng học bài tại bàn học"
       />
-      <ThemedView style={styles.badge}>
-        <Icon name="shield-checkmark" size={BADGE_ICON_SIZE} themeColor="accent" />
-        <ThemedText type="smallBold">Đồng hành chuẩn mực</ThemedText>
-      </ThemedView>
+      {/* Vung dat nhan cach deu hai mep anh: nhan om vua chu, chu phong to thi xuong dong trong vung */}
+      <View style={styles.badgeArea}>
+        <ThemedView style={styles.badge}>
+          <Icon name="shield-checkmark" size={BADGE_ICON_SIZE} themeColor="accent" />
+          <ThemedText type="smallBold" style={styles.badgeText}>
+            Đồng hành chuẩn mực
+          </ThemedText>
+        </ThemedView>
+      </View>
     </View>
   );
 }
@@ -31,10 +36,14 @@ export function WelcomeHero() {
 const styles = StyleSheet.create({
   container: { borderRadius: Radius.xl, overflow: 'hidden' },
   image: { width: '100%', aspectRatio: HERO_ASPECT_RATIO },
-  badge: {
+  badgeArea: {
     position: 'absolute',
     left: Spacing.three,
+    right: Spacing.three,
     bottom: Spacing.three,
+    alignItems: 'flex-start',
+  },
+  badge: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.two,
@@ -42,4 +51,5 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.one,
     borderRadius: Radius.full,
   },
+  badgeText: { flexShrink: 1 },
 });

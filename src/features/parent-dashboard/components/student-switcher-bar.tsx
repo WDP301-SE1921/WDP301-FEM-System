@@ -25,7 +25,7 @@ export function StudentSwitcherBar({ student, onPress }: StudentSwitcherBarProps
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Chọn con, đang xem ${student.fullName}`}
+      accessibilityLabel={`Chọn học sinh, đang xem ${student.fullName}`}
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.pressed]}
     >
@@ -41,7 +41,7 @@ export function StudentSwitcherBar({ student, onPress }: StudentSwitcherBarProps
             <ThemedText type="default" numberOfLines={1} style={styles.name}>
               {getShortName(student.fullName)}
             </ThemedText>
-            <ToneBadge label={`Lớp ${student.grade}`} tone="primary" />
+            <ToneBadge label={`Khối ${student.grade}`} tone="primary" />
           </View>
           {student.subjectNames.length > 0 ? (
             <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>

@@ -1,10 +1,19 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { useState } from 'react';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
-import { ParentSchedule } from '@/features/parent-dashboard/components/parent-schedule';
-import type { LinkedStudent, StudentEnrollment } from '@/features/parent-dashboard/types';
+import {
+  ParentSchedule,
+  type ParentScheduleProps,
+} from '@/features/parent-dashboard/components/parent-schedule';
+import type {
+  ScheduleView,
+  LinkedStudent,
+  StudentEnrollment,
+} from '@/features/parent-dashboard/types';
 import { formatNextSession } from '@/features/parent-dashboard/utils';
+import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
 import { addDays, startOfDay } from '@/utils/date';
 
@@ -46,11 +55,12 @@ function enrollment(
   return {
     status: 'ACTIVE',
     pause: null,
+    programId: 'program-math',
     programName: 'Toán 8 – Chuyên đề nâng cao',
     subjectName: 'Toán',
     className: 'Toán nâng cao 8A2',
     teacherName: 'Đặng Hải Yến',
-    room: 'P.203',
+    room: 'Phòng P.203',
     weeklySlots: [],
     completedSessions: 9,
     totalSessions: 24,
@@ -107,6 +117,15 @@ function mockTwoChildren() {
   );
 }
 
+/** Route giu che do xem tren URL; o day giu bang state de bam chuyen che do nhu tren app. */
+function ScheduleWithView(props: Omit<ParentScheduleProps, 'view' | 'onChangeView'>) {
+  const [view, setView] = useState<ScheduleView>('WEEK');
+  return <ParentSchedule {...props} view={view} onChangeView={setView} />;
+}
+
+// Con dang xem dung chung moi tab (store toan cuc): moi test bat dau tu con dau tien
+afterEach(() => useStudentSelectionStore.setState({ selectedStudentId: null }));
+
 async function renderCourses() {
   const handlers = {
     onAddChild: jest.fn(),
@@ -119,7 +138,7 @@ async function renderCourses() {
   });
   await render(
     <QueryClientProvider client={queryClient}>
-      <ParentSchedule {...handlers} />
+      <ScheduleWithView {...handlers} />
     </QueryClientProvider>,
   );
   const user = userEvent.setup();
@@ -172,7 +191,6 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(onOpenSession).toHaveBeenCalledWith({
       studentId: MINH_ANH.id,
       sessionId: 'session-next-math',
-      startsAt: NEXT_MATH_STARTS_AT,
     });
   });
 
@@ -186,7 +204,9 @@ describe('features/parent-dashboard/StudentCourses', () => {
     expect(screen.getByText('20/09/2026')).toBeOnTheScreen();
     expect(screen.getByText('18/11/2026')).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Chọn con, đang xem Nguyễn Minh Anh' }));
+    await user.press(
+      screen.getByRole('button', { name: 'Chọn học sinh, đang xem Nguyễn Minh Anh' }),
+    );
     await user.press(screen.getByRole('radio', { name: 'Nguyễn Hoàng Long, khối 6' }));
 
     expect(await screen.findByText('Tiếng Anh 6A1')).toBeOnTheScreen();

@@ -53,8 +53,8 @@ function PauseNotice({ pause }: { pause: EnrollmentPause }) {
     <ThemedView type="accentSoft" style={styles.pause}>
       <Icon name="pause-circle" size={ICON_SIZE} themeColor="accent" />
       <ThemedText type="small" style={styles.pauseText}>
-        Bảo lưu từ <ThemedText type="smallBold">{formatDateKey(pause.fromDate)}</ThemedText> đến hết{' '}
-        <ThemedText type="smallBold">{formatDateKey(pause.toDate)}</ThemedText>
+        Tạm nghỉ từ <ThemedText type="smallBold">{formatDateKey(pause.fromDate)}</ThemedText> đến
+        hết <ThemedText type="smallBold">{formatDateKey(pause.toDate)}</ThemedText>
       </ThemedText>
     </ThemedView>
   );

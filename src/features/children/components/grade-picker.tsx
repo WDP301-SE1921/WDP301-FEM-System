@@ -9,7 +9,7 @@ import type { ChildGrade } from '../types';
 
 /** Cao bang o nhap `Input` de cac o trong form thang hang, du vung cham 44 (design-mobile.md). */
 const OPTION_MIN_HEIGHT = 48;
-const LABEL = 'Lớp';
+const LABEL = 'Khối';
 
 export type GradePickerProps = {
   /** Chua chon thi `undefined`. */

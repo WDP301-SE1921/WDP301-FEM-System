@@ -27,6 +27,9 @@ import { TodoAssignmentCard } from './todo-assignment-card';
 
 export type StudentAssignmentsProps = {
   student: LinkedStudent;
+  /** Tab dang xem; route giu tren URL de nut o trang chu mo dung tab (vd "Đã có điểm"). */
+  tab: AssignmentTab;
+  onChangeTab: (tab: AssignmentTab) => void;
   /** Mo de bai de con lam, hoac bai da nop kem diem va dap an. */
   onOpenAssignment: (assignmentId: string) => void;
 };
@@ -35,9 +38,13 @@ export type StudentAssignmentsProps = {
  * Bai tap cua con: nhac bai co han gan nhat, ba tab (can lam, da nop, da co diem) kem so bai,
  * chip loc theo mon va the tung bai.
  */
-export function StudentAssignments({ student, onOpenAssignment }: StudentAssignmentsProps) {
+export function StudentAssignments({
+  student,
+  tab,
+  onChangeTab,
+  onOpenAssignment,
+}: StudentAssignmentsProps) {
   const assignments = useStudentAssignments(student.id);
-  const [tab, setTab] = useState<AssignmentTab>('TODO');
   const [subject, setSubject] = useState<string>(ALL_SUBJECTS);
 
   if (assignments.isPending) return <LoadingState />;
@@ -97,8 +104,18 @@ export function StudentAssignments({ student, onOpenAssignment }: StudentAssignm
 
   return (
     <View style={styles.container}>
-      {nearestDue ? <NearestDueCard assignment={nearestDue} childName={childName} /> : null}
-      <AssignmentTabSwitch value={tab} counts={countAssignmentsByTab(filtered)} onChange={setTab} />
+      {nearestDue ? (
+        <NearestDueCard
+          assignment={nearestDue}
+          childName={childName}
+          onPress={() => onOpenAssignment(nearestDue.id)}
+        />
+      ) : null}
+      <AssignmentTabSwitch
+        value={tab}
+        counts={countAssignmentsByTab(filtered)}
+        onChange={onChangeTab}
+      />
       {subjectOptions.length > 0 ? (
         <FilterChips options={subjectOptions} selected={activeSubject} onSelect={setSubject} />
       ) : null}

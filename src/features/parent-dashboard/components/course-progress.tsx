@@ -27,7 +27,7 @@ export function CourseProgress({
   tone,
 }: CourseProgressProps) {
   const theme = useTheme();
-  const { color } = TONES[tone];
+  const { color, text } = TONES[tone];
   const summary = `${completedSessions}/${totalSessions} buổi (${percent}%)`;
 
   return (
@@ -36,7 +36,7 @@ export function CourseProgress({
         <ThemedText type="small" themeColor="textSecondary" style={styles.label}>
           {label}
         </ThemedText>
-        <ThemedText type="smallBold" themeColor={color}>
+        <ThemedText type="smallBold" themeColor={text}>
           {summary}
         </ThemedText>
       </View>

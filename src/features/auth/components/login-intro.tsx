@@ -39,7 +39,7 @@ export function LoginIntro() {
         Đăng nhập
       </ThemedText>
       <ThemedText type="small" themeColor="textSecondary" style={styles.description}>
-        Truy cập hệ thống quản lý học tập và thông báo con tại{' '}
+        Truy cập hệ thống quản lý học tập và thông báo của học sinh tại{' '}
         <ThemedText type="smallBold" themeColor="primary">
           EduGrade
         </ThemedText>

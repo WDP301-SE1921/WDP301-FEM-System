@@ -48,12 +48,12 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
         <View style={[styles.highlight, { backgroundColor: theme[tone.color] }]} />
 
         <View style={styles.header}>
-          <View style={styles.row}>
+          <View style={[styles.row, styles.time]}>
             <Icon name="time-outline" size={TIME_ICON_SIZE} themeColor={tone.color} />
             <ThemedText type="smallBold">
               {formatTime(session.startsAt)} – {formatTime(session.endsAt)}
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" style={styles.period}>
               ({DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)]})
             </ThemedText>
           </View>
@@ -69,7 +69,7 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
 
         {session.note ? (
           <ThemedView type={tone.soft} style={styles.note}>
-            <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.color} />
+            <Icon name={appearance.noteIcon} size={DETAIL_ICON_SIZE} themeColor={tone.text} />
             <ThemedText type="small" style={styles.noteText}>
               {session.note}
             </ThemedText>
@@ -86,7 +86,7 @@ export function ScheduleSessionCard({ session, isToday, onPress }: ScheduleSessi
             <ThemedView style={[styles.row, styles.room]}>
               <Icon name="location-outline" size={DETAIL_ICON_SIZE} themeColor={tone.color} />
               <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                Phòng {session.room}
+                {session.room}
               </ThemedText>
             </ThemedView>
           ) : null}
@@ -100,7 +100,7 @@ type SessionTeacherProps = Pick<ScheduleSession, 'teacherName' | 'subjectName'> 
 
 /** Giao vien cua buoi. Chua co ten giao vien thi chi hien mon hoc. */
 function SessionTeacher({ teacherName, subjectName, tone }: SessionTeacherProps) {
-  const { color, soft } = TONES[tone];
+  const { color, soft, text } = TONES[tone];
   if (!teacherName) {
     return (
       <View style={[styles.row, styles.teacher]}>
@@ -115,7 +115,7 @@ function SessionTeacher({ teacherName, subjectName, tone }: SessionTeacherProps)
   return (
     <View style={[styles.row, styles.teacher]}>
       <ThemedView type={soft} style={styles.teacherAvatar}>
-        <ThemedText type="smallBold" themeColor={color}>
+        <ThemedText type="smallBold" themeColor={text}>
           {getInitials(teacherName)}
         </ThemedText>
       </ThemedView>
@@ -159,6 +159,9 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.75 },
   row: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  // Chu phong to lam gio hoc dai hon ca hang: buoi trong ngay xuong dong, khong tran the
+  time: { flexShrink: 1 },
+  period: { flexShrink: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   title: { flex: 1, fontWeight: 700 },
   note: {

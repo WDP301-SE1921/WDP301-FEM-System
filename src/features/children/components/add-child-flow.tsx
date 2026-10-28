@@ -46,13 +46,13 @@ export function AddChildFlow({
   return (
     <View style={styles.flow}>
       <ChildFormHeader
-        title="Thêm con"
-        description="Tạo hồ sơ cho con để theo dõi lịch học, điểm danh và kết quả học tập của con."
+        title="Thêm học sinh"
+        description="Tạo hồ sơ học sinh để theo dõi lịch học, điểm danh và kết quả học tập."
         onBack={onBack}
       />
       {isEmailVerified ? (
         <ChildForm
-          submitLabel="Thêm con"
+          submitLabel="Thêm học sinh"
           submitIcon="person-add-outline"
           onSubmit={(values) => addChild.mutate(values)}
           isPending={addChild.isPending}

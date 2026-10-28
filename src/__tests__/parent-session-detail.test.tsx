@@ -29,7 +29,7 @@ function at(hours: number, minutes = 0): string {
   return new Date(2026, 9, 16, hours, minutes).toISOString();
 }
 
-const SESSION_REF = { studentId: MINH_ANH.id, sessionId: 'session-1', startsAt: at(18) };
+const SESSION_REF = { studentId: MINH_ANH.id, sessionId: 'session-1' };
 
 function hoursFromNow(hours: number): string {
   return new Date(Date.now() + hours * HOUR_MS).toISOString();
@@ -41,7 +41,7 @@ const COMPLETED_MAKEUP: SessionDetail = {
   subjectName: 'Toán',
   startsAt: at(18),
   endsAt: at(19, 30),
-  room: 'P.203',
+  room: 'Phòng A101',
   teacherName: 'Đặng Hải Yến',
   type: 'MAKEUP',
   topic: 'Đại số',
@@ -69,7 +69,7 @@ const UPCOMING_REGULAR: SessionDetail = {
   materials: [],
 };
 
-/** Buoi dung nhu app ghep tu BE: chua co phong, ten giao vien, diem danh, nhan xet va tai lieu. */
+/** Buoi chua xep phong, giao vien chua dat ten, con chua co trong danh sach diem danh. */
 const BACKEND_SESSION: SessionDetail = {
   ...UPCOMING_REGULAR,
   room: null,
@@ -115,7 +115,7 @@ describe('features/parent-dashboard/ParentSessionDetail', () => {
 
     expect(screen.getByText('18:00 – 19:30')).toBeOnTheScreen();
     expect(screen.getByText('Tối · 90 phút')).toBeOnTheScreen();
-    expect(screen.getByText('Phòng P.203')).toBeOnTheScreen();
+    expect(screen.getByText('Phòng A101')).toBeOnTheScreen();
     expect(screen.getByText('Bài 12: Phương trình bậc hai')).toBeOnTheScreen();
     expect(screen.getByText('Có mặt · Đúng giờ')).toBeOnTheScreen();
     expect(screen.getByText('Vào lớp lúc 17:55')).toBeOnTheScreen();
@@ -143,7 +143,7 @@ describe('features/parent-dashboard/ParentSessionDetail', () => {
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
-  it('buoi tu BE: chi hien thong tin BE co, an phong, giao vien, diem danh va nhan xet', async () => {
+  it('thieu phong, ten giao vien, diem danh va nhan xet thi an cac dong do', async () => {
     api.getSessionDetail.mockResolvedValue(BACKEND_SESSION);
     await renderDetail();
 
@@ -161,7 +161,24 @@ describe('features/parent-dashboard/ParentSessionDetail', () => {
     expect(screen.queryByText('Nhận xét & tài liệu')).not.toBeOnTheScreen();
   });
 
-  it('khong thay buoi trong lich cua ngay do thi bao khong tim thay', async () => {
+  it('buoi da huy: bao huy kem ly do cua trung tam, khong hien diem danh', async () => {
+    api.getSessionDetail.mockResolvedValue({
+      ...BACKEND_SESSION,
+      status: 'CANCELLED',
+      note: 'Giáo viên ốm, trung tâm sẽ xếp buổi khác',
+      attendance: null,
+    });
+    await renderDetail();
+
+    expect(
+      await screen.findByText('Buổi học bị huỷ', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('Ghi chú của trung tâm')).toBeOnTheScreen();
+    expect(screen.getByText('Giáo viên ốm, trung tâm sẽ xếp buổi khác')).toBeOnTheScreen();
+    expect(screen.queryByText('Trạng thái điểm danh')).not.toBeOnTheScreen();
+  });
+
+  it('buoi khong con trong lich cua con thi bao khong tim thay', async () => {
     api.getSessionDetail.mockResolvedValue(null);
     const { onBack, user } = await renderDetail();
 

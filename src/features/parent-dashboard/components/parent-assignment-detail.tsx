@@ -56,8 +56,8 @@ export function ParentAssignmentDetail({
     if (!recipient) {
       return (
         <EmptyState
-          title="Bài này không giao cho con"
-          description="Vào Điểm & Bài tập và chọn lại bài của con."
+          title="Bài này không giao cho học sinh"
+          description="Vào Điểm & Bài tập và chọn lại bài của học sinh."
         />
       );
     }

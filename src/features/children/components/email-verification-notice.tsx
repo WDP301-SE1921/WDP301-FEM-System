@@ -34,7 +34,7 @@ export function EmailVerificationNotice({
         </ThemedText>
       </View>
       <ThemedText type="small" themeColor="textSecondary">
-        Trung tâm chỉ nhận hồ sơ của con từ tài khoản đã xác minh email. Mã xác minh được gửi tới{' '}
+        Trung tâm chỉ nhận hồ sơ học sinh từ tài khoản đã xác minh email. Mã xác minh được gửi tới{' '}
         <ThemedText type="smallBold" selectable>
           {parentEmail}
         </ThemedText>

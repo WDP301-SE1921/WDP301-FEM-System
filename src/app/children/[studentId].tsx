@@ -2,7 +2,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 
 import { EmptyState } from '@/components/common/empty-state';
 import { Screen } from '@/components/common/screen';
-import { useAuth } from '@/features/auth';
+import { getSignedOutHref, useAuth } from '@/features/auth';
 import { EditChildFlow } from '@/features/children';
 
 type EditChildParams = {
@@ -10,11 +10,11 @@ type EditChildParams = {
 };
 
 export default function EditChildScreen() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, isSessionExpired, user } = useAuth();
   const { studentId } = useLocalSearchParams<EditChildParams>();
 
   // Nam ngoai (tabs) nen tu chan nguoi chua dang nhap
-  if (!isAuthenticated) return <Redirect href="/(auth)/welcome" />;
+  if (!isAuthenticated) return <Redirect href={getSignedOutHref(isSessionExpired)} />;
 
   // Mo thang tu deep link thi khong co man hinh truoc de quay lai
   const goBack = () => (router.canGoBack() ? router.back() : router.replace('/(tabs)/profile'));
@@ -25,7 +25,7 @@ export default function EditChildScreen() {
       <Screen>
         <EmptyState
           title="Không mở được hồ sơ"
-          description="Chỉ tài khoản phụ huynh có hồ sơ của con."
+          description="Chỉ tài khoản phụ huynh có hồ sơ học sinh."
           actionLabel="Quay lại"
           onAction={goBack}
         />

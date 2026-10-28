@@ -26,6 +26,7 @@ describe('features/parent-dashboard/useRefreshParentData', () => {
       queryKeys.me.all,
       queryKeys.registrations.all,
       queryKeys.academic.all,
+      queryKeys.notifications.all,
     ]);
     expect(result.current.isRefreshing).toBe(false);
   });

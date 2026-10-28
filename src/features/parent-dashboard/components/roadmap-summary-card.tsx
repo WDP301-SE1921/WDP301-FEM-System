@@ -42,7 +42,8 @@ export function RoadmapSummaryCard({ enrollment, summary, markers }: RoadmapSumm
           </ThemedText>
         </View>
         <ThemedView type="accentSoft" style={styles.percent}>
-          <Icon name="star" size={ICON_SIZE} themeColor="accent" />
+          {/* Khong dung ngoi sao: ngoi sao da danh cho diem, o day la phan tram bai da hoc */}
+          <Icon name="pie-chart-outline" size={ICON_SIZE} themeColor="accentStrong" />
           <ThemedText type="smallBold">{summary.percent}%</ThemedText>
         </ThemedView>
       </View>
@@ -100,7 +101,8 @@ function RoadmapCounter({ label, value, background }: RoadmapCounterProps) {
       style={styles.counter}
     >
       <ThemedText type="heading">{value}</ThemedText>
-      <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+      {/* Chu phong to thi nhan xuong dong thay vi bi cat con "Đang h…" */}
+      <ThemedText type="small" themeColor="textSecondary" style={styles.counterLabel}>
         {label}
       </ThemedText>
     </ThemedView>
@@ -142,4 +144,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.one,
     borderRadius: Radius.lg,
   },
+  counterLabel: { textAlign: 'center' },
 });

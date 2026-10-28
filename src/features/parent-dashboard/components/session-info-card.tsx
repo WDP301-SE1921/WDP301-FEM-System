@@ -23,7 +23,8 @@ export type SessionInfoCardProps = {
 
 /**
  * Thoi gian, phong, giao vien, bai hoc va diem danh cua buoi hoc. Phong, giao vien va diem danh chi
- * hien khi co du lieu: BE chua tra cac thong tin nay cho phu huynh.
+ * hien khi co du lieu: buoi chua xep phong, giao vien chua dat ten hien thi, hoac con chua co trong
+ * danh sach diem danh cua buoi.
  */
 export function SessionInfoCard({ session }: SessionInfoCardProps) {
   const period = DAY_PERIOD_LABELS[getDayPeriod(session.startsAt)];
@@ -44,7 +45,7 @@ export function SessionInfoCard({ session }: SessionInfoCardProps) {
           <SessionInfoRow
             leading={<ToneIcon name="location-outline" tone="accent" />}
             label="Phòng học"
-            value={`Phòng ${session.room}`}
+            value={session.room}
           />
         ) : null}
         {session.teacherName ? (
@@ -92,7 +93,7 @@ function AttendanceRow({ session, attendance }: AttendanceRowProps) {
 function TeacherAvatar({ name }: { name: string }) {
   return (
     <ThemedView type="primarySoft" style={styles.avatar}>
-      <ThemedText type="smallBold" themeColor="primary">
+      <ThemedText type="smallBold" themeColor="primaryStrong">
         {getInitials(name)}
       </ThemedText>
     </ThemedView>

@@ -1,105 +1,138 @@
 # Yêu cầu bổ sung/sửa BE cho mobile PHỤ HUYNH
 
-Ngày: 06/10/2026. Phạm vi đối chiếu: nhánh `dev` của `WDP301-BE-System` tại commit `d4d3f3e` (đã merge PR #4 `feature/create-schedule` và PR #5 `feature/payment-bill`), các module `curriculum-scheduling`, `academic`, `registration-flow`, Prisma schema và `docs/SRS.md` (bản 03/10/2026). File này nằm ở repo mobile để gửi nhóm BE; mobile không sửa nguồn BE.
+Ngày: 19/10/2026, bổ sung mục 1.7 ngày 20/10/2026 sau khi rà soát độ dễ dùng của app với phụ huynh và học sinh, mục 1.8 ngày 27/10/2026 sau đợt CLO và phân trang của BE (`c9ecbcd`). Phạm vi đối chiếu: nhánh `dev` của `WDP301-BE-System` tại commit `c3b54d4` (sau commit `9188c92` "add parent learning APIs and realtime notifications" và các commit back office ngày 19/10), các module `curriculum-scheduling`, `academic`, `registration-flow`, `auth`, `notifications`, Prisma schema, các tài liệu `docs/parent-learning-api.md`, `docs/notifications-api.md`, `NOTIFICATION_FLOW_GUIDE.md` và `docs/SRS.md` (bản 03/10/2026). Bản trước của file này đối chiếu commit `a02152c` (15/10). File nằm ở repo mobile để gửi nhóm BE; mobile không sửa nguồn BE.
 
-Mọi nhận xét dưới đây rút ra từ **đọc code**, chưa chạy lại trên một BE đang chạy. Mobile cũng chưa gọi thử BE thật cho các route mới nối (mới kiểm tra bằng typecheck, test với adapter mạng giả và bundle Android), nên nếu chỗ nào mobile hiểu sai contract thì nhờ BE báo lại.
+Cảm ơn nhóm BE: gần hết yêu cầu của bản 15/10 đã có trong bản này (xem "Đã xử lý so với bản 15/10"). Mọi nhận xét dưới đây rút ra từ **đọc code**, chưa chạy lại trên một BE đang chạy: BE local của nhóm mobile chưa chạy các migration mới. Mobile cũng chưa gọi thử BE thật cho các route nối ngày 15/10 và 19/10 (mới kiểm tra bằng typecheck, test với adapter mạng giả và bundle Android), nên nếu chỗ nào mobile hiểu sai contract thì nhờ BE báo lại.
 
 ## 0. Mobile đang dùng gì của BE
 
-Đã nối thật từ 05/10: đăng nhập, đăng ký, refresh, đăng xuất, `GET /auth/me`, xác minh email, `GET/POST /me/students`, `PATCH /me/students/:id`, `GET /me/students/:id/enrollments`, `GET /registrations/:id/receipt`.
+Từ 19/10 mọi màn hình phụ huynh đều đọc BE thật, không còn dữ liệu giả.
 
-Nối thêm ngày 06/10 theo PR #4 và PR #5:
+Đã nối từ 05/10, 06/10 và 15/10: đăng nhập, đăng ký, refresh, đăng xuất, `GET` và `PATCH /auth/me`, xác minh email, đổi và quên mật khẩu, `GET/POST /me/students`, `PATCH /me/students/:id`, `GET /me/students/:id/enrollments`, `GET /me/bills`, `GET /registrations/:id/bill`, `GET /registrations/:id/receipt`, `GET /academic/scheduled-sessions`, `GET /academic/scheduled-sessions/:id`, `GET /academic/me/students/:id/attendance`, `GET /academic/leaves`, `GET /academic/makeups`, `GET /rooms`, `GET /academic/assignments`, `GET /academic/assignments/:id`, `GET /academic/assignments/:id/submissions`, `POST /academic/submissions`. Nối ngày 21/10: `POST /academic/files` (ảnh bài làm JPEG hoặc PNG, gửi kèm bài nộp qua `fileIds`). Nối ngày 27/10: `GET /academic/programs/:id/outcome-sets` (khối "Mục tiêu khóa học" ở Lộ trình); cùng ngày mobile đọc thêm `learningTargets`, `questions[].outcomeId` của chi tiết bài (khối "Mục tiêu bài") và đọc hết các trang của `GET /me/students`, `GET /me/students/:id/enrollments`, `GET /rooms`, `history` điểm danh.
 
-| Route                                                                              | Màn hình mobile                                                                             |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| `GET /academic/scheduled-sessions?fromDate&toDate&page&limit`                      | Lịch tuần, thẻ "Buổi học hôm nay", chi tiết buổi, buổi tiếp theo của từng môn, lộ trình môn |
-| `GET /academic/leaves?studentId&kind=PERIOD_PAUSE&status=APPROVED&fromDate&toDate` | Trạng thái "Tạm nghỉ" của môn                                                               |
-| `GET /academic/assignments?page&limit`                                             | Danh sách bài tập                                                                           |
-| `GET /academic/assignments/:id`, `GET /academic/assignments/:id/submissions`       | Danh sách bài tập (ghép trạng thái nộp, điểm) và màn chi tiết bài                           |
-| `POST /academic/submissions` (`recipientId`, `answers`)                            | Nộp bài                                                                                     |
-| `GET /me/bills?page&limit`                                                         | Thẻ bill "Chưa thanh toán" của tab Học phí (bill `UNPAID` của con đang xem)                 |
-| `GET /registrations/:id/bill`                                                      | Màn chi tiết bill, mở từ thẻ bill chưa thanh toán                                           |
+Nối thêm hoặc đổi cách gọi ngày 19/10:
 
-Vẫn chạy bằng dữ liệu giả vì BE chưa có route cho phụ huynh: lịch sử điểm danh và tỷ lệ đi học, điểm trung bình và việc cần chú ý ở trang chủ, thông báo trong app.
+| Route                                                                                                                    | Màn hình mobile                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `GET /academic/me/students/:id/grades?page&limit`                                                                        | Mới: "Điểm trung bình" ở trang chủ (trung bình mọi bài, chênh lệch so với tháng trước) và điểm trung bình môn trên thẻ môn học     |
+| `GET /academic/me/students/:id/curriculum?page&limit`                                                                    | Mới: Lộ trình bài học (cả bài chưa xếp buổi); lớp chưa có học phần thì vẫn dựng từ các buổi                                        |
+| `GET /notifications`, `GET /notifications/unread-count`, `PATCH /notifications/:id/read`, `POST /notifications/read-all` | Mới: nút chuông, màn "Thông báo", "Thông báo mới" ở trang chủ (lọc `studentId`)                                                    |
+| Socket.IO namespace `/notifications`                                                                                     | Mới: `notification.created` thì tải lại thông báo và dữ liệu học tập đang hiện; `notifications.read-changed` thì tải lại thông báo |
+| `GET /academic/scheduled-sessions?studentId&fromDate&toDate&paginated=true&page&limit`                                   | Đổi: gửi `paginated=true`, đọc theo `total`; hiện cả buổi `CANCELLED` kèm `cancelReason`; lấy giáo viên, phòng từ danh sách        |
+| `GET /academic/scheduled-sessions/:id?studentId`                                                                         | Đổi: lấy tên phòng từ `room`, không gọi `GET /rooms` nữa                                                                           |
+| `GET /academic/me/students/:id/attendance`                                                                               | Đổi: lớp, đơn nghỉ, lịch học bù lấy từ `history`; không gọi `GET /academic/makeups`, `GET /academic/leaves` nữa                    |
+| `GET /academic/assignments?studentId&paginated=true&page&limit`                                                          | Đổi: lọc theo con, lấy lớp, số câu, lần nộp gần nhất và điểm đã công bố từ danh sách (trước đó 1 + 2N request)                     |
+| `GET /academic/assignments/:id/submissions?paginated=true`, `GET /academic/leaves?…&paginated=true`                      | Đổi: đọc theo `total`                                                                                                              |
+| `GET /me/students/:id/enrollments`                                                                                       | Đổi: tên giáo viên lấy từ `class.teacher` (và `placements[].class.teacher`)                                                        |
+| `GET` và `PATCH /auth/me`                                                                                                | Đổi: màn "Thông tin tài khoản" điền sẵn số điện thoại từ `phone`; để trống thì gửi `phone: ""` để xoá số                           |
 
 ## 1. Lỗi và điểm cần chốt trong code BE hiện tại
 
-### 1.1 Buổi học bù của con không có trong lịch của phụ huynh (P0)
+### 1.1 Giáo trình chỉ trả cho ghi danh đang trong kỳ (P2)
 
-`CurriculumSchedulingService.sessions` với role `PARENT` chỉ lấy buổi của lớp con ghi danh (`enrollment.classId` hoặc `placements[].classId`). Khi nhân viên xếp học bù, con là `SessionParticipant` loại `MAKEUP` trong buổi của **lớp khác**, nên buổi đó không bao giờ được trả về. SRS mục 3.5 yêu cầu phụ huynh xem "lịch học bù". `GET /academic/makeups` có trả `replacement.session { id, classId, startsAt, endsAt }` nhưng không có tên lớp, môn, bài học và không ghép được vào lịch.
+`studentCurriculum` chỉ lấy ghi danh `ACTIVE` có `startDate <= hôm nay < endDate`. Ghi danh sắp học (đã thu tiền, kỳ chưa bắt đầu) nhận trang rỗng, nên mobile dựng lộ trình của môn đó từ các buổi đã sinh (không thấy bài chưa xếp buổi). Đề xuất: trả cả ghi danh `UPCOMING` (theo `term.status`), để phụ huynh xem trước nội dung kỳ sắp học.
 
-Đề xuất: `scheduled-sessions` trả thêm các buổi con tham gia với `kind: MAKEUP` (kèm buổi gốc được bù), mỗi buổi có một field phân biệt `REGULAR`/`MAKEUP`.
+### 1.2 Thẻ môn học vẫn cần `GET /rooms` (P2)
 
-### 1.2 Ghi danh hết kỳ vẫn `ACTIVE`, còn ghi danh `ENDED` thì mất hết lịch sử buổi học (P0)
+`GET /me/students/:id/enrollments` có `class.roomId` (cả trong `placements`) nhưng không có tên phòng, nên mobile vẫn gọi `GET /rooms` (trả mọi phòng của trung tâm, kèm `capacity`, `isActive`) chỉ để đổi id ra tên. Đề xuất: trả thêm `class.room { id, name } | null` như danh sách buổi học; khi đó mobile bỏ hẳn `GET /rooms`.
 
-- Không có chỗ nào chuyển `Enrollment.status` sang `ENDED` khi qua `endDate` (chỉ `endOne` trong `enrollment-workflows.service.ts`, do nhân viên bấm). Vì vậy `status` không nói được con còn học hay không; BE tự so ngày ở từng nơi (`inTerm`, `scheduleOf`) và client cũng phải tự so. Mobile đang coi ghi danh `ACTIVE` đã qua `endDate` là "Đã kết thúc".
-- Ngược lại, `scheduled-sessions` chỉ lấy ghi danh `status: 'ACTIVE'`. Ngay khi nhân viên kết thúc một ghi danh, mọi buổi đã học của ghi danh đó biến mất khỏi lịch và lộ trình của phụ huynh.
+### 1.3 `lesson.sequence` vẫn đếm trong từng học phần (P2, còn từ bản trước)
 
-Đề xuất: trả trạng thái kỳ học đã tính sẵn (như `term.status` của biên lai) trong `GET /me/students/:id/enrollments`; và cho `scheduled-sessions` trả cả buổi trong kỳ của ghi danh `ENDED` (tới thời điểm kết thúc).
+Cả chi tiết buổi lẫn giáo trình ghi rõ `sequence` là thứ tự trong học phần. Mobile tự đánh số bài trên lộ trình (theo thứ tự học phần rồi thứ tự bài) và không hiện "Bài N" ở chi tiết buổi để khỏi lệch. Nếu có thứ tự trong cả khóa thì nhờ BE trả thêm.
 
-### 1.3 Buổi trong thời gian bảo lưu và buổi bị huỷ (P1, cần chốt)
+### 1.4 `Enrollment.status` vẫn không tự sang `ENDED` (P2, còn từ bản trước)
 
-- Buổi nằm trong đơn bảo lưu đã duyệt (`PERIOD_PAUSE`) vẫn được trả như buổi phải học. Cần chốt: ẩn, hay trả kèm cờ để app ghi "Đang bảo lưu".
-- `SessionStatus.CANCELLED` có trong schema nhưng chưa route nào huỷ một buổi (nghỉ lễ, giáo viên nghỉ). Khi làm, lưu ý `scheduled-sessions` đang lọc bỏ buổi `CANCELLED` với `PARENT`: phụ huynh sẽ chỉ thấy buổi học biến mất. Đề xuất trả kèm `status: CANCELLED` để app hiện "Buổi học bị huỷ". Cũng lưu ý `findConflicts` bỏ qua buổi `CANCELLED` trong khi `class_sessions` có unique `(classId, startsAt)`, nên sinh lại lịch vào đúng giờ buổi đã huỷ sẽ vấp unique và trả 409 `RESOURCE_CONFLICT` thay vì `SCHEDULE_CONFLICT`.
+Đã có `term.status` tính sẵn trong `GET /me/students/:id/enrollments` (cảm ơn). Mobile vẫn tự tính trạng thái kỳ học theo cùng quy tắc (`ENDED`, rồi hết hạn ở ngày `endDate`, rồi sắp học); không cần BE sửa thêm, chỉ ghi lại để hai bên giữ cùng quy tắc.
 
-### 1.4 Không báo nghỉ trước được cho buổi sinh từ học phần (P1, ảnh hưởng luồng của web)
+### 1.5 Không có thông báo khi app đóng (P2, cần chốt)
 
-`requestLeave` với `SINGLE_ABSENCE` yêu cầu đã có `SessionParticipant` của ghi danh trong buổi đó (`INVALID_SESSION`). Buổi sinh bằng `POST /academic/classes/:id/session-generations` không tạo danh sách điểm danh; chỉ `MANAGER`/`TEACHER` gọi được `POST /academic/sessions/:id/roster`. Hệ quả: phụ huynh báo nghỉ cho buổi tuần sau (SRS mục 6.4) thì nhân viên chưa ghi nhận được cho tới khi giáo viên chuẩn bị danh sách.
+Bản này chỉ phát qua Socket.IO khi app đang mở; `NOTIFICATION_FLOW_GUIDE.md` ghi chưa có push hệ điều hành. Phụ huynh đóng app thì chỉ thấy thông báo khi mở lại. SRS chỉ yêu cầu email (mục 3.11, 5.11) nên đây không phải lỗi; nếu nhóm muốn báo ngay cả khi app đóng thì cần BE lưu push token của thiết bị (ví dụ Expo push) và mobile cần thêm thư viện, nên cần chốt chung.
 
-Đề xuất: khi ghi nhận nghỉ một buổi, tự tạo participant cho ghi danh đó nếu buổi thuộc kỳ và lớp của con; hoặc tạo roster ngay lúc sinh buổi và khi xác nhận thu tiền.
+### 1.6 Ghi nhận thêm (không chặn mobile)
 
-### 1.5 Phân trang không có tổng số bản ghi (P1)
+- Socket bị BE đóng mỗi lần access token hết hạn, nên mobile refresh token rồi kết nối lại khoảng mỗi `expiresIn` giây. Mobile dùng chung một lần refresh cho REST và socket (BE xoay vòng refresh token). Nhờ BE xác nhận giới hạn bắt tay theo IP (`THROTTLE_LIMIT_PER_MINUTE`) đủ khi nhiều điện thoại cùng mạng LAN của trung tâm.
+- Điện thoại không gửi header `Origin`, nên `CORS_ORIGINS` không ảnh hưởng mobile; proxy trên môi trường test phải chuyển tiếp WebSocket cho `/socket.io/`.
+- Còn từ bản trước: quyền đọc bill (`targetStudent.parentProfile.userId`) và biên lai (`parentEmail`) kiểm tra theo hai cách khác nhau; số tiền của bill là chuỗi thập phân còn biên lai là number; `GET /me/bills` chưa lọc được theo con hay trạng thái (mobile đọc hết rồi lọc); `EnrollmentStatus.PENDING_LINK` vẫn còn dù SRS đã bỏ luồng link/mã; `GET /classes` cho role `PARENT` trả mọi lớp của trung tâm (kèm `monthlyFee`, `capacity`), mobile không dùng.
 
-Các route `academic` (`scheduled-sessions`, `assignments`, `submissions`, `leaves`, `makeups`) trả mảng trần, không có `total` hay `hasNextPage`, trong khi `GET /me/bills`, `GET /students`, `GET /registrations` trả `{ items, page, limit, total }`. Mobile phải đọc `limit=100` liên tiếp tới khi gặp trang chưa đầy. Riêng `scheduled-sessions` với `PARENT` còn tải toàn bộ buổi của khoảng ngày rồi mới cắt trang trong bộ nhớ (`.slice`), nên phân trang không giảm tải cho database.
+### 1.7 Chỗ khó dùng với phụ huynh ít quen công nghệ (bổ sung 20/10)
 
-Đề xuất: dùng chung một dạng `{ items, page, limit, total }` (web đã nêu ở mục 4.2 trong file yêu cầu của web) và báo trước khi đổi.
+Ba mục dưới đây rút ra từ đọc code BE `c3b54d4`, chưa thử trên BE đang chạy. Mobile đã làm phần của mình (ghi ở từng mục); phần còn lại cần BE.
 
-### 1.6 Thiếu phòng học trong schema (P2)
+**1.7.1 Xác minh email phải dán mã 43 ký tự (P1).** `issueEmailVerification` (`auth.service.ts`) gửi email chỉ có dòng `Mã xác minh tài khoản EduGrade: <mã>`, mã là 32 byte dạng base64url. Phụ huynh phải mở app email, nhấn giữ để chép cả chuỗi dài, quay lại app rồi dán: đây là chỗ người ít dùng điện thoại dễ bỏ cuộc nhất, và xác minh xong mới tạo được hồ sơ con. Mobile đã tự lấy mã khi phụ huynh dán cả dòng (trước đó dán cả dòng thì BE báo `AUTH_INVALID_EMAIL_TOKEN`). Đề xuất, chọn một:
 
-SRS mục 3.1 và 6.2 có bước chọn phòng khi tạo lớp, nhưng `Class` và `ClassSession` không có field phòng. Mobile đã ẩn dòng "Phòng học".
+- Email có link bấm được, ví dụ `fem://verify-email?token=<mã>` (scheme theo bản cài: `fem`, `fempreview`, `femdev`) hoặc link web chuyển tiếp về app. Mobile sẽ thêm xử lý link khi BE chốt dạng link.
+- Hoặc mã 6 chữ số, hạn ngắn (ví dụ 15 phút), giới hạn số lần nhập sai: phụ huynh đọc và gõ được, không cần chép dán.
 
-### 1.7 Ghi nhận thêm khi đọc PR #4 và PR #5 (không chặn mobile)
+Web không gọi `POST /auth/verify-email` nên không bị ảnh hưởng; giữ được dạng mã cũ song song nếu cần.
 
-- Quyền đọc cùng một đơn đang kiểm tra theo hai cách: `GET /registrations/:id/bill` và `GET /me/bills` theo quan hệ `targetStudent.parentProfile.userId`, còn `GET /registrations/:id` và `GET /registrations/:id/receipt` theo `user.email === order.parentEmail`. Nên dùng một cách (theo quan hệ hồ sơ con) để bill đọc được thì biên lai cũng đọc được.
-- Số tiền của bill là chuỗi thập phân (`pricing.total: "2400000.00"`, `payment.paidAmount`), còn biên lai trả number (`payment.amount`, `quotedAmount`). Mobile đang xử lý cả hai; nên thống nhất một dạng.
-- `GET /me/bills` chưa lọc được theo `studentId` hay `status`. Mobile đọc hết các trang rồi tự lọc bill `UNPAID` của con đang xem.
-- `GET /academic/sessions` (cũ, chỉ buổi đã có participant) và `GET /academic/scheduled-sessions` (mới) cùng tồn tại với kết quả khác nhau cho phụ huynh. Nên ghi rõ route nào là chính; mobile chỉ dùng route mới.
-- `EnrollmentStatus.PENDING_LINK` vẫn còn trong schema dù SRS đã bỏ luồng link/mã (mục 5.3, 6.1).
-- `GET /me/students/:id/enrollments` trả nguyên bản ghi Prisma (cả `registrationOrder`, `payment`, `class.monthlyFee`...). Contract đang là "mọi cột của bảng"; nên có DTO để đổi schema không làm vỡ client.
-- Môi trường: `package.json` ghi `packageManager: pnpm@9.0.0` nhưng `pnpm-workspace.yaml` chỉ có `allowBuilds` (cấu hình của pnpm 10.26+), nên `pnpm install` qua corepack báo `ERR_PNPM_INVALID_WORKSPACE_CONFIGURATION`. `README.md` ghi Swagger ở `/docs`, `main.ts` đặt ở `/api/docs`.
+**1.7.2 Tuần nào phụ huynh cũng phải đăng nhập lại (P1).** `createAuthenticatedSession` đặt `expiresAt` của phiên bằng lúc đăng nhập cộng `JWT_REFRESH_TTL_SECONDS` (mặc định 604800, tức 7 ngày), còn `refresh` ký cặp token mới với `session.expiresAt` cũ. Vì vậy dù mở app mỗi ngày, phiên vẫn hết đúng 7 ngày sau lần đăng nhập. Phụ huynh hay quên mật khẩu sẽ bị chặn mỗi tuần. Mobile đã báo "Phiên đăng nhập đã hết hạn" ở màn đăng nhập thay vì đưa về màn chào mà không giải thích. Đề xuất: mỗi lần refresh thì gia hạn phiên thêm một chu kỳ (`expiresAt = now + TTL`), kèm một hạn tuyệt đối dài (ví dụ 90 ngày) và vẫn thu hồi khi đổi mật khẩu hoặc dùng lại refresh token cũ. Web dùng chung luồng auth nên cũng đỡ phải đăng nhập lại.
+
+**1.7.3 Chưa có thông tin liên hệ của trung tâm (P2).** App chỉ ghi được "liên hệ quầy lễ tân", không có số để bấm gọi. Mobile tạm đọc số từ biến môi trường `EXPO_PUBLIC_CENTER_PHONE` (để trống thì không hiện nút "Gọi trung tâm"), nhưng đổi số phải build lại app. Đề xuất: `GET /center` (cần đăng nhập, hoặc public) trả `{ name, address, phone, email, openingHours }`, dùng chung cho bill, biên lai và màn học phí; tên trung tâm trên biên lai hiện cũng đang viết cứng ở mobile.
+
+### 1.8 Đợt CLO và phân trang (bổ sung 27/10)
+
+Đối chiếu `dev` tại `c9ecbcd` (PR #10 `feture/data-sees-clo`, merge `e2cb844`, cùng `c9ecbcd`) và bản bàn giao cho mobile ngày 26/10. Rút ra từ **đọc code**, chưa chạy trên BE đang chạy. Mobile đã sửa phần của mình ngày 27/10 (đọc hết các trang, khối "Mục tiêu bài" và "Mục tiêu khóa học").
+
+**1.8.1 Bỏ `paginated` mà chỉ trả 20 dòng là đổi contract (ghi nhận).** Bản mobile đã cài trên máy phụ huynh trước 27/10 gọi `GET /me/students`, `GET /me/students/:id/enrollments`, `GET /rooms` không có `page`, `limit`, và đọc `history` của `GET /academic/me/students/:id/attendance` như danh sách đầy đủ, nên từ dòng 21 sẽ thiếu con, thiếu môn và học phí, thiếu tên phòng, thiếu buổi trong lịch sử điểm danh mà không báo lỗi. Bản bàn giao chỉ nhắc ba route đầu; `GET /rooms` và `history` của điểm danh cũng bị (bản bàn giao còn ghi mobile dùng mock điểm danh, thực ra đã nối BE từ 15/10). Nhờ BE báo trước các thay đổi kiểu này (xem mục 3).
+
+**1.8.2 `learningTargets` không có thứ tự cố định (P2).** `detail` trong `assessment.service.ts` lấy `outcomeSet.outcomes` không có `orderBy`, trong khi `GET /academic/programs/:id/outcome-sets` xếp CLO theo `code`. Mobile và web giữ thứ tự BE trả, nên khối "Mục tiêu bài" có thể khác thứ tự với "Mục tiêu khóa học" và đổi thứ tự giữa hai lần mở. Đề xuất: `orderBy: { code: 'asc' }` ở `detail`.
+
+**1.8.3 Quyền xem CLO của khóa chỉ xét lớp lúc đăng ký (P2).** `list` trong `outcome.service.ts` cho `PARENT` tìm ghi danh có `class.programId` bằng khóa cần xem, không xét `placements`. Con đã chuyển sang lớp thuộc chương trình khác thì nhận 403 `FORBIDDEN` khi xem mục tiêu khóa đang học; mobile ẩn khối "Mục tiêu khóa học" trong trường hợp này. Đề xuất: chấp nhận cả `placements.some.class.programId`.
+
+**1.8.4 Lịch sử điểm danh phân trang nhưng mỗi trang vẫn đọc cả kỳ (ghi nhận).** `attendanceSummary` đọc tới 20.000 bản ghi rồi mới cắt trang, nên mobile đọc 100 dòng mỗi trang thì con có 300 buổi sẽ khiến BE quét cả kỳ ba lần. Thẻ tỷ lệ đi học ở trang chủ gửi `limit=1` vì chỉ cần `counts`. Chưa cần sửa; nếu dữ liệu lớn lên thì nhờ BE cân nhắc phân trang trong database.
+
+### Đã xử lý so với bản 15/10
+
+- Chi tiết buổi của phụ huynh không còn trả `lesson.content` (giáo án có đáp án) và thông tin nội bộ của lớp (mục 1.1 cũ, P0).
+- Danh sách buổi không còn trả buổi mà chỗ của con đã bị huỷ (mục 1.2 cũ).
+- Danh sách buổi trả cả buổi `CANCELLED` kèm `cancelReason` (mục 1.3 cũ); mobile hiện nhãn "Đã huỷ" và lý do ở lịch tuần, thẻ "Buổi học hôm nay".
+- Lịch sử điểm danh có lớp, đơn nghỉ đã duyệt và lịch học bù mới nhất (mục 1.4 cũ).
+- `SafeUserDto` của phụ huynh có `phone` (mục 1.6 cũ).
+- Phân trang có `total` khi gửi `paginated=true` (mục 1.7 cũ).
+- Danh sách buổi có `room` và `teacher` (mục 1.8 cũ).
+- Bài tập theo từng con kèm lớp, số câu, lần nộp gần nhất và điểm đã công bố; điểm trung bình theo môn; giáo trình cho phụ huynh; tên giáo viên của lớp trong ghi danh (mục 2 cũ: P0, hai dòng P1, P2).
 
 ## 2. API còn thiếu cho màn hình phụ huynh
 
 Tên route dưới đây là **đề xuất**. Mobile chưa gọi route nào trong bảng này.
 
-| Ưu tiên | Nhu cầu (SRS)                                                    | Hiện trạng BE                                                                                                                                                  | Đề xuất                                                                                                                                                                              |
-| ------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| P0      | Kết quả điểm danh từng buổi và tỷ lệ đi học (3.5, 5.5, 5.6, 4.2) | `SessionParticipant.attendance` không được trả cho `PARENT` ở route nào. `GET /academic/sessions` chỉ cho biết con có trong buổi                               | `GET /me/students/:id/attendance?fromDate&toDate`: mỗi buổi kèm `attendance`, `kind`, đơn nghỉ, buổi học bù; kèm tỷ lệ đi học **tính ở BE** theo mục 5.5 để web và mobile giống nhau |
-| P0      | Bài tập theo từng con                                            | `GET /academic/assignments` trả chung mọi con, chỉ có `id, classId, title, dueAt, status, maxAttempts`. Mobile phải gọi thêm đề bài và bài nộp: 1 + 2N request | Thêm lọc `studentId` (hoặc `GET /me/students/:id/assignments`), trả kèm tên lớp, môn, `recipientId`, số câu theo loại, tổng điểm, lần nộp gần nhất và điểm đã công bố                |
-| P1      | Lịch theo từng con, có giáo viên                                 | `scheduled-sessions` không có id của con hay ghi danh; chỉ có `teacherId`. Mobile tự tách theo ghi danh và ẩn tên giáo viên                                    | Nhận `studentId`, hoặc trả `enrollmentId`/`studentProfileId` cho mỗi buổi; thêm `teacher { displayName }`, `lesson.sequence`                                                         |
-| P1      | Chi tiết một buổi                                                | Không có route đọc một buổi cho `PARENT`. Mobile phải truyền kèm ngày học để tìm buổi trong lịch của ngày đó                                                   | `GET /academic/scheduled-sessions/:id` cho phụ huynh có con trong buổi, kèm điểm danh của con và `summary` của buổi                                                                  |
-| P1      | Tiến độ học tập (3.5)                                            | `GET /academic/curriculum-units*` và `GET /academic/lessons` không cho `PARENT`. Mobile dựng lộ trình từ các buổi đã sinh nên không thấy bài chưa xếp buổi     | Cho phụ huynh đọc học phần đã duyệt của lớp con đang học (tiêu đề, thứ tự, loại bài), không cần `content`                                                                            |
-| P1      | Lịch sử điểm, điểm trung bình (3.5)                              | Chỉ đọc được điểm qua từng bài nộp                                                                                                                             | Gộp vào route bài tập theo con ở trên, hoặc route tổng hợp điểm theo môn                                                                                                             |
-| P2      | Tên giáo viên của lớp                                            | `GET /me/students/:id/enrollments` có `class.teacherId`, không có tên                                                                                          | Thêm `class.teacher { displayName }`                                                                                                                                                 |
-| P2      | Tổng quan trang chủ                                              | Không có route tổng hợp                                                                                                                                        | Có thể ghép ở mobile khi đã có điểm danh và bài tập theo con; không bắt buộc thêm route                                                                                              |
+| Ưu tiên | Nhu cầu                                        | Hiện trạng BE                                             | Đề xuất                                                |
+| ------- | ---------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------ |
+| P1      | Xác minh email không phải chép mã dài          | Email chỉ có mã 43 ký tự                                  | Link mở app hoặc mã 6 số (mục 1.7.1)                   |
+| P1      | Không phải đăng nhập lại mỗi tuần              | Phiên hết hạn cố định 7 ngày sau khi đăng nhập            | Gia hạn khi refresh, kèm hạn tuyệt đối (mục 1.7.2)     |
+| P2      | Số điện thoại, địa chỉ trung tâm               | Không có                                                  | `GET /center` (mục 1.7.3)                              |
+| P2      | Tên phòng trên thẻ môn học                     | Ghi danh chỉ có `class.roomId`                            | Thêm `class.room { id, name }` (mục 1.2)               |
+| P2      | Lộ trình của môn sắp học                       | Giáo trình chỉ trả cho ghi danh đang trong kỳ             | Trả cả ghi danh sắp học (mục 1.1)                      |
+| P2      | Báo phụ huynh khi app đóng                     | Chỉ có Socket.IO khi app mở                               | Cần chốt chung (mục 1.5)                               |
+| P2      | Giờ vào lớp, nhận xét riêng từng con, tài liệu | Chi tiết buổi chỉ có `summary` chung và điểm danh của con | Thêm vào `participation` và buổi học khi BE có dữ liệu |
 
-Bài tự luận đính kèm ảnh: BE đã có `POST /academic/files` và `fileIds` trong `SubmissionDto`; phần còn thiếu nằm ở mobile.
+Trang chủ không cần route tổng quan riêng: mobile đã ghép từ lịch học, điểm danh, điểm, bài tập, bill và thông báo.
 
-Thông báo trong app: SRS chỉ có thông báo qua email (mục 3.11, 5.11). Mobile đang có nút chuông chạy bằng dữ liệu giả; giữ hay bỏ là việc nhóm chốt, chưa phải yêu cầu với BE.
+Chưa làm ở mobile, chờ nhóm chốt (không phải yêu cầu với BE): phụ huynh gửi đơn xin nghỉ trên app (`POST /academic/leaves` đã cho `PARENT`; SRS mục 3.5 chưa ghi, mục 6.4 ghi "Phụ huynh báo nghỉ"). Đính kèm ảnh bài tự luận đã làm ngày 21/10; mobile chưa gọi `GET /academic/files/:id/download` nên phụ huynh chưa xem lại được ảnh đã nộp (route trả link S3 ký 60 giây, kèm `ResponseContentDisposition: attachment`: nếu mobile dùng để hiện ảnh thì nhờ BE cho thêm kiểu `inline`).
 
 ## 3. Contract mobile đang dựa vào
 
 Đổi các điểm sau cần báo mobile trước:
 
-- `scheduled-sessions` (role `PARENT`): mảng buổi theo `startsAt` tăng dần; mỗi buổi có `id`, `classId`, `startsAt`, `endsAt` (UTC), `status`, `class.name`, `class.program.subject`, `lesson.title`, `lesson.kind` (`LESSON` | `MONTHLY_TEST`). Mobile gửi `fromDate`, `toDate` dạng `YYYY-MM-DD`, `page`, `limit=100`; khoảng dài nhất là một kỳ ghi danh (tối đa 12 tháng).
-- Mobile tách buổi theo con bằng đúng điều kiện BE đang dùng: ghi danh `ACTIVE`, ngày học (giờ Việt Nam) trong `[startDate, endDate)`, và lớp khớp `placements` (`effectiveFrom <= startsAt < effectiveTo`) hoặc `class.id` khi không có placement. Vì vậy mobile cần `placements { classId, effectiveFrom, effectiveTo, class { id, name, program, weeklySchedules } }` trong `GET /me/students/:id/enrollments`.
-- `leaves`: mobile đọc `enrollmentId`, `fromDate`, `toDate` của đơn `PERIOD_PAUSE` đã duyệt đang hiệu lực hôm nay.
-- `me/bills`: `{ items, page, limit, total }`, mới lập trước; mỗi bill mobile đọc `registrationId`, `status` (`UNPAID` | `PAID` | `CANCELLED`), `issuedAt`, `student.id`, `class.name`, `term.packageMonths`, `term.startDate` (`YYYY-MM-DD`), `pricing.total`, `pricing.currency`.
-- `assignments/:id`: `classId`, `title`, `instructions`, `dueAt`, `status`, `maxAttempts`, `recipients[] { id, enrollmentId }`, `questions[] { id, kind, prompt, choices, maxScore, correctAnswer? }`.
-- `assignments/:id/submissions`: `recipientId`, `attemptNo`, `answers`, `submittedAt`, `grades[]` chỉ gồm bản `PUBLISHED`, bản sửa mới nhất trước (`totalScore`, `scores`, `feedback`, `publishedAt`).
-- Mã lỗi mobile có thông báo tiếng Việt: `SUBMISSION_CLOSED`, `ATTEMPTS_EXHAUSTED`, `INVALID_ANSWERS`, `INVALID_CHOICE`, `RESOURCE_NOT_FOUND`, `FORBIDDEN`.
+- `scheduled-sessions` (role `PARENT`, có `studentId`, `paginated=true`): `{ items, page, limit, total }`, buổi theo `startsAt` tăng dần, gồm buổi `CANCELLED`; mỗi buổi có `id`, `classId`, `startsAt`, `endsAt` (UTC), `status`, `cancelReason`, `class.name`, `class.program.subject`, `teacher.displayName`, `room.name | null`, `lesson { id, title, kind }` (`LESSON` | `MONTHLY_TEST`), `participations[] { enrollmentId, kind, attendance }` (chỉ chỗ chưa huỷ). Mobile gửi `fromDate`, `toDate` dạng `YYYY-MM-DD`, `limit=100`; khoảng dài nhất là một kỳ ghi danh. Buổi chưa có participant thì mobile gán vào ghi danh theo `placements` (ghi danh `ACTIVE`, ngày học trong `[startDate, endDate)`, lớp khớp placement).
+- `scheduled-sessions/:id?studentId` (role `PARENT`): `id`, `startsAt`, `endsAt`, `status`, `summary`, `cancelReason`, `class { name, program { subject } }`, `teacher { displayName }`, `room { name } | null`, `lesson { id, title }`, `participation { enrollmentId, kind, attendance } | null`. Mobile coi 404 `SESSION_NOT_FOUND` và 403 `FORBIDDEN` là "buổi không có trong lịch của con".
+- `me/students/:id/attendance?page&limit`: `counts { present, absent, madeUp, excused }` tính trên cả kỳ, `total` và `history[] { enrollmentId, effectiveStatus, session { id, startsAt, endsAt }, class { name, program { subject } }, approvedLeave { reason } | null, latestMakeup { status, replacement { session { startsAt } } } | null }` của trang. Mobile không gửi `fromDate`, `toDate`, đọc hết `history` (`limit=100`) theo `total`, gửi `limit=1` khi chỉ cần `counts`, và tính tỷ lệ = (`present` + `madeUp`) / (`present` + `madeUp` + `absent`), cùng công thức với BE.
+- `me/students/:id/grades`: `subjects[] { subject, averageOutOf10 }`, `history[] { scoreOutOf10, publishedAt }`, `total`. Mobile đọc hết các trang (`limit=100`) để tính điểm trung bình mọi bài và chênh lệch so với điểm trung bình tính tới hết tháng trước.
+- `me/students/:id/curriculum`: `{ items, total }`, mỗi học phần có `classes[] { id }`, `lessons[] { id, title, sequence, kind }`. Mobile khớp bài với buổi theo `lesson.id` của buổi.
+- `assignments?studentId&paginated=true`: mỗi bài có `id`, `classId`, `testType`, `title`, `dueAt`, `maxAttempts`, `class { name, program { subject } }`, `questionCounts { multipleChoice, essay }`, `maxScore`, `recipients[] { studentId, latestSubmission { attemptNo, submittedAt, publishedGrade { totalScore, feedback, publishedAt } | null } | null }`.
+- `assignments/:id`: `classId`, `title`, `instructions`, `dueAt`, `status`, `maxAttempts`, `recipients[] { id, enrollmentId }`, `questions[] { id, kind, prompt, choices, maxScore, correctAnswer?, outcomeId }`, `learningTargets[] { id, code, title }` (cả bộ CLO; mobile chỉ hiện CLO có câu hỏi gắn `outcomeId`, giữ thứ tự BE trả).
+- `programs/:id/outcome-sets?paginated=true&page=1&limit=1` (role `PARENT`): `{ items, total }`, phiên bản mới nhất trước; mobile đọc `items[0].outcomes[] { id, code, title, required }`. 403 `FORBIDDEN` và 404 `PROGRAM_NOT_FOUND` thì mobile ẩn khối. `assignments/:id/submissions?paginated=true`: `recipientId`, `attemptNo`, `answers`, `submittedAt`, `grades[]` chỉ gồm bản `PUBLISHED`, bản sửa mới nhất trước.
+- `leaves?paginated=true`: `enrollmentId`, `fromDate`, `toDate` của đơn `PERIOD_PAUSE` `APPROVED` (trạng thái tạm nghỉ của môn).
+- `me/students?paginated=true`, `me/students/:id/enrollments?paginated=true`, `rooms?paginated=true`: `{ items, page, limit, total }`, mobile gửi `limit=100` và đọc hết các trang theo `total`. Ghi danh: `placements { classId, effectiveFrom, effectiveTo, class { id, name, programId, roomId, program, weeklySchedules, teacher { displayName } | null } }`, `class` cùng dạng; phòng: `id`, `name`.
+- `me/bills` (không gửi `paginated`): `{ items, page, limit, total }`, mới lập trước; mỗi bill mobile đọc `registrationId`, `status` (`UNPAID` | `PAID` | `CANCELLED`), `issuedAt`, `student.id`, `class.name`, `term`, `pricing.total`, `pricing.currency`.
+- `notifications`: `{ items, page, limit, total }`, mỗi thông báo `id`, `type`, `title`, `body`, `target { kind, id }`, `context { studentIds }`, `createdAt`, `readAt`. Mobile mở bài tập (`ASSIGNMENT`) và buổi học (`SESSION`) theo `context.studentIds[0]`, bill theo `REGISTRATION`; loại khác chỉ đánh dấu đã đọc. `unread-count`: `{ unreadCount }`.
+- Socket.IO: `io('<gốc server>/notifications', { path: '/socket.io', transports: ['websocket'], auth: { token } })`, sự kiện `notification.created` và `notifications.read-changed`, lỗi kết nối `AUTH_UNAUTHORIZED` (mobile refresh rồi kết nối lại một lần), `ORIGIN_NOT_ALLOWED` (dừng), các mã khác (thử lại chậm dần).
+- `auth`: `GET /auth/me` và `PATCH /auth/me` trả `phone`; `PATCH /auth/me` body `{ displayName, phone }` với `phone: ""` là xoá số; `POST /auth/change-password` body `{ currentPassword, newPassword }` (8–72 ký tự), giữ phiên hiện tại; `POST /auth/forgot-password` body `{ email }`, trả 202 cả khi email chưa đăng ký.
+- Mã lỗi mobile có thông báo tiếng Việt: `AUTH_CURRENT_PASSWORD_INVALID`, `SUBMISSION_CLOSED`, `ATTEMPTS_EXHAUSTED`, `INVALID_ANSWERS`, `INVALID_CHOICE`, `RESOURCE_NOT_FOUND`, `FORBIDDEN`, `INVALID_DATE_RANGE` (từ 27/10).
 
 ## 4. Đề nghị để nghiệm thu chung
 
-- Apply migration của PR #4 và PR #5 trên môi trường test và có dữ liệu: một tài khoản `PARENT` đã xác minh với hai con, mỗi con một ghi danh đang học ở lớp đã sinh buổi từ học phần (có bài kiểm tra tháng), một con có đơn bảo lưu đã duyệt, một buổi học bù đã xếp, một bài tập đang mở, một bài đã công bố điểm và một đơn đăng ký chưa xác nhận thu tiền (bill `UNPAID`).
-- Cấu hình `SMTP_URL`, `MAIL_FROM` trên môi trường test: thiếu thì tài khoản phụ huynh tự đăng ký không nhận được mã xác minh và không tạo được hồ sơ con.
+- Môi trường test chạy đủ migration tới `c3b54d4` (gồm `20261019000000_assignment_metadata` và `20261019001000_notifications`) và có dữ liệu: một tài khoản `PARENT` đã xác minh với hai con; mỗi con một ghi danh đang học ở lớp đã sinh buổi từ học phần đã duyệt (có bài kiểm tra tháng) và đã có buổi chốt điểm danh; một buổi vắng có đơn nghỉ đã duyệt và lịch học bù ở lớp khác; một con có đơn tạm nghỉ đã duyệt; một con đã chuyển lớp; một buổi bị huỷ; một bài tập đang mở, một bài kiểm tra 15 phút đã công bố điểm và một đơn đăng ký chưa xác nhận thu tiền (bill `UNPAID`). Nhờ BE cho biết seed (`pnpm seed:dashboard`) tạo tài khoản phụ huynh nào phủ được các trường hợp trên.
+- Để thử realtime: chạy một instance BE, cho điện thoại kết nối được tới cổng BE qua mạng LAN (không dùng `localhost`), rồi lần lượt công bố điểm, chốt điểm danh, huỷ một buổi, lập bill cho con của phụ huynh đó.
+- Cấu hình `SMTP_URL`, `MAIL_FROM` và `WEB_ORIGIN` (địa chỉ điện thoại truy cập được) trên môi trường test: thiếu SMTP thì phụ huynh tự đăng ký không nhận được mã xác minh và link đặt lại mật khẩu.
+- Cấu hình kho lưu trữ (`STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, kèm `STORAGE_ENDPOINT` nếu dùng MinIO) trên môi trường test: thiếu thì `POST /academic/files` trả 503 và học sinh không gửi được ảnh bài làm.

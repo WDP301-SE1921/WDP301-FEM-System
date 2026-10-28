@@ -1,6 +1,6 @@
 /** Kieu cua phien dang nhap, dung chung cho store va cac feature. Khop SafeUserDto cua BE. */
 
-/** `UserRole` cua BE. App mobile chi co man hinh cho `PARENT`, role khac van dang nhap duoc. */
+/** `UserRole` cua BE. App mobile chi danh cho `PARENT`: role khac bi chan luc dang nhap (`canUseMobileApp`). */
 export type UserRole = 'STAFF' | 'MANAGER' | 'TEACHER' | 'CURRICULUM_DESIGNER' | 'PARENT';
 
 export type UserStatus = 'ACTIVE' | 'DISABLED';
@@ -13,6 +13,13 @@ export type User = {
   status: UserStatus;
   /** null khi chua xac minh email: BE chua cho phu huynh tao hay sua ho so con. */
   emailVerifiedAt: string | null;
+  /** So dien thoai lien he dang luu. BE chi tra voi tai khoan `PARENT`; null khi chua nhap. */
+  phone?: string | null;
+  /**
+   * Tai khoan da co anh dai dien (`GET /auth/me/avatar` tra link). Khong co o phien luu tu truoc khi BE
+   * tra field nay (2026-10-27): coi nhu chua biet.
+   */
+  hasAvatar?: boolean;
   createdAt: string;
   updatedAt: string;
 };

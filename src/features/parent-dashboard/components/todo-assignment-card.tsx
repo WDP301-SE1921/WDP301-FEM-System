@@ -17,12 +17,19 @@ export type TodoAssignmentCardProps = {
   onOpen: () => void;
 };
 
-/** Bai con chua nop: con bao nhieu ngay, de bai, han nop va so cau. Bai sap het han duoc lam noi. */
+/**
+ * Bai con chua nop: con bao nhieu ngay, ten bai, han nop va so cau. De bai chi co o man chi tiet (danh
+ * sach bai tap cua BE khong tra de bai). Bai sap het han duoc lam noi.
+ */
 export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardProps) {
   const deadline = getAssignmentDeadline(assignment.dueAt);
 
   return (
-    <AssignmentCardFrame highlightTone={deadline.isUrgent ? 'accent' : undefined}>
+    <AssignmentCardFrame
+      highlightTone={deadline.isUrgent ? 'accent' : undefined}
+      onPress={onOpen}
+      accessibilityLabel={`Làm bài: ${assignment.title}`}
+    >
       <AssignmentCardHeader
         assignment={assignment}
         trailing={<ToneBadge label={deadline.label} tone={deadline.tone} icon={deadline.icon} />}
@@ -30,21 +37,13 @@ export function TodoAssignmentCard({ assignment, onOpen }: TodoAssignmentCardPro
       <ThemedText type="default" accessibilityRole="header" style={styles.title}>
         {assignment.title}
       </ThemedText>
-      <ThemedText type="small" themeColor="textSecondary">
-        {assignment.instructions}
-      </ThemedText>
       <AssignmentInfoRow
         icon="calendar-outline"
         text={formatAssignmentDue(assignment.dueAt)}
         trailing={formatQuestionCount(assignment.questionCounts)}
       />
       <View style={styles.actions}>
-        <ActionChip
-          label="Làm bài"
-          trailingIcon="arrow-forward"
-          accessibilityLabel={`Làm bài: ${assignment.title}`}
-          onPress={onOpen}
-        />
+        <ActionChip label="Làm bài" trailingIcon="arrow-forward" />
       </View>
     </AssignmentCardFrame>
   );

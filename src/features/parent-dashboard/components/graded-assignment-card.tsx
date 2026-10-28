@@ -30,7 +30,10 @@ export function GradedAssignmentCard({ assignment, grade, onOpen }: GradedAssign
   const level = getGradeLevel(grade);
 
   return (
-    <AssignmentCardFrame>
+    <AssignmentCardFrame
+      onPress={onOpen}
+      accessibilityLabel={`Xem bài làm và đáp án: ${assignment.title}`}
+    >
       <View style={styles.header}>
         <View style={styles.titleBlock}>
           <AssignmentCardHeader assignment={assignment} />
@@ -45,7 +48,7 @@ export function GradedAssignmentCard({ assignment, grade, onOpen }: GradedAssign
         <View style={styles.reviewHeader}>
           <View style={styles.gradedAt}>
             <Icon name="checkmark-circle" size={ICON_SIZE} themeColor={TONES[level.tone].color} />
-            <ThemedText type="small" themeColor="textSecondary">
+            <ThemedText type="small" themeColor="textSecondary" style={styles.gradedAtText}>
               Đã chấm ngày {formatDayMonth(grade.publishedAt)}
             </ThemedText>
           </View>
@@ -65,13 +68,7 @@ export function GradedAssignmentCard({ assignment, grade, onOpen }: GradedAssign
       ) : null}
 
       <View style={styles.actions}>
-        <ActionChip
-          label="Xem bài làm và đáp án"
-          variant="soft"
-          trailingIcon="arrow-forward"
-          accessibilityLabel={`Xem bài làm và đáp án: ${assignment.title}`}
-          onPress={onOpen}
-        />
+        <ActionChip label="Xem bài làm và đáp án" variant="soft" trailingIcon="arrow-forward" />
       </View>
     </AssignmentCardFrame>
   );
@@ -89,6 +86,7 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   gradedAt: { flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
+  gradedAtText: { flexShrink: 1 },
   feedback: { fontStyle: 'italic' },
   actions: { flexDirection: 'row', justifyContent: 'flex-end' },
 });

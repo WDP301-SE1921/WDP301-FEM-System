@@ -15,7 +15,9 @@ export const Colors = {
     backgroundElement: '#F0F0F3',
     backgroundSelected: '#E0E1E6',
     border: '#D7DBDF',
-    primary: '#208AEF',
+    /** Mau chinh cua design-mobile.md: chu trang tren nen nay dat 5.2:1. */
+    primary: '#2563EB',
+    /** Chu va icon dat tren nen `primary` va cac nen mau dam (nut, icon tron dac). */
     primaryText: '#FFFFFF',
     accent: '#F59E0B',
     danger: '#DC2626',
@@ -26,6 +28,14 @@ export const Colors = {
     accentSoft: '#FEF3C7',
     successSoft: '#DCFCE7',
     dangerSoft: '#FEE2E2',
+    /**
+     * Mau chu cua sac thai, dat tren nen nhat cung ten va tren nen trang (nhan trang thai, so lieu). Mau
+     * goc qua nhat de lam chu nho: vang tren nen vang nhat chi 1.9:1, cac mau duoi day tu 5.3:1 tro len.
+     */
+    primaryStrong: '#1D4ED8',
+    accentStrong: '#92400E',
+    successStrong: '#166534',
+    dangerStrong: '#B91C1C',
     /** Lop phu mo phia sau bottom sheet va modal. */
     overlay: 'rgba(15, 23, 42, 0.4)',
     /** Nen chip va hinh trang tri dat tren khoi nen `primary`, vd khoi hero. */
@@ -39,7 +49,8 @@ export const Colors = {
     backgroundSelected: '#2E3135',
     border: '#3A3D42',
     primary: '#3C9DF5',
-    primaryText: '#FFFFFF',
+    /** Nen mau o che do toi la mau sang: chu trang chi dat 2.9:1 nen dung chu toi. */
+    primaryText: '#0F172A',
     accent: '#FBBF24',
     danger: '#F87171',
     success: '#4ADE80',
@@ -48,6 +59,11 @@ export const Colors = {
     accentSoft: '#451A03',
     successSoft: '#052E16',
     dangerSoft: '#450A0A',
+    /** Mau goc da sang du tren nen toi (tu 5.1:1). */
+    primaryStrong: '#3C9DF5',
+    accentStrong: '#FBBF24',
+    successStrong: '#4ADE80',
+    dangerStrong: '#F87171',
     overlay: 'rgba(0, 0, 0, 0.6)',
     primaryOverlay: 'rgba(255, 255, 255, 0.18)',
   },

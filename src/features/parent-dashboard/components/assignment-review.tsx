@@ -10,9 +10,12 @@ import { getAssignmentMaxScore, getPublishedGrade, getQuestionReview } from '../
 import { GradeResultCard } from './grade-result-card';
 import { QuestionReviewCard } from './question-review-card';
 import { SectionCard } from './section-card';
+import { SubmittedFiles } from './submitted-files';
 
 export type AssignmentReviewProps = {
   questions: AssignmentQuestion[];
+  /** Ma CLO cua tung cau theo id cau hoi, xem `getQuestionOutcomeCodes`. */
+  outcomeCodes: Partial<Record<string, string>>;
   /** Lan nop dang xem; null khi con chua nop va khong nop duoc nua. */
   submission: SubmissionRecord | null;
   /** So lan con con duoc nop; 0 thi khong hien nut nop lai. */
@@ -26,12 +29,14 @@ export type AssignmentReviewProps = {
  */
 export function AssignmentReview({
   questions,
+  outcomeCodes,
   submission,
   remainingAttempts,
   onRetry,
 }: AssignmentReviewProps) {
   const grade = getPublishedGrade(submission);
   const hasAnswerKey = questions.some(({ correctAnswer }) => Boolean(correctAnswer));
+  const fileCount = submission?.files.length ?? 0;
 
   const renderStatus = () => {
     if (grade) {
@@ -49,7 +54,7 @@ export function AssignmentReview({
     return (
       <SectionCard title="Đã hết hạn nộp bài" icon="lock-closed-outline" tone="danger">
         <ThemedText type="small" themeColor="textSecondary">
-          Con chưa nộp bài này và không nộp được nữa. Liên hệ giáo viên nếu cần nộp bổ sung.
+          Học sinh chưa nộp bài này và không nộp được nữa. Liên hệ giáo viên nếu cần nộp bổ sung.
         </ThemedText>
       </SectionCard>
     );
@@ -65,8 +70,11 @@ export function AssignmentReview({
       ) : null}
 
       <ThemedText type="default" accessibilityRole="header" style={styles.sectionTitle}>
-        {submission ? 'Bài làm của con' : 'Đề bài'}
+        {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
+      {submission && fileCount > 0 ? (
+        <SubmittedFiles fileIds={submission.files.map(({ fileId }) => fileId)} />
+      ) : null}
       {questions.map((question, index) => (
         <QuestionReviewCard
           key={question.id}
@@ -74,13 +82,15 @@ export function AssignmentReview({
           question={question}
           review={getQuestionReview(question, submission)}
           hasSubmission={submission !== null}
+          hasAttachments={fileCount > 0}
+          outcomeCode={outcomeCodes[question.id]}
         />
       ))}
 
       {submission && remainingAttempts > 0 ? (
         <>
           <ThemedText type="small" themeColor="textSecondary" style={styles.hint}>
-            Con còn {remainingAttempts} lần nộp lại trước hạn nộp.
+            Học sinh còn {remainingAttempts} lần nộp lại trước hạn nộp.
           </ThemedText>
           <Button
             title="Làm lại và nộp lại"
