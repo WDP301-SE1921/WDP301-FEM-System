@@ -21,6 +21,8 @@ export type QuestionReviewCardProps = {
   hasSubmission: boolean;
   /** Lan nop co anh bai lam: cau tu luan de trong la con tra loi bang anh. */
   hasAttachments: boolean;
+  /** Ma CLO cau nay do, xem `getQuestionOutcomeCodes`. */
+  outcomeCode?: string;
 };
 
 /**
@@ -33,6 +35,7 @@ export function QuestionReviewCard({
   review,
   hasSubmission,
   hasAttachments,
+  outcomeCode,
 }: QuestionReviewCardProps) {
   const maxPoints = formatPoints(question.maxScore);
   const result =
@@ -43,6 +46,7 @@ export function QuestionReviewCard({
       position={position}
       prompt={question.prompt}
       points={review.score === null ? maxPoints : `${review.score} / ${maxPoints}`}
+      outcomeCode={outcomeCode}
     >
       {question.choices ? (
         <View style={styles.choices}>

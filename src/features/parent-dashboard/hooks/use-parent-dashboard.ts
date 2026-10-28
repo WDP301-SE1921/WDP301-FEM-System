@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/api/query-client';
 
 import { parentDashboardApi } from '../api/parent-dashboard-api';
+import { FILE_PREVIEW_STALE_MS } from '../constants';
 import type { ScheduleRange, SessionRef } from '../types';
 
 export function useLinkedStudents() {
@@ -47,6 +48,13 @@ export function useEnrollmentLessons(studentId: string, enrollmentId: string) {
   });
 }
 
+export function useCourseOutcomeSet(programId: string) {
+  return useQuery({
+    queryKey: queryKeys.academic.programOutcomeSet(programId),
+    queryFn: () => parentDashboardApi.getCourseOutcomeSet(programId),
+  });
+}
+
 export function useStudentAttendance(studentId: string) {
   return useQuery({
     queryKey: queryKeys.parent.studentAttendance(studentId),
@@ -79,6 +87,15 @@ export function useAssignmentSubmissions(assignmentId: string) {
   return useQuery({
     queryKey: queryKeys.academic.assignmentSubmissions(assignmentId),
     queryFn: () => parentDashboardApi.getAssignmentSubmissions(assignmentId),
+  });
+}
+
+/** Link xem mot anh bai lam da nop. Link het han sau vai phut nen chi giu trong `FILE_PREVIEW_STALE_MS`. */
+export function useFilePreview(fileId: string) {
+  return useQuery({
+    queryKey: queryKeys.academic.filePreview(fileId),
+    queryFn: () => parentDashboardApi.getFilePreview(fileId),
+    staleTime: FILE_PREVIEW_STALE_MS,
   });
 }
 

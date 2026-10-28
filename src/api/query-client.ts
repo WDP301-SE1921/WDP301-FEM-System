@@ -26,6 +26,8 @@ export const queryClient = new QueryClient({
 export const queryKeys = {
   auth: {
     me: ['auth', 'me'] as const,
+    /** Link xem anh dai dien cua tai khoan dang dang nhap. */
+    avatar: ['auth', 'avatar'] as const,
   },
   parent: {
     /** Tien to cua moi key `parent`, dung khi tai lai toan bo du lieu cua phu huynh. */
@@ -77,5 +79,10 @@ export const queryKeys = {
     assignment: (assignmentId: string) => ['academic', 'assignments', assignmentId] as const,
     assignmentSubmissions: (assignmentId: string) =>
       ['academic', 'assignments', assignmentId, 'submissions'] as const,
+    /** Bo chuan dau ra moi nhat cua mot khoa hoc. */
+    programOutcomeSet: (programId: string) =>
+      ['academic', 'programs', programId, 'outcome-set'] as const,
+    /** Link xem mot anh bai lam da nop. */
+    filePreview: (fileId: string) => ['academic', 'files', fileId, 'preview'] as const,
   },
 } as const;

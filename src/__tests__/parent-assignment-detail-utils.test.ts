@@ -15,7 +15,9 @@ import {
   getAssignmentDetailStatus,
   getAssignmentMaxScore,
   getChoiceState,
+  getMeasuredTargets,
   getPublishedGrade,
+  getQuestionOutcomeCodes,
   getUnansweredPositions,
   getQuestionReview,
   getSubmitConfirmMessage,
@@ -35,6 +37,7 @@ const CHOICE: AssignmentQuestion = {
   prompt: 'Khai triển (x + 3)² ta được:',
   choices: ['x² + 6x + 9', 'x² + 9'],
   maxScore: 4,
+  outcomeId: null,
 };
 const ESSAY: AssignmentQuestion = {
   id: 'q2',
@@ -42,6 +45,7 @@ const ESSAY: AssignmentQuestion = {
   prompt: 'Phân tích x² − 5x + 6 thành nhân tử.',
   choices: null,
   maxScore: 6,
+  outcomeId: null,
 };
 const QUESTIONS = [CHOICE, ESSAY];
 
@@ -95,6 +99,48 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       'recipient-2',
     );
     expect(findStudentRecipient(recipients, ['enrollment-5'])).toBeNull();
+  });
+
+  describe('muc tieu bai (CLO)', () => {
+    const TARGETS = [
+      { id: 'clo-1', code: 'MATH-8-01', title: 'Đa thức', statement: '' },
+      { id: 'clo-2', code: 'MATH-8-02', title: 'Hằng đẳng thức', statement: '' },
+      { id: 'clo-3', code: 'MATH-8-03', title: 'Phân tích nhân tử', statement: '' },
+    ];
+
+    it('getMeasuredTargets chi giu CLO co cau hoi do, theo thu tu trong bo', () => {
+      const detail = {
+        learningTargets: TARGETS,
+        questions: [
+          { ...ESSAY, outcomeId: 'clo-3' },
+          { ...CHOICE, outcomeId: 'clo-1' },
+          { ...CHOICE, id: 'q3', outcomeId: 'clo-3' },
+        ],
+      };
+
+      expect(getMeasuredTargets(detail).map(({ code }) => code)).toEqual([
+        'MATH-8-01',
+        'MATH-8-03',
+      ]);
+    });
+
+    it('bai cu khong co CLO thi rong', () => {
+      expect(getMeasuredTargets({ learningTargets: [], questions: QUESTIONS })).toEqual([]);
+      expect(getQuestionOutcomeCodes({ learningTargets: [], questions: QUESTIONS })).toEqual({});
+    });
+
+    it('getQuestionOutcomeCodes bo cau khong gan CLO hoac gan CLO ngoai bo', () => {
+      const detail = {
+        learningTargets: TARGETS,
+        questions: [
+          { ...CHOICE, outcomeId: 'clo-2' },
+          { ...ESSAY, outcomeId: 'clo-ngoai-bo' },
+          { ...ESSAY, id: 'q3', outcomeId: null },
+        ],
+      };
+
+      expect(getQuestionOutcomeCodes(detail)).toEqual({ q1: 'MATH-8-02' });
+    });
   });
 
   it('findLatestSubmission lay lan nop co attemptNo lon nhat cua dung con', () => {

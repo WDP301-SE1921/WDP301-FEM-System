@@ -55,6 +55,7 @@ function classroom(name: string, subject: string, slotsPerWeek: number): Tuition
   return {
     id: `class-${name}`,
     name,
+    programId: `program-${subject}`,
     roomId: null,
     program: { name: `Chương trình ${subject}`, subject, grade: 8 },
     teacher: null,

@@ -41,6 +41,7 @@ const TEACHER = { id: 'teacher-1', displayName: 'Đặng Hải Yến' };
 const MATH_CLASS: TuitionClass = {
   id: 'class-math',
   name: 'Toán nâng cao 8A2',
+  programId: 'program-math',
   roomId: null,
   program: { name: 'Toán 8 – Chuyên đề nâng cao', subject: 'Toán', grade: 8 },
   weeklySchedules: [
@@ -58,6 +59,7 @@ const MATH_CLASS_B: TuitionClass = {
 const ENGLISH_CLASS: TuitionClass = {
   id: 'class-english',
   name: 'Tiếng Anh 6A1',
+  programId: 'program-english',
   roomId: 'room-b201',
   program: { name: 'Tiếng Anh 6 – Giao tiếp', subject: 'Tiếng Anh', grade: 6 },
   weeklySchedules: [{ weekday: 3, startTime: '17:45', endTime: '19:15' }],
@@ -368,6 +370,7 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
         id: 'enrollment-math',
         status: 'ACTIVE',
         pause: null,
+        programId: 'program-math',
         programName: 'Toán 8 – Chuyên đề nâng cao',
         subjectName: 'Toán',
         className: 'Toán nâng cao 8A2',

@@ -24,3 +24,12 @@ export type UpdateProfilePayload = AccountProfileInput;
 export type ResendVerificationResult = {
   sent: boolean;
 };
+
+/**
+ * Response GET va PUT /auth/me/avatar: link xem anh dai dien ky co han (`expiresIn` giay, BE ky 900
+ * giay). Ca hai null khi tai khoan chua co anh.
+ */
+export type AvatarAccess = {
+  url: string | null;
+  expiresIn: number | null;
+};

@@ -5,12 +5,24 @@ export type ApiResponse<T> = {
   data: T;
 };
 
-export type Paginated<T> = {
+/**
+ * Query phan trang cua BE (PageDto, `docs/data-list-api.md`): `page` tu 1, `limit` tu 1 toi 100. Bo
+ * `limit` thi BE chi tra 20 dong dau, ke ca route van tra mang.
+ */
+export type PageQuery = {
+  page: number;
+  limit: number;
+};
+
+/** Query phan trang kem `paginated: true`: route van tra mang thi tra `Page`, doc duoc het theo `total`. */
+export type PaginatedQuery = PageQuery & { paginated: true };
+
+/** Response phan trang cua BE (`{ items, page, limit, total }`). `total` dem sau khi loc quyen. */
+export type Page<T> = {
   items: T[];
   page: number;
-  pageSize: number;
+  limit: number;
   total: number;
-  totalPages: number;
 };
 
 export type ApiErrorBody = {

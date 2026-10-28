@@ -22,6 +22,8 @@ export type QuestionAnswerCardProps = {
   value: string;
   /** Con da bam nop ma cau nay con trong. */
   isMissing: boolean;
+  /** Ma CLO cau nay do, xem `getQuestionOutcomeCodes`. */
+  outcomeCode?: string;
   onChange: (answer: string) => void;
 };
 
@@ -31,6 +33,7 @@ export function QuestionAnswerCard({
   question,
   value,
   isMissing,
+  outcomeCode,
   onChange,
 }: QuestionAnswerCardProps) {
   const label = `Câu ${position}`;
@@ -41,6 +44,7 @@ export function QuestionAnswerCard({
       prompt={question.prompt}
       points={formatPoints(question.maxScore)}
       isMissing={isMissing}
+      outcomeCode={outcomeCode}
     >
       {question.choices ? (
         <View accessibilityRole="radiogroup" accessibilityLabel={label} style={styles.choices}>

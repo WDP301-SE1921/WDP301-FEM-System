@@ -13,12 +13,13 @@ import type { ImageSource } from '@/lib/image-picker';
 import { IMAGE_PICK_PROBLEMS, MAX_SUBMISSION_FILES } from '../constants';
 import type { ImagePickProblem, SubmissionAttachment } from '../types';
 
+import { SubmittedImage } from './submitted-image';
+
 const THUMBNAIL_SIZE = 88;
 const REMOVE_BUTTON_SIZE = 28;
 /** Bu phan thieu cua nut xoa de vung cham dat 44x44 (design-mobile.md). */
 const REMOVE_HIT_SLOP = 8;
 const REMOVE_ICON_SIZE = 16;
-const PLACEHOLDER_ICON_SIZE = 28;
 
 export type AssignmentAttachmentsProps = {
   attachments: readonly SubmissionAttachment[];
@@ -124,18 +125,12 @@ function AttachmentThumbnail({ attachment, position, onRemove }: AttachmentThumb
           accessibilityLabel={`Ảnh bài làm ${position}`}
         />
       ) : (
-        // Anh cua lan nop truoc: app chua tai duoc anh da nop de xem lai
-        <ThemedView
-          type="background"
-          accessible
+        // Anh cua lan nop truoc khong con tren may: tai lai tu BE
+        <SubmittedImage
+          fileId={attachment.fileId}
           accessibilityLabel={`Ảnh bài làm ${position}, đã gửi ở lần nộp trước`}
-          style={[styles.image, styles.placeholder, { borderColor: theme.border }]}
-        >
-          <Icon name="image-outline" size={PLACEHOLDER_ICON_SIZE} themeColor="textSecondary" />
-          <ThemedText type="small" themeColor="textSecondary" style={styles.placeholderText}>
-            Lần trước
-          </ThemedText>
-        </ThemedView>
+          style={styles.image}
+        />
       )}
       <Pressable
         accessibilityRole="button"
@@ -202,14 +197,6 @@ const styles = StyleSheet.create({
     height: THUMBNAIL_SIZE,
     borderRadius: Radius.lg,
   },
-  placeholder: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.half,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-  },
-  placeholderText: { textAlign: 'center' },
   uploading: { alignItems: 'center', justifyContent: 'center' },
   remove: {
     position: 'absolute',

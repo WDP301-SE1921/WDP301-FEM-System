@@ -14,6 +14,7 @@ const STUDENT_ID = 'cmg2x1abc0001student';
 const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
 const SESSION_ID = 'cmg2x1abc0005session';
 const NOTIFICATION_ID = 'cmg2x1abc0006notification';
+const FILE_ID = 'cmg2x1abc0007file';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -28,6 +29,9 @@ describe('api/wired-routes', () => {
       ['post', Endpoints.auth.resendVerification],
       ['post', Endpoints.auth.changePassword],
       ['post', Endpoints.auth.forgotPassword],
+      ['get', Endpoints.auth.avatar],
+      ['put', Endpoints.auth.avatar],
+      ['delete', Endpoints.auth.avatar],
       ['get', Endpoints.me.students],
       ['post', Endpoints.me.students],
       ['patch', Endpoints.me.student(STUDENT_ID)],
@@ -47,6 +51,8 @@ describe('api/wired-routes', () => {
       ['get', Endpoints.academic.assignment(ASSIGNMENT_ID)],
       ['get', Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID)],
       ['post', Endpoints.academic.submissions],
+      ['post', Endpoints.academic.files],
+      ['get', Endpoints.academic.filePreview(FILE_ID)],
       ['get', Endpoints.notifications.list],
       ['get', Endpoints.notifications.unreadCount],
       ['patch', Endpoints.notifications.read(NOTIFICATION_ID)],
@@ -62,6 +68,9 @@ describe('api/wired-routes', () => {
       ['sai method', 'post', Endpoints.notifications.read(NOTIFICATION_ID)],
       ['route TAM da bo', 'get', `/parent/students/${STUDENT_ID}/attendance`],
       ['dat lai mat khau lam tren web', 'post', '/auth/reset-password'],
+      ['tai tep ve may chua wire', 'get', `/academic/files/${FILE_ID}/download`],
+      ['sai method', 'post', Endpoints.auth.avatar],
+      ['sai method', 'delete', Endpoints.academic.filePreview(FILE_ID)],
       ['route cua quan ly', 'post', `${Endpoints.academic.scheduledSession(SESSION_ID)}/cancel`],
       ['route TAM da bo', 'get', `${Endpoints.me.student(STUDENT_ID)}/registrations`],
       ['route cua nhan vien', 'post', '/registrations/cmg2x1abc0003order/confirm-payment'],

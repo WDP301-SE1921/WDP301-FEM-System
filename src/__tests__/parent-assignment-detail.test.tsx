@@ -21,6 +21,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     getTuitionEnrollments: jest.fn(),
     submitAssignment: jest.fn(),
     uploadSubmissionImage: jest.fn(),
+    getFilePreview: jest.fn(),
   },
 }));
 // Camera va thu vien anh la module native: test chon san ket qua tra ve
@@ -88,6 +89,7 @@ const ENROLLMENT: TuitionEnrollment = {
   class: {
     id: 'class-1',
     name: 'Toán nâng cao 8A2',
+    programId: 'program-math',
     roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
@@ -102,6 +104,7 @@ const CHOICE_QUESTION: AssignmentQuestion = {
   prompt: 'Khai triển (x + 3)² ta được:',
   choices: [WRONG_CHOICE, CORRECT_CHOICE],
   maxScore: 4,
+  outcomeId: null,
 };
 const ESSAY_QUESTION: AssignmentQuestion = {
   id: 'q2',
@@ -109,6 +112,7 @@ const ESSAY_QUESTION: AssignmentQuestion = {
   prompt: 'Phân tích x² − 5x + 6 thành nhân tử.',
   choices: null,
   maxScore: 6,
+  outcomeId: null,
 };
 
 const DETAIL: AssignmentDetail = {
@@ -123,6 +127,8 @@ const DETAIL: AssignmentDetail = {
   maxAttempts: 2,
   recipients: [{ id: RECIPIENT_ID, enrollmentId: ENROLLMENT.id }],
   questions: [CHOICE_QUESTION, ESSAY_QUESTION],
+  outcomeSetId: null,
+  learningTargets: [],
 };
 
 const SUBMITTED: SubmissionRecord = {
@@ -161,6 +167,10 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     mockSavedDrafts.clear();
     api.getAssignmentDetail.mockResolvedValue(DETAIL);
     api.getTuitionEnrollments.mockResolvedValue([ENROLLMENT]);
+    api.getFilePreview.mockImplementation(async (fileId) => ({
+      url: `https://storage.example.com/edugrade/submissions/parent-1/${fileId}.jpg?X-Amz-Signature=s`,
+      expiresIn: 300,
+    }));
   });
 
   it('bai chua nop: chi ra cau con thieu, hoi lai truoc khi nop, nop xong chuyen sang bai da nop', async () => {
@@ -464,7 +474,96 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     ).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Làm lại và nộp lại' }));
 
-    expect(screen.getByLabelText('Ảnh bài làm 1, đã gửi ở lần nộp trước')).toBeOnTheScreen();
+    // Anh khong con tren may: tai lai tu BE theo id
+    expect(await screen.findByLabelText('Ảnh bài làm 1, đã gửi ở lần nộp trước')).toBeOnTheScreen();
+    expect(api.getFilePreview).toHaveBeenCalledWith('file-old');
+  });
+
+  it('xem lai anh bai lam da nop: anh nho, bam de xem tron anh va chuyen anh', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([
+      { ...SUBMITTED, files: [{ fileId: 'file-a' }, { fileId: 'file-b' }] },
+    ]);
+    const { user } = await renderDetail();
+
+    expect(
+      await screen.findByText(
+        /^Đã gửi kèm 2 ảnh bài làm/,
+        {},
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Ảnh bài làm 2')).toBeOnTheScreen();
+    expect(api.getFilePreview).toHaveBeenCalledWith('file-a');
+    expect(api.getFilePreview).toHaveBeenCalledWith('file-b');
+
+    await user.press(screen.getByRole('button', { name: 'Xem ảnh bài làm 1' }));
+    expect(screen.getByText('Ảnh bài làm 1/2')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Ảnh trước' })).toBeDisabled();
+
+    await user.press(screen.getByRole('button', { name: 'Ảnh sau' }));
+    expect(screen.getByText('Ảnh bài làm 2/2')).toBeOnTheScreen();
+    expect(screen.getByRole('button', { name: 'Ảnh sau' })).toBeDisabled();
+
+    await user.press(screen.getByRole('button', { name: 'Đóng' }));
+    expect(screen.queryByText('Ảnh bài làm 2/2')).not.toBeOnTheScreen();
+  });
+
+  it('khong lay duoc link anh da nop thi bao trong khung anh, van xem duoc bai', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([
+      { ...SUBMITTED, files: [{ fileId: 'file-gone' }] },
+    ]);
+    api.getFilePreview.mockRejectedValue(new AppError('Không tìm thấy dữ liệu yêu cầu.', 404));
+    await renderDetail();
+
+    expect(
+      await screen.findByLabelText(
+        'Ảnh bài làm 1, không tải được ảnh',
+        {},
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('Bài làm của học sinh')).toBeOnTheScreen();
+  });
+
+  it('bai co CLO: chi hien muc tieu cau hoi do, gan ma CLO canh cau', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([]);
+    api.getAssignmentDetail.mockResolvedValue({
+      ...DETAIL,
+      outcomeSetId: 'set-1',
+      // BE tra ca bo CLO; bai chi do MATH-8-02 va MATH-8-03
+      learningTargets: [
+        { id: 'clo-1', code: 'MATH-8-01', title: 'Đa thức nhiều biến', statement: '…' },
+        { id: 'clo-2', code: 'MATH-8-02', title: 'Hằng đẳng thức', statement: '…' },
+        { id: 'clo-3', code: 'MATH-8-03', title: 'Phân tích nhân tử', statement: '…' },
+      ],
+      questions: [
+        { ...CHOICE_QUESTION, outcomeId: 'clo-3' },
+        { ...ESSAY_QUESTION, outcomeId: 'clo-2' },
+      ],
+    });
+    await renderDetail();
+
+    expect(
+      await screen.findByText('Mục tiêu bài', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    // Giu thu tu trong bo, khong theo thu tu cau
+    expect(
+      screen.getAllByLabelText(/^MATH-8-0\d: /).map((row) => row.props.accessibilityLabel),
+    ).toEqual(['MATH-8-02: Hằng đẳng thức', 'MATH-8-03: Phân tích nhân tử']);
+    expect(screen.queryByText('Đa thức nhiều biến')).not.toBeOnTheScreen();
+    expect(screen.getByLabelText('Mục tiêu MATH-8-03')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Mục tiêu MATH-8-02')).toBeOnTheScreen();
+  });
+
+  it('bai cu khong co CLO thi khong hien khoi muc tieu', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([]);
+    await renderDetail();
+
+    expect(
+      await screen.findByText(DETAIL.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Mục tiêu bài')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText(/^Mục tiêu /)).not.toBeOnTheScreen();
   });
 
   it('bai khong giao cho con dang xem thi khong hien de', async () => {

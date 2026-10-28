@@ -224,6 +224,7 @@ export function toStudentEnrollments({
       pause: pause
         ? { fromDate: toApiDateKey(pause.fromDate), toDate: toApiDateKey(pause.toDate) }
         : null,
+      programId: currentClass.programId,
       programName: currentClass.program.name,
       subjectName,
       className: currentClass.name,

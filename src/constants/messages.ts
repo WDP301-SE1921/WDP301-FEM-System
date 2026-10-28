@@ -15,6 +15,11 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   UNAUTHENTICATED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   FORBIDDEN: 'Bạn không có quyền thực hiện thao tác này.',
   RESOURCE_NOT_FOUND: 'Không tìm thấy dữ liệu yêu cầu.',
+  /**
+   * Moi danh sach loc theo ngay: ngay khong ton tai, hoac ngay bat dau sau ngay ket thuc. App tu tinh
+   * khoang ngay nen nguoi dung khong tu sua duoc.
+   */
+  INVALID_DATE_RANGE: 'Khoảng ngày xem không hợp lệ. Vui lòng chọn tuần khác hoặc thử lại.',
   INTERNAL_ERROR: ErrorMessages.unknown,
   /** JwtAuthGuard tra ma nay khi thieu, sai hoac het han access token. */
   AUTH_UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
@@ -41,4 +46,6 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   INVALID_FILE_TYPE: 'Chỉ gửi được ảnh JPG hoặc PNG.',
   INVALID_FILE_SIZE: 'Ảnh phải nhỏ hơn 10 MB.',
   INVALID_FILES: 'Có ảnh bài làm không còn dùng được. Hãy xoá ảnh đó và gửi lại.',
+  /** Hai lan doi anh dai dien cung luc (vd tren hai may): lan den sau bi tu choi. */
+  AVATAR_CONFLICT: 'Ảnh đại diện vừa được đổi ở nơi khác. Vui lòng thử lại.',
 };

@@ -351,6 +351,12 @@ export const ANSWER_RESULTS: Record<'correct' | 'wrong', StatusAppearance> = {
 /** Gioi han `fileIds` cua SubmissionDto. */
 export const MAX_SUBMISSION_FILES = 5;
 
+/**
+ * Link xem anh bai lam BE ky 300 giay: lay link moi truoc khi het han mot phut, de anh chua co trong
+ * cache van tai duoc.
+ */
+export const FILE_PREVIEW_STALE_MS = 4 * 60_000;
+
 /** Bao khi mo camera hoac thu vien ma khong co anh gui duoc. */
 export const IMAGE_PICK_PROBLEMS: Record<ImagePickProblem, string> = {
   PERMISSION_DENIED:

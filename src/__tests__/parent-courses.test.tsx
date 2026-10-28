@@ -55,6 +55,7 @@ function enrollment(
   return {
     status: 'ACTIVE',
     pause: null,
+    programId: 'program-math',
     programName: 'Toán 8 – Chuyên đề nâng cao',
     subjectName: 'Toán',
     className: 'Toán nâng cao 8A2',

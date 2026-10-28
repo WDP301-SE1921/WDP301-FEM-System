@@ -31,6 +31,7 @@ const current = variants[variant];
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: current.name,
+  owner: 'nhanle6',
   slug: 'wdp301-fem-system',
   version: '1.0.0',
   orientation: 'portrait',
@@ -84,8 +85,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   extra: {
     variant,
     eas: {
-      // Dien projectId sau khi chay: eas init
-      projectId: process.env.EAS_PROJECT_ID,
+      // Project EAS @nhanle6/wdp301-fem-system, tao bang `eas init` ngay 2026-10-21.
+      // Config dong nen eas init khong tu ghi duoc, phai dien tay.
+      projectId: '78cf9028-7e15-443a-a58e-587d73060803',
     },
   },
 });

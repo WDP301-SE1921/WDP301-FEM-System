@@ -1,6 +1,7 @@
 import type { Href } from 'expo-router';
 
 import type { IconName } from '@/components/ui/icon';
+import type { Page } from '@/types/api';
 import {
   addDays,
   diffInCalendarDays,
@@ -86,12 +87,12 @@ import type {
   DayPeriod,
   EnrollmentLesson,
   FilterOption,
+  LearningTarget,
   LessonAssignment,
   LessonKind,
   LessonProgress,
   LinkedStudent,
   NotificationTargetKind,
-  Page,
   PaidEnrollment,
   ParentDestination,
   QuestionKind,
@@ -808,6 +809,30 @@ export function findStudentRecipient(
   enrollmentIds: readonly string[],
 ): AssignmentRecipient | null {
   return recipients.find(({ enrollmentId }) => enrollmentIds.includes(enrollmentId)) ?? null;
+}
+
+/**
+ * Muc tieu that cua bai: cac CLO co cau hoi gan `outcomeId`, giu thu tu trong bo nhu web. BE tra
+ * `learningTargets` la ca bo CLO giao vien chon, hien het thi ghi qua muc tieu cua bai.
+ */
+export function getMeasuredTargets(
+  detail: Pick<AssignmentDetail, 'learningTargets' | 'questions'>,
+): LearningTarget[] {
+  const measuredIds = new Set(detail.questions.map(({ outcomeId }) => outcomeId));
+  return detail.learningTargets.filter(({ id }) => measuredIds.has(id));
+}
+
+/** Ma CLO cua tung cau, key la id cau hoi. Cau khong gan CLO (bai cu) thi khong co key. */
+export function getQuestionOutcomeCodes(
+  detail: Pick<AssignmentDetail, 'learningTargets' | 'questions'>,
+): Partial<Record<string, string>> {
+  const codeById = new Map(detail.learningTargets.map(({ id, code }) => [id, code]));
+  return Object.fromEntries(
+    detail.questions.flatMap(({ id, outcomeId }) => {
+      const code = outcomeId ? codeById.get(outcomeId) : undefined;
+      return code ? [[id, code]] : [];
+    }),
+  );
 }
 
 /** Lan nop moi nhat cua con. null khi con chua nop. */

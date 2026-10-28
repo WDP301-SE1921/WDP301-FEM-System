@@ -1,9 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { Button } from '@/components/ui/button';
-import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
-import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing } from '@/constants/theme';
 
 import type { AssignmentQuestion, SubmissionRecord } from '../types';
@@ -12,11 +10,12 @@ import { getAssignmentMaxScore, getPublishedGrade, getQuestionReview } from '../
 import { GradeResultCard } from './grade-result-card';
 import { QuestionReviewCard } from './question-review-card';
 import { SectionCard } from './section-card';
-
-const FILES_ICON_SIZE = 20;
+import { SubmittedFiles } from './submitted-files';
 
 export type AssignmentReviewProps = {
   questions: AssignmentQuestion[];
+  /** Ma CLO cua tung cau theo id cau hoi, xem `getQuestionOutcomeCodes`. */
+  outcomeCodes: Partial<Record<string, string>>;
   /** Lan nop dang xem; null khi con chua nop va khong nop duoc nua. */
   submission: SubmissionRecord | null;
   /** So lan con con duoc nop; 0 thi khong hien nut nop lai. */
@@ -30,6 +29,7 @@ export type AssignmentReviewProps = {
  */
 export function AssignmentReview({
   questions,
+  outcomeCodes,
   submission,
   remainingAttempts,
   onRetry,
@@ -72,15 +72,8 @@ export function AssignmentReview({
       <ThemedText type="default" accessibilityRole="header" style={styles.sectionTitle}>
         {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
-      {fileCount > 0 ? (
-        // App chua xem lai duoc anh da nop (GET /academic/files/:id/download chua wire)
-        <ThemedView type="backgroundElement" style={styles.files}>
-          <Icon name="images-outline" size={FILES_ICON_SIZE} themeColor="primary" />
-          <ThemedText type="small" style={styles.filesText}>
-            Đã gửi kèm {fileCount} ảnh bài làm. Giáo viên chấm câu tự luận theo ảnh và phần chữ đã
-            gõ.
-          </ThemedText>
-        </ThemedView>
+      {submission && fileCount > 0 ? (
+        <SubmittedFiles fileIds={submission.files.map(({ fileId }) => fileId)} />
       ) : null}
       {questions.map((question, index) => (
         <QuestionReviewCard
@@ -90,6 +83,7 @@ export function AssignmentReview({
           review={getQuestionReview(question, submission)}
           hasSubmission={submission !== null}
           hasAttachments={fileCount > 0}
+          outcomeCode={outcomeCodes[question.id]}
         />
       ))}
 
@@ -116,13 +110,5 @@ const styles = StyleSheet.create({
   container: { gap: Spacing.three },
   sectionTitle: { fontWeight: 700 },
   hint: { textAlign: 'center' },
-  files: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Radius.control,
-  },
-  filesText: { flex: 1 },
   pill: { borderRadius: Radius.full },
 });

@@ -4,7 +4,9 @@ import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashb
 import type {
   AppNotification,
   AssignmentListItem,
+  AttendanceHistoryItem,
   AttendanceReport,
+  CourseOutcomeSet,
   CurriculumUnit,
   GradeHistoryItem,
   ScheduledSession,
@@ -126,6 +128,7 @@ const ENROLLMENT: TuitionEnrollment = {
   class: {
     id: 'class-math',
     name: 'Toán nâng cao 8A2',
+    programId: 'program-math',
     roomId: null,
     program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
     weeklySchedules: [],
@@ -174,8 +177,7 @@ const EMPTY_GRADES = { studentId: STUDENT_ID, subjects: [], history: [], ...page
 
 /** BE tra rong cho moi route, rieng ghi danh tra ghi danh cua con. */
 function respondEmpty({ path }: SentRequest): unknown {
-  if (path === ROUTES.enrollments) return [ENROLLMENT];
-  if (path === ROUTES.rooms) return [];
+  if (path === ROUTES.enrollments) return page([ENROLLMENT]);
   if (path === ROUTES.grades) return EMPTY_GRADES;
   if (path === ROUTES.curriculum) return { studentId: STUDENT_ID, ...page([]) };
   return page([]);
@@ -196,7 +198,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         session('math', 1),
         session('bi-huy', 2, { status: 'CANCELLED', cancelReason: 'Giáo viên ốm' }),
       ];
-      respond = ({ path }) => (path === ROUTES.sessions ? page(sessions) : [ENROLLMENT]);
+      respond = ({ path }) => (path === ROUTES.sessions ? page(sessions) : page([ENROLLMENT]));
       const range = { from: toDateKey(new Date()), to: toDateKey(addDays(new Date(), 6)) };
 
       const schedule = await parentDashboardApi.getStudentSchedule(STUDENT_ID, range);
@@ -218,7 +220,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     it('doc tiep trang sau cho toi khi du `total` cua BE', async () => {
       const fullPage = Array.from({ length: PAGE_LIMIT }, (_, index) => session(`s${index}`, 1));
       respond = ({ path, query }) => {
-        if (path !== ROUTES.sessions) return [ENROLLMENT];
+        if (path !== ROUTES.sessions) return page([ENROLLMENT]);
         return query.page === '1'
           ? page(fullPage, PAGE_LIMIT + 1)
           : page([session('trang-hai', 2)], PAGE_LIMIT + 1, 2);
@@ -294,7 +296,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     it('ghep ghi danh voi don bao luu, buoi sap toi, phong va diem trung binh mon', async () => {
       respond = (request) => {
         if (request.path === ROUTES.sessions) return page([session('tiep-theo', 2)]);
-        if (request.path === ROUTES.rooms) return ROOMS;
+        if (request.path === ROUTES.rooms) return page(ROOMS);
         if (request.path === ROUTES.grades) {
           return {
             ...EMPTY_GRADES,
@@ -302,7 +304,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
           };
         }
         if (request.path === ROUTES.enrollments) {
-          return [{ ...ENROLLMENT, class: { ...ENROLLMENT.class, roomId: 'room-a101' } }];
+          return page([{ ...ENROLLMENT, class: { ...ENROLLMENT.class, roomId: 'room-a101' } }]);
         }
         return respondEmpty(request);
       };
@@ -344,6 +346,117 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       await expect(parentDashboardApi.getStudentEnrollments(STUDENT_ID)).resolves.toEqual([
         expect.objectContaining({ id: 'enrollment-math', room: null, averageScore: null }),
       ]);
+    });
+  });
+
+  describe('danh sach BE chi tra mot trang (BE e2cb844)', () => {
+    const STUDENTS_ROUTE = '/me/students';
+    const enrollmentNo = (index: number): TuitionEnrollment => ({
+      ...ENROLLMENT,
+      id: `enrollment-${index}`,
+    });
+
+    it('con co 25 ghi danh thi doc du 25 trong mot trang 100 dong', async () => {
+      const enrollments = Array.from({ length: 25 }, (_, index) => enrollmentNo(index));
+      respond = () => page(enrollments);
+
+      await expect(parentDashboardApi.getTuitionEnrollments(STUDENT_ID)).resolves.toHaveLength(25);
+      expect(sent).toEqual([
+        { method: 'get', path: ROUTES.enrollments, query: FIRST_PAGE, body: undefined },
+      ]);
+    });
+
+    it('ghi danh hon mot trang thi doc tiep theo `total`', async () => {
+      const firstPage = Array.from({ length: PAGE_LIMIT }, (_, index) => enrollmentNo(index));
+      respond = ({ query }) =>
+        query.page === '1'
+          ? page(firstPage, PAGE_LIMIT + 2)
+          : page([enrollmentNo(100), enrollmentNo(101)], PAGE_LIMIT + 2, 2);
+
+      await expect(parentDashboardApi.getTuitionEnrollments(STUDENT_ID)).resolves.toHaveLength(
+        PAGE_LIMIT + 2,
+      );
+      expect(sentTo(ROUTES.enrollments).map(({ query }) => query.page)).toEqual(['1', '2']);
+    });
+
+    it('danh sach con doc het cac trang roi doc ghi danh tung con', async () => {
+      const child = { id: STUDENT_ID, fullName: 'Nguyễn Minh Anh', grade: 8 };
+      respond = (request) =>
+        request.path === STUDENTS_ROUTE ? page([child]) : respondEmpty(request);
+
+      await expect(parentDashboardApi.getStudents()).resolves.toEqual([
+        { ...child, subjectNames: ['Toán'] },
+      ]);
+      expect(sentTo(STUDENTS_ROUTE)).toEqual([
+        { method: 'get', path: STUDENTS_ROUTE, query: FIRST_PAGE, body: undefined },
+      ]);
+    });
+
+    it('phong hoc doc het cac trang', async () => {
+      const firstPage = Array.from({ length: PAGE_LIMIT }, (_, index) => ({
+        id: `room-${index}`,
+        name: `Phòng ${index}`,
+      }));
+      respond = ({ query }) =>
+        query.page === '1'
+          ? page(firstPage, PAGE_LIMIT + 1)
+          : page([{ id: 'room-cuoi', name: 'Phòng cuối' }], PAGE_LIMIT + 1, 2);
+
+      await expect(parentDashboardApi.getRooms()).resolves.toHaveLength(PAGE_LIMIT + 1);
+      expect(sentTo(ROUTES.rooms).map(({ query }) => query)).toEqual([
+        FIRST_PAGE,
+        { ...FIRST_PAGE, page: '2' },
+      ]);
+    });
+  });
+
+  describe('getCourseOutcomeSet', () => {
+    const PROGRAM_ID = 'program-math';
+    const OUTCOMES_ROUTE = `/academic/programs/${PROGRAM_ID}/outcome-sets`;
+    const outcomeSet: CourseOutcomeSet = {
+      id: 'set-2',
+      programId: PROGRAM_ID,
+      level: 'Lớp 8 - cơ bản',
+      version: 2,
+      outcomes: [
+        {
+          id: 'clo-1',
+          code: 'MATH-8-01',
+          title: 'Đa thức nhiều biến',
+          statement: 'Sau chủ đề, học sinh có thể cộng, trừ, nhân đa thức nhiều biến.',
+          required: true,
+        },
+      ],
+    };
+
+    it('lay bo moi nhat: mot dong dau, BE xep phien ban moi nhat truoc', async () => {
+      respond = () => page([outcomeSet], 2);
+
+      await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).resolves.toEqual(outcomeSet);
+      expect(sent).toEqual([
+        {
+          method: 'get',
+          path: OUTCOMES_ROUTE,
+          query: { paginated: 'true', page: '1', limit: '1' },
+          body: undefined,
+        },
+      ]);
+    });
+
+    it('khoa chua co bo da duyet, hoac BE khong cho xem (con khong hoc khoa) thi null', async () => {
+      respond = () => page([]);
+      await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).resolves.toBeNull();
+
+      respond = () => new BeError(403, 'FORBIDDEN');
+      await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).resolves.toBeNull();
+
+      respond = () => new BeError(404, 'PROGRAM_NOT_FOUND');
+      await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).resolves.toBeNull();
+
+      respond = () => new BeError(500, 'INTERNAL_ERROR');
+      await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).rejects.toMatchObject({
+        code: 'INTERNAL_ERROR',
+      });
     });
   });
 
@@ -398,39 +511,51 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
   });
 
   describe('diem danh', () => {
-    const report: AttendanceReport = {
-      counts: { present: 6, absent: 2, madeUp: 2, excused: 1 },
-      history: [
-        {
-          enrollmentId: ENROLLMENT.id,
-          effectiveStatus: 'ABSENT',
-          session: { id: 'vang', classId: 'class-math', startsAt: at(-3), endsAt: at(-3, 20) },
-          class: { name: 'Toán nâng cao 8A2', program: { subject: 'Toán' } },
-          approvedLeave: { id: 'leave-1', kind: 'SINGLE_ABSENCE', reason: 'Con bị sốt' },
-          latestMakeup: {
-            id: 'makeup-1',
-            status: 'BOOKED',
-            replacement: {
-              sessionId: 'bu',
-              session: { id: 'bu', startsAt: at(2, 9), endsAt: at(2, 11) },
-            },
-          },
+    const absence: AttendanceHistoryItem = {
+      enrollmentId: ENROLLMENT.id,
+      effectiveStatus: 'ABSENT',
+      session: { id: 'vang', classId: 'class-math', startsAt: at(-3), endsAt: at(-3, 20) },
+      class: { name: 'Toán nâng cao 8A2', program: { subject: 'Toán' } },
+      approvedLeave: { id: 'leave-1', kind: 'SINGLE_ABSENCE', reason: 'Con bị sốt' },
+      latestMakeup: {
+        id: 'makeup-1',
+        status: 'BOOKED',
+        replacement: {
+          sessionId: 'bu',
+          session: { id: 'bu', startsAt: at(2, 9), endsAt: at(2, 11) },
         },
-      ],
+      },
     };
+    const COUNTS = { present: 6, absent: 2, madeUp: 2, excused: 1 };
 
-    it('ty le di hoc tinh tu so buoi cua BE, chi goi mot route', async () => {
-      respond = () => report;
+    /** BE phan trang `history`, `counts` tinh tren ca ky nen trang nao cung nhu nhau. */
+    function report(
+      history: AttendanceHistoryItem[],
+      total = history.length,
+      pageNumber = 1,
+    ): AttendanceReport {
+      return { counts: COUNTS, history, page: pageNumber, limit: PAGE_LIMIT, total };
+    }
+
+    it('ty le di hoc chi can `counts`: xin trang `history` nho nhat, mot request', async () => {
+      respond = () => report([absence], 40);
 
       await expect(parentDashboardApi.getAttendanceSummary(STUDENT_ID)).resolves.toEqual({
         attendedSessions: 8,
         totalSessions: 10,
       });
-      expect(sent.map(({ path }) => path)).toEqual([ROUTES.attendance]);
+      expect(sent).toEqual([
+        {
+          method: 'get',
+          path: ROUTES.attendance,
+          query: { page: '1', limit: '1' },
+          body: undefined,
+        },
+      ]);
     });
 
     it('lich su lay lop, don nghi va lich hoc bu tu chinh route diem danh', async () => {
-      respond = () => report;
+      respond = () => report([absence]);
 
       const records = await parentDashboardApi.getStudentAttendance(STUDENT_ID);
 
@@ -444,8 +569,33 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         }),
       ]);
       expect(sent).toEqual([
-        { method: 'get', path: ROUTES.attendance, query: {}, body: undefined },
+        {
+          method: 'get',
+          path: ROUTES.attendance,
+          query: { page: '1', limit: String(PAGE_LIMIT) },
+          body: undefined,
+        },
       ]);
+    });
+
+    it('lich su dai hon mot trang thi doc het cac trang theo `total`', async () => {
+      const present = (index: number): AttendanceHistoryItem => ({
+        ...absence,
+        effectiveStatus: 'PRESENT',
+        session: { ...absence.session, id: `buoi-${index}` },
+        approvedLeave: null,
+        latestMakeup: null,
+      });
+      const firstPage = Array.from({ length: PAGE_LIMIT }, (_, index) => present(index));
+      respond = ({ query }) =>
+        query.page === '1'
+          ? report(firstPage, PAGE_LIMIT + 1)
+          : report([absence], PAGE_LIMIT + 1, 2);
+
+      const records = await parentDashboardApi.getStudentAttendance(STUDENT_ID);
+
+      expect(records).toHaveLength(PAGE_LIMIT + 1);
+      expect(sentTo(ROUTES.attendance).map(({ query }) => query.page)).toEqual(['1', '2']);
     });
   });
 
@@ -718,6 +868,21 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
         code: 'INVALID_FILE_TYPE',
         message: 'Chỉ gửi được ảnh JPG hoặc PNG.',
       });
+    });
+  });
+
+  describe('getFilePreview', () => {
+    it('lay link xem anh bai lam da nop qua GET /academic/files/:id/preview', async () => {
+      const preview = {
+        url: 'https://storage.example.com/edugrade/submissions/parent-1/a.jpg?X-Amz-Signature=s',
+        expiresIn: 300,
+      };
+      respond = () => preview;
+
+      await expect(parentDashboardApi.getFilePreview('file-1')).resolves.toEqual(preview);
+      expect(sentTo('/academic/files/file-1/preview')).toEqual([
+        expect.objectContaining({ method: 'get', query: {} }),
+      ]);
     });
   });
 

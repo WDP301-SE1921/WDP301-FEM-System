@@ -4,7 +4,8 @@
  * `./api/parent-data-mappers.ts`.
  */
 import type { IconName } from '@/components/ui/icon';
-import type { PickImageResult } from '@/lib/image-picker';
+import type { PickImageProblem } from '@/lib/image-picker';
+import type { Page, PageQuery, PaginatedQuery } from '@/types/api';
 
 /**
  * Mot phan tu cua GET /me/students (module `registration-flow` cua BE, da noi BE that): ban ghi
@@ -190,6 +191,8 @@ export type StudentEnrollment = {
   status: EnrollmentStatus;
   /** null khi khong bao luu. Chi co o ghi danh `ACTIVE`. */
   pause: EnrollmentPause | null;
+  /** Chuong trinh cua lop con dang hoc, dung de doc muc tieu khoa hoc. */
+  programId: string;
   /** `Program.name`, vd `Toán 8 – Chuyên đề nâng cao`. */
   programName: string;
   /** `Program.subject`, vd `Toán`. */
@@ -332,26 +335,6 @@ export type AssignmentTab = 'TODO' | 'SUBMITTED' | 'GRADED';
  * Prisma, o day chi khai bao field app dung.
  */
 
-/** Query phan trang cua module `academic` (PageDto): `limit` tu 1 toi 100. */
-export type PageQuery = {
-  page: number;
-  limit: number;
-};
-
-/**
- * Query phan trang kem `paginated: true`: cac route `academic` tra `Page` thay vi mang trong, nen doc
- * duoc het theo `total`.
- */
-export type PaginatedQuery = PageQuery & { paginated: true };
-
-/** Response phan trang cua BE (`{ items, page, limit, total }`). `total` dem sau khi loc quyen. */
-export type Page<T> = {
-  items: T[];
-  page: number;
-  limit: number;
-  total: number;
-};
-
 /** `CurriculumItemKind` cua BE: bai hoc thuong hay bai kiem tra thang. */
 export type CurriculumItemKind = 'LESSON' | 'MONTHLY_TEST';
 
@@ -487,10 +470,11 @@ export type AttendanceHistoryItem = {
 };
 
 /**
- * Response GET /academic/me/students/:id/attendance. BE dung chung cong thuc voi web: ty le = (co mat
- * + hoc bu) / buoi phai hoc, buoi nghi co phep khong tinh vao buoi phai hoc (xem `toAttendanceSummary`).
+ * Response GET /academic/me/students/:id/attendance (query `page`, `limit`). BE dung chung cong thuc
+ * voi web: ty le = (co mat + hoc bu) / buoi phai hoc, buoi nghi co phep khong tinh vao buoi phai hoc
+ * (xem `toAttendanceSummary`). `counts` tinh tren ca ky; phan trang chi ap cho `history`.
  */
-export type AttendanceReport = {
+export type AttendanceReport = Omit<Page<AttendanceHistoryItem>, 'items'> & {
   counts: AttendanceCounts;
   /** Buoi co dinh da chot diem danh cua con, cu nhat truoc. */
   history: AttendanceHistoryItem[];
@@ -569,6 +553,18 @@ export type AssignmentQuestion = {
   maxScore: number;
   /** Lua chon dung hoac loi giai mau. Chi co sau khi giao vien cong bo dap an. */
   correctAnswer?: string | null;
+  /** Muc tieu (CLO) cau nay do, mot trong `AssignmentDetail.learningTargets`. null voi bai cu. */
+  outcomeId: string | null;
+};
+
+/** Mot muc tieu bai (CLO trong bo chuan dau ra cua khoa hoc). */
+export type LearningTarget = {
+  id: string;
+  /** Ma CLO trong bo, vd `MATH-6-01`. */
+  code: string;
+  title: string;
+  /** Mo ta day du muc tieu. */
+  statement: string;
 };
 
 /** Con duoc giao bai (AssignmentRecipient): mot ghi danh cua con trong lop cua bai. */
@@ -592,6 +588,13 @@ export type AssignmentDetail = {
   /** Chi gom con cua phu huynh dang dang nhap. */
   recipients: AssignmentRecipient[];
   questions: AssignmentQuestion[];
+  /** Bo CLO giao vien chon cho bai. null voi bai cu hoac khoa hoc chua co bo CLO da duyet. */
+  outcomeSetId: string | null;
+  /**
+   * Ca bo CLO cua bai, khong chi cac CLO bai do: muc tieu that cua bai la cac CLO co cau hoi gan
+   * `outcomeId` (xem `getMeasuredTargets`). Rong voi bai cu.
+   */
+  learningTargets: LearningTarget[];
 };
 
 export type SubmissionAnswer = {
@@ -624,7 +627,7 @@ export type SubmissionRecord = {
   attemptNo: number;
   answers: SubmissionAnswer[];
   submittedAt: string;
-  /** Anh bai lam gui kem lan nop. BE chi tra id; xem anh can `GET /academic/files/:id/download`. */
+  /** Anh bai lam gui kem lan nop. BE chi tra id; link xem anh lay qua `GET /academic/files/:id/preview`. */
   files: { fileId: string }[];
   /** Chi gom diem da cong bo, ban sua moi nhat truoc. Rong khi giao vien chua cong bo. */
   grades: SubmissionGrade[];
@@ -651,8 +654,17 @@ export type UploadedFile = {
 };
 
 /**
+ * Response GET /academic/files/:id/preview: link xem tep ky co han (`expiresIn` giay, BE ky 300 giay).
+ * Moi lan goi tra link moi cho cung mot tep.
+ */
+export type SignedFileUrl = {
+  url: string;
+  expiresIn: number;
+};
+
+/**
  * Anh bai lam gui kem lan nop. `uri` la anh tren may de xem truoc; null voi anh lay lai tu lan nop
- * truoc khi con nop lai (app chua doc duoc anh da nop: `GET /academic/files/:id/download` chua wire).
+ * truoc khi con nop lai, app tai anh do tu BE theo `fileId`.
  */
 export type SubmissionAttachment = {
   fileId: string;
@@ -671,7 +683,7 @@ export type SubmissionReceipt = {
 export type AnswerDraft = Partial<Record<string, string>>;
 
 /** Ly do khong co anh de gui sau khi mo camera hoac thu vien (nguoi dung tu huy thi khong bao). */
-export type ImagePickProblem = Exclude<PickImageResult['status'], 'PICKED' | 'CANCELED'>;
+export type ImagePickProblem = PickImageProblem;
 
 /** Bai lam dang do luu tren may: cau tra loi va anh bai lam da tai len. */
 export type AssignmentDraft = {
@@ -712,6 +724,8 @@ export type RegistrationStatus =
 export type TuitionClass = {
   id: string;
   name: string;
+  /** Chuong trinh (khoa hoc) cua lop, dung de doc muc tieu khoa hoc. */
+  programId: string;
   /** Phong cua lop (xem GET /rooms), null khi lop chua xep phong. */
   roomId: string | null;
   program: { name: string; subject: string; grade: number };
@@ -971,6 +985,26 @@ export type CurriculumUnit = {
 
 /** Response GET /academic/me/students/:id/curriculum. Con khong co ghi danh dang hoc thi rong. */
 export type CurriculumPage = Page<CurriculumUnit> & { studentId: string };
+
+/** Mot muc tieu (CLO) trong chuan dau ra cua khoa hoc. */
+export type CourseOutcome = LearningTarget & {
+  /** false: muc tieu mo rong, khong bat buoc voi moi hoc sinh. */
+  required: boolean;
+};
+
+/**
+ * Mot phan tu cua GET /academic/programs/:id/outcome-sets voi role PARENT: bo chuan dau ra (CLO) da
+ * duyet cua khoa hoc ma con dang hoc hoac da hoc, phien ban moi nhat truoc, CLO theo ma. BE chua tinh
+ * muc dat CLO cua hoc sinh nen app khong ghi "đạt chuẩn".
+ */
+export type CourseOutcomeSet = {
+  id: string;
+  programId: string;
+  /** Nhan cap do do trung tam dat, vd `Lớp 6 - cơ bản`. */
+  level: string;
+  version: number;
+  outcomes: CourseOutcome[];
+};
 
 /** `NotificationType` cua BE (`NOTIFICATION_TYPES` trong `notifications.dto.ts`). */
 export type NotificationType =

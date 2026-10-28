@@ -30,6 +30,8 @@ export type AssignmentAnswerFormProps = AssignmentRef & {
   /** Con dang nop bai, xem `AssignmentDetail.recipients`. */
   recipientId: string;
   questions: AssignmentQuestion[];
+  /** Ma CLO cua tung cau theo id cau hoi, xem `getQuestionOutcomeCodes`. */
+  outcomeCodes: Partial<Record<string, string>>;
   /** Bai lam (ca anh) cua lan nop truoc khi con nop lai; bo trong khi nop lan dau. */
   initialDraft?: AssignmentDraft;
   /** So lan con con duoc nop, tinh ca lan nay. */
@@ -51,6 +53,7 @@ export function AssignmentAnswerForm({
   assignmentId,
   recipientId,
   questions,
+  outcomeCodes,
   initialDraft = EMPTY_DRAFT,
   remainingAttempts,
   onSubmitted,
@@ -116,6 +119,7 @@ export function AssignmentAnswerForm({
           question={question}
           value={answers[question.id] ?? ''}
           isMissing={missing.has(index + 1)}
+          outcomeCode={outcomeCodes[question.id]}
           onChange={(answer) => updateAnswer(question.id, answer)}
         />
       ))}

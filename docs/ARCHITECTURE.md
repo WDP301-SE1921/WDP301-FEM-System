@@ -41,7 +41,7 @@ src/
 │       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con); `?tab=` mo thang tab
 │       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
 │       ├── notifications.tsx # Hop thu thong bao cua phu huynh. Khong co nut tren thanh tab, mo tu nut chuong; co nut quay lai
-│       └── profile.tsx       # Tai khoan (phu huynh: email dang nhap, sua thong tin, doi mat khau, ho so con)
+│       └── profile.tsx       # Tai khoan (phu huynh: anh dai dien, email dang nhap, sua thong tin, doi mat khau, ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token
@@ -136,8 +136,10 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | Luu token / du lieu thuong                               | `secureStorage`, `storage`                                                                | `lib/storage`        |
 | Ghi log                                                  | `logger`                                                                                  | `lib/logger`         |
 | Ket noi realtime (Socket.IO) tu doi token                | `createRealtimeChannel`                                                                   | `lib/realtime`       |
-| Chup hoac chon anh (chi JPEG, PNG cho BE), gui multipart | `pickImage`, `appendImageToForm`                                                          | `lib/image-picker`   |
+| Chup hoac chon anh (chi JPEG, PNG cho BE), gui multipart | `pickImage` (`PickImageOptions`: gioi han, ten file, cat theo ti le), `appendImageToForm` | `lib/image-picker`   |
+| Khoa cache cua anh lay qua link ky co han (`expo-image`) | `getSignedUrlCacheKey`                                                                    | `utils/url`          |
 | Duong dan API, query key                                 | `Endpoints`, `queryKeys`                                                                  | `api/`               |
+| Doc het cac trang cua danh sach (BE chi tra mot trang)   | `readAllPages`, kieu `Page`, `PageQuery`, `PaginatedQuery` (`@/types/api`)                | `api/pagination`     |
 
 ## Chon cong cu cho tung loai state
 

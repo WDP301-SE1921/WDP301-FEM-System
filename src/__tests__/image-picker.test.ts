@@ -4,7 +4,12 @@ import {
   requestCameraPermissionsAsync,
 } from 'expo-image-picker';
 
-import { MAX_IMAGE_BYTES, pickImage, toPickedImage } from '@/lib/image-picker';
+import {
+  MAX_IMAGE_BYTES,
+  pickImage,
+  toPickedImage,
+  type PickImageOptions,
+} from '@/lib/image-picker';
 
 jest.mock('expo-image-picker', () => ({
   launchCameraAsync: jest.fn(),
@@ -104,6 +109,35 @@ describe('lib/image-picker', () => {
 
       camera.mockRejectedValueOnce(new Error('No camera'));
       await expect(pickImage('camera')).resolves.toEqual({ status: 'FAILED' });
+    });
+
+    it('anh dai dien: cho cat vuong, gioi han va ten file rieng', async () => {
+      const options: PickImageOptions = {
+        maxBytes: 5_000_000,
+        fileNamePrefix: 'anh-dai-dien',
+        aspect: [1, 1],
+      };
+      library.mockResolvedValueOnce(pickedResult({}));
+
+      await expect(pickImage('library', options)).resolves.toMatchObject({
+        status: 'PICKED',
+        image: { name: expect.stringMatching(/^anh-dai-dien-\d+\.jpg$/) },
+      });
+      expect(library).toHaveBeenCalledWith(
+        expect.objectContaining({ allowsEditing: true, aspect: [1, 1], quality: 0.7 }),
+      );
+
+      // Duoi gioi han 10 MB cua anh bai lam nhung qua gioi han rieng
+      library.mockResolvedValueOnce(pickedResult({ fileSize: 5_000_001 }));
+      await expect(pickImage('library', options)).resolves.toEqual({ status: 'TOO_LARGE' });
+    });
+
+    it('anh bai lam giu nguyen anh goc, khong mo buoc cat anh', async () => {
+      library.mockResolvedValueOnce(pickedResult({}));
+
+      await pickImage('library');
+
+      expect(library).toHaveBeenCalledWith(expect.not.objectContaining({ allowsEditing: true }));
     });
   });
 });

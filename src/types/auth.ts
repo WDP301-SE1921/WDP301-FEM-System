@@ -15,6 +15,11 @@ export type User = {
   emailVerifiedAt: string | null;
   /** So dien thoai lien he dang luu. BE chi tra voi tai khoan `PARENT`; null khi chua nhap. */
   phone?: string | null;
+  /**
+   * Tai khoan da co anh dai dien (`GET /auth/me/avatar` tra link). Khong co o phien luu tu truoc khi BE
+   * tra field nay (2026-10-27): coi nhu chua biet.
+   */
+  hasAvatar?: boolean;
   createdAt: string;
   updatedAt: string;
 };

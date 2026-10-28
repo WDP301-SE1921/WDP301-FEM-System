@@ -20,6 +20,11 @@ export const Endpoints = {
     changePassword: '/auth/change-password',
     /** POST: gui email chua lien ket dat lai mat khau (trang web `/reset-password`). */
     forgotPassword: '/auth/forgot-password',
+    /**
+     * Anh dai dien cua tai khoan dang dang nhap. GET: link xem anh ky 900 giay (null khi chua co anh).
+     * PUT multipart (truong `file`, PNG hoac JPEG toi da 5 MB): thay anh, tra link moi. DELETE: go anh.
+     */
+    avatar: '/auth/me/avatar',
   },
   /**
    * Module `notifications` cua BE (nhanh `dev`): hop thu thong bao cua tai khoan dang dang nhap. Da
@@ -36,15 +41,24 @@ export const Endpoints = {
     /** POST: danh dau da doc moi thong bao. */
     readAll: '/notifications/read-all',
   },
-  /** Module `registration-flow` cua BE (nhanh `dev`): danh sach phong hoc. Da noi BE that. */
+  /**
+   * Module `registration-flow` cua BE (nhanh `dev`): danh sach phong hoc. Query `page`, `limit`,
+   * `paginated`. Da noi BE that.
+   */
   rooms: '/rooms',
   /** Module `registration-flow` cua BE (nhanh `dev`): du lieu cua phu huynh dang dang nhap. Da noi BE that. */
   me: {
-    /** GET: ho so cac con (StudentProfile) cua phu huynh, kem ngay sinh. POST: tao ho so con moi. */
+    /**
+     * GET: ho so cac con (StudentProfile) cua phu huynh, kem ngay sinh; query `page`, `limit`,
+     * `paginated`. POST: tao ho so con moi.
+     */
     students: '/me/students',
     /** PATCH: phu huynh sua ho ten, khoi, ngay sinh cua con. */
     student: (studentId: string) => `/me/students/${studentId}`,
-    /** Ghi danh cua con kem lop, lich co dinh va thanh toan cua don dang ky. */
+    /**
+     * Ghi danh cua con kem lop, lich co dinh va thanh toan cua don dang ky. Query `page`, `limit`,
+     * `paginated`.
+     */
     studentEnrollments: (studentId: string) => `/me/students/${studentId}/enrollments`,
     /**
      * Bill cua moi don dang ky thuoc cac con cua phu huynh, gom bill chua thu tien. Query `page`,
@@ -61,7 +75,7 @@ export const Endpoints = {
   },
   /**
    * Module `academic` va `curriculum-scheduling` cua BE (nhanh `dev`): buoi hoc, don nghi, bai tap,
-   * bai nop va diem da cong bo. Da noi BE that.
+   * bai nop, diem da cong bo va chuan dau ra cua khoa hoc. Da noi BE that.
    */
   academic: {
     /**
@@ -74,13 +88,18 @@ export const Endpoints = {
     scheduledSession: (sessionId: string) => `/academic/scheduled-sessions/${sessionId}`,
     /**
      * Ty le di hoc va cac buoi da chot diem danh cua mot con, kem lop, don nghi va lich hoc bu cua
-     * buoi. Query `fromDate?`, `toDate?`.
+     * buoi. Query `page`, `limit` (chi phan trang `history`), `fromDate?`, `toDate?`.
      */
     studentAttendance: (studentId: string) => `/academic/me/students/${studentId}/attendance`,
     /** Diem da cong bo cua mot con va diem trung binh theo mon. Query `page`, `limit`. */
     studentGrades: (studentId: string) => `/academic/me/students/${studentId}/grades`,
     /** Hoc phan da duyet (kem bai hoc) cua lop con dang hoc. Query `page`, `limit`. */
     studentCurriculum: (studentId: string) => `/academic/me/students/${studentId}/curriculum`,
+    /**
+     * Bo chuan dau ra (CLO) da duyet cua mot khoa hoc ma con dang hoc hoac da hoc, phien ban moi nhat
+     * truoc. Query `page`, `limit`, `paginated`. Con khong hoc khoa do thi 403 `FORBIDDEN`.
+     */
+    programOutcomeSets: (programId: string) => `/academic/programs/${programId}/outcome-sets`,
     /**
      * Lich hoc bu (MakeupBooking) cua cac con, moi xep truoc. App khong con goi: lich su diem danh da
      * kem lich hoc bu. Van de trong `WIRED_ROUTES` vi da wire.
@@ -105,5 +124,10 @@ export const Endpoints = {
      * id de gui kem bai nop qua `fileIds`.
      */
     files: '/academic/files',
+    /**
+     * Link xem mot tep phu huynh da tai len (anh bai lam da nop), ky 300 giay; anh tra `inline` de
+     * hien thang trong app.
+     */
+    filePreview: (fileId: string) => `/academic/files/${fileId}/preview`,
   },
 } as const;

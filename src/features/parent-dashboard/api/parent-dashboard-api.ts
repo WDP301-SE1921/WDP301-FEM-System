@@ -1,8 +1,15 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
+import { readAllPages } from '@/api/pagination';
 import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
 import { logger } from '@/lib/logger';
-import { AppError, type ApiResponse } from '@/types/api';
+import {
+  AppError,
+  type ApiResponse,
+  type Page,
+  type PageQuery,
+  type PaginatedQuery,
+} from '@/types/api';
 import { addDays, toDateKey } from '@/utils/date';
 
 import { RECENT_NOTIFICATION_COUNT } from '../constants';
@@ -15,6 +22,7 @@ import type {
   AttendanceReport,
   AttendanceSummary,
   BillPage,
+  CourseOutcomeSet,
   CurriculumPage,
   CurriculumUnit,
   EnrollmentLesson,
@@ -23,8 +31,6 @@ import type {
   LeaveRequest,
   LinkedStudent,
   NotificationQuery,
-  Page,
-  PageQuery,
   ReadAllNotificationsResult,
   Room,
   ScheduledSession,
@@ -34,6 +40,7 @@ import type {
   ScheduleSession,
   SessionDetail,
   SessionRef,
+  SignedFileUrl,
   StudentAssignment,
   StudentEnrollment,
   StudentGrades,
@@ -77,10 +84,6 @@ const UPLOAD_STATUS_MESSAGES: Partial<Record<number, string>> = {
     'Trung tâm chưa nhận ảnh bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
 };
 
-/** `limit` lon nhat BE nhan (PageDto). */
-const PAGE_LIMIT = 100;
-/** Chan vong lap khi BE tra `total` sai: 20 trang la 2000 ban ghi. */
-const MAX_PAGES = 20;
 /** Tim buoi tiep theo cua mon trong 30 ngay toi, bang khoang BE mac dinh cho phu huynh. */
 const UPCOMING_SESSION_DAYS = 30;
 /**
@@ -91,25 +94,21 @@ const SESSION_UNAVAILABLE_CODES: readonly (string | undefined)[] = [
   'SESSION_NOT_FOUND',
   'FORBIDDEN',
 ];
-
-/** Mot trang cua route phan trang, rut gon ve danh sach va tong so ban ghi. */
-type PageSlice<T> = Pick<Page<T>, 'items' | 'total'>;
-
-/** Doc het cac trang cua mot route phan trang theo `total` cua BE. */
-async function readAllPages<T>(
-  readPage: (query: PageQuery) => Promise<PageSlice<T>>,
-): Promise<T[]> {
-  const items: T[] = [];
-  for (let page = 1; page <= MAX_PAGES; page += 1) {
-    const batch = await readPage({ page, limit: PAGE_LIMIT });
-    items.push(...batch.items);
-    if (batch.items.length === 0 || items.length >= batch.total) return items;
-  }
-  logger.warn('[parent-dashboard] Du lieu vuot qua so trang toi da, bo phan con lai', {
-    maxPages: MAX_PAGES,
-  });
-  return items;
-}
+/**
+ * Ty le di hoc chi can `counts` (BE tinh tren ca ky, khong theo trang): xin trang `history` nho nhat
+ * de khong tai lich su.
+ */
+const ATTENDANCE_COUNTS_ONLY: PageQuery = { page: 1, limit: 1 };
+/** Bo CLO moi nhat cua khoa hoc: BE xep phien ban moi nhat truoc. */
+const LATEST_OUTCOME_SET: PaginatedQuery = { paginated: true, page: 1, limit: 1 };
+/**
+ * Ma loi khi khoa hoc khong con xem duoc muc tieu: khoa da xoa, hoac BE khong thay con hoc khoa nay
+ * (BE xet theo lop luc dang ky, con co the da chuyen sang lop cua khoa khac).
+ */
+const OUTCOMES_UNAVAILABLE_CODES: readonly (string | undefined)[] = [
+  'PROGRAM_NOT_FOUND',
+  'FORBIDDEN',
+];
 
 /**
  * Du lieu phu (ten phong, diem trung binh mon) chi de hien them: tai loi thi an phan do thay vi lam
@@ -130,9 +129,15 @@ export const parentDashboardApi = {
    * nen doc them ghi danh cua tung con.
    */
   async getStudents(): Promise<LinkedStudent[]> {
-    const { data } = await apiClient.get<ApiResponse<StudentProfile[]>>(Endpoints.me.students);
+    const students = await readAllPages(async (page) => {
+      const { data } = await apiClient.get<ApiResponse<Page<StudentProfile>>>(
+        Endpoints.me.students,
+        { params: { paginated: true, ...page } },
+      );
+      return data.data;
+    });
     return Promise.all(
-      data.data.map(async ({ id, fullName, grade }) => ({
+      students.map(async ({ id, fullName, grade }) => ({
         id,
         fullName,
         grade,
@@ -181,8 +186,12 @@ export const parentDashboardApi = {
 
   /** Moi phong hoc cua trung tam. */
   async getRooms(): Promise<Room[]> {
-    const { data } = await apiClient.get<ApiResponse<Room[]>>(Endpoints.rooms);
-    return data.data;
+    return readAllPages(async (page) => {
+      const { data } = await apiClient.get<ApiResponse<Page<Room>>>(Endpoints.rooms, {
+        params: { paginated: true, ...page },
+      });
+      return data.data;
+    });
   },
 
   /** Cac buoi con hoc trong khoang ngay, gom buoi hoc bu o lop khac va buoi bi huy. */
@@ -246,6 +255,25 @@ export const parentDashboardApi = {
     });
   },
 
+  /**
+   * Chuan dau ra (CLO) moi nhat da duyet cua mot khoa hoc con dang hoc. null khi khoa chua co bo CLO
+   * da duyet, hoac khoa khong con xem duoc.
+   */
+  async getCourseOutcomeSet(programId: string): Promise<CourseOutcomeSet | null> {
+    try {
+      const { data } = await apiClient.get<ApiResponse<Page<CourseOutcomeSet>>>(
+        Endpoints.academic.programOutcomeSets(programId),
+        { params: LATEST_OUTCOME_SET },
+      );
+      return data.data.items[0] ?? null;
+    } catch (error) {
+      if (error instanceof AppError && OUTCOMES_UNAVAILABLE_CODES.includes(error.code)) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
   /** Lo trinh cua mot mon: bai cua hoc phan da duyet kem buoi day bai trong ky ghi danh. */
   async getEnrollmentLessons(studentId: string, enrollmentId: string): Promise<EnrollmentLesson[]> {
     const enrollments = await parentDashboardApi.getTuitionEnrollments(studentId);
@@ -260,23 +288,33 @@ export const parentDashboardApi = {
     return toEnrollmentLessons({ enrollment, sessions, units });
   },
 
-  /** So buoi theo ket qua diem danh va cac buoi da chot diem danh cua mot con, tu truoc toi nay. */
-  async getAttendanceReport(studentId: string): Promise<AttendanceReport> {
+  /**
+   * So buoi theo ket qua diem danh (ca ky) va mot trang cac buoi da chot diem danh cua mot con, tu
+   * truoc toi nay.
+   */
+  async getAttendanceReport(studentId: string, params: PageQuery): Promise<AttendanceReport> {
     const { data } = await apiClient.get<ApiResponse<AttendanceReport>>(
       Endpoints.academic.studentAttendance(studentId),
+      { params },
     );
     return data.data;
   },
 
   /** Ty le di hoc cua mot con, cung cach tinh voi web. */
   async getAttendanceSummary(studentId: string): Promise<AttendanceSummary> {
-    const { counts } = await parentDashboardApi.getAttendanceReport(studentId);
+    const { counts } = await parentDashboardApi.getAttendanceReport(
+      studentId,
+      ATTENDANCE_COUNTS_ONLY,
+    );
     return toAttendanceSummary(counts);
   },
 
-  /** Cac buoi da chot diem danh cua mot con kem ket qua, don nghi va lich hoc bu. */
+  /** Cac buoi da chot diem danh cua mot con kem ket qua, don nghi va lich hoc bu. Doc het cac trang. */
   async getStudentAttendance(studentId: string): Promise<AttendanceRecord[]> {
-    const { history } = await parentDashboardApi.getAttendanceReport(studentId);
+    const history = await readAllPages(async (params) => {
+      const report = await parentDashboardApi.getAttendanceReport(studentId, params);
+      return { items: report.history, total: report.total };
+    });
     return toAttendanceRecords(history);
   },
 
@@ -349,6 +387,14 @@ export const parentDashboardApi = {
     }
   },
 
+  /** Link xem lai mot anh bai lam da nop (chi phu huynh da tai anh len xem duoc). */
+  async getFilePreview(fileId: string): Promise<SignedFileUrl> {
+    const { data } = await apiClient.get<ApiResponse<SignedFileUrl>>(
+      Endpoints.academic.filePreview(fileId),
+    );
+    return data.data;
+  },
+
   /** Con nop bai qua phien dang nhap cua phu huynh. */
   async submitAssignment(payload: SubmitAssignmentPayload): Promise<SubmissionReceipt> {
     const { data } = await apiClient.post<ApiResponse<SubmissionReceipt>>(
@@ -376,12 +422,18 @@ export const parentDashboardApi = {
     return { summary: toScoreSummary(history), subjects };
   },
 
-  /** Ghi danh cua mot con kem lop, ky hoc va thanh toan da xac nhan (lich su dong hoc phi). */
+  /**
+   * Ghi danh cua mot con (ca mon da ket thuc) kem lop, ky hoc va thanh toan da xac nhan (lich su dong
+   * hoc phi). Doc het cac trang.
+   */
   async getTuitionEnrollments(studentId: string): Promise<TuitionEnrollment[]> {
-    const { data } = await apiClient.get<ApiResponse<TuitionEnrollment[]>>(
-      Endpoints.me.studentEnrollments(studentId),
-    );
-    return data.data;
+    return readAllPages(async (page) => {
+      const { data } = await apiClient.get<ApiResponse<Page<TuitionEnrollment>>>(
+        Endpoints.me.studentEnrollments(studentId),
+        { params: { paginated: true, ...page } },
+      );
+      return data.data;
+    });
   },
 
   /** Bill cua moi don dang ky thuoc cac con cua phu huynh, moi lap truoc. Doc het cac trang. */

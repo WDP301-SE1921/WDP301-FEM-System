@@ -1,15 +1,44 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
-import type { ApiResponse } from '@/types/api';
+import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
+import { AppError, type ApiResponse } from '@/types/api';
 import type { AuthSession, User } from '@/types/auth';
 
 import type { LoginInput, VerifyEmailInput } from '../schemas';
 import type {
+  AvatarAccess,
   ChangePasswordPayload,
   RegisterPayload,
   ResendVerificationResult,
   UpdateProfilePayload,
 } from '../types';
+
+/** Anh dai dien toi da 5 MB, BE con day tiep len kho luu tru (cho toi 30 giay). */
+const AVATAR_UPLOAD_TIMEOUT_MS = 60_000;
+const HTTP_PAYLOAD_TOO_LARGE = 413;
+const HTTP_SERVICE_UNAVAILABLE = 503;
+const AVATAR_TOO_LARGE_MESSAGE = 'Ảnh đại diện phải nhỏ hơn 5 MB.';
+
+/**
+ * Thong bao khi gui anh dai dien loi. `INVALID_FILE_SIZE` dung chung voi anh bai lam (10 MB) nen phai
+ * ghi de; anh vuot gioi han cua BE va kho luu tru loi chi co ma chung `HTTP_ERROR`, phan biet bang
+ * status.
+ */
+const AVATAR_UPLOAD_CODE_MESSAGES: Partial<Record<string, string>> = {
+  INVALID_FILE_SIZE: AVATAR_TOO_LARGE_MESSAGE,
+};
+const AVATAR_UPLOAD_STATUS_MESSAGES: Partial<Record<number, string>> = {
+  [HTTP_PAYLOAD_TOO_LARGE]: AVATAR_TOO_LARGE_MESSAGE,
+  [HTTP_SERVICE_UNAVAILABLE]: 'Chưa lưu được ảnh đại diện lúc này. Vui lòng thử lại sau.',
+};
+
+function toAvatarUploadError(error: unknown): unknown {
+  if (!(error instanceof AppError)) return error;
+  const message =
+    (error.code ? AVATAR_UPLOAD_CODE_MESSAGES[error.code] : undefined) ??
+    AVATAR_UPLOAD_STATUS_MESSAGES[error.status ?? 0];
+  return message ? new AppError(message, error.status, error.code) : error;
+}
 
 export const authApi = {
   async login(payload: LoginInput): Promise<AuthSession> {
@@ -50,6 +79,33 @@ export const authApi = {
    */
   async forgotPassword(email: string): Promise<void> {
     await apiClient.post(Endpoints.auth.forgotPassword, { email });
+  },
+
+  /** Link xem anh dai dien; `url` null khi tai khoan chua co anh. */
+  async getAvatar(): Promise<AvatarAccess> {
+    const { data } = await apiClient.get<ApiResponse<AvatarAccess>>(Endpoints.auth.avatar);
+    return data.data;
+  },
+
+  /** Thay anh dai dien (PNG hoac JPEG toi da 5 MB), BE tra link xem anh moi. */
+  async uploadAvatar(image: PickedImage): Promise<AvatarAccess> {
+    const form = new FormData();
+    await appendImageToForm(form, 'file', image);
+    try {
+      const { data } = await apiClient.put<ApiResponse<AvatarAccess>>(Endpoints.auth.avatar, form, {
+        // apiClient mac dinh gui JSON: axios se doi FormData thanh JSON neu khong doi header
+        headers: { 'Content-Type': 'multipart/form-data' },
+        timeout: AVATAR_UPLOAD_TIMEOUT_MS,
+      });
+      return data.data;
+    } catch (error) {
+      throw toAvatarUploadError(error);
+    }
+  },
+
+  /** Go anh dai dien. Tai khoan chua co anh thi BE van tra thanh cong. */
+  async deleteAvatar(): Promise<void> {
+    await apiClient.delete(Endpoints.auth.avatar);
   },
 
   async logout(): Promise<void> {
