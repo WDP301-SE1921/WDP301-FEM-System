@@ -1,4 +1,9 @@
-import type { AccountProfileInput, ChangePasswordInput, RegisterInput } from './schemas';
+import type {
+  AccountProfileInput,
+  ChangePasswordInput,
+  RegisterInput,
+  VerifyEmailInput,
+} from './schemas';
 
 /**
  * Body POST /auth/register (RegisterParentDto). `confirmPassword` chi de validate o client; `phone`
@@ -6,6 +11,11 @@ import type { AccountProfileInput, ChangePasswordInput, RegisterInput } from './
  */
 export type RegisterPayload = Omit<RegisterInput, 'confirmPassword' | 'phone'> & {
   phone?: string;
+};
+
+/** Body POST /auth/verify-email (VerifyEmailDto): ma 6 so kem email cua tai khoan nhan ma. */
+export type VerifyEmailPayload = VerifyEmailInput & {
+  email: string;
 };
 
 /** Body POST /auth/change-password (ChangePasswordDto). */

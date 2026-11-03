@@ -22,6 +22,7 @@ import type {
   AttendanceReport,
   AttendanceSummary,
   BillPage,
+  CenterInfo,
   CourseOutcomeSet,
   CurriculumPage,
   CurriculumUnit,
@@ -60,6 +61,7 @@ import { getActiveSubjectNames, toAttendanceSummary } from '../utils';
 
 import {
   getTermRange,
+  hasClassRoomNames,
   toAttendanceRecords,
   toEnrollmentLessons,
   toScoreSummary,
@@ -107,6 +109,14 @@ const LATEST_OUTCOME_SET: PaginatedQuery = { paginated: true, page: 1, limit: 1 
  */
 const OUTCOMES_UNAVAILABLE_CODES: readonly (string | undefined)[] = [
   'PROGRAM_NOT_FOUND',
+  'FORBIDDEN',
+];
+/**
+ * Ma loi khi bo CLO cua bai khong con xem duoc: bo da xoa, hoac BE khong thay con hoc khoa cua bo
+ * (cung cach xet theo lop luc dang ky).
+ */
+const OUTCOME_SET_UNAVAILABLE_CODES: readonly (string | undefined)[] = [
+  'OUTCOME_SET_NOT_FOUND',
   'FORBIDDEN',
 ];
 
@@ -194,6 +204,12 @@ export const parentDashboardApi = {
     });
   },
 
+  /** Thong tin lien he cua trung tam do BE khai bao. */
+  async getCenterInfo(): Promise<CenterInfo> {
+    const { data } = await apiClient.get<ApiResponse<CenterInfo>>(Endpoints.center);
+    return data.data;
+  },
+
   /** Cac buoi con hoc trong khoang ngay, gom buoi hoc bu o lop khac va buoi bi huy. */
   async getStudentSchedule(studentId: string, range: ScheduleRange): Promise<ScheduleSession[]> {
     return toStudentSchedule(await parentDashboardApi.getScheduledSessions(studentId, range));
@@ -220,20 +236,23 @@ export const parentDashboardApi = {
   async getStudentEnrollments(studentId: string): Promise<StudentEnrollment[]> {
     const now = new Date();
     const today = toDateKey(now);
-    const [enrollments, pauses, upcomingSessions, rooms, subjectGrades] = await Promise.all([
+    const [enrollments, pauses, upcomingSessions, subjectGrades] = await Promise.all([
       parentDashboardApi.getTuitionEnrollments(studentId),
       parentDashboardApi.getActivePauses(studentId, today),
       parentDashboardApi.getScheduledSessions(studentId, {
         from: today,
         to: toDateKey(addDays(now, UPCOMING_SESSION_DAYS)),
       }),
-      readOrFallback(() => parentDashboardApi.getRooms(), [], 'danh sach phong'),
       readOrFallback<SubjectGradeAverage[]>(
         async () => (await parentDashboardApi.getStudentGrades(studentId)).subjects,
         [],
         'diem trung binh mon',
       ),
     ]);
+    // BE truoc ngay 03/11 chi tra `roomId` cua lop: moi can danh sach phong de doi ra ten
+    const rooms = hasClassRoomNames(enrollments, now)
+      ? []
+      : await readOrFallback(() => parentDashboardApi.getRooms(), [], 'danh sach phong');
     return toStudentEnrollments({
       enrollments,
       pauses,
@@ -268,6 +287,24 @@ export const parentDashboardApi = {
       return data.data.items[0] ?? null;
     } catch (error) {
       if (error instanceof AppError && OUTCOMES_UNAVAILABLE_CODES.includes(error.code)) {
+        return null;
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Mot bo chuan dau ra (CLO) theo id, vd bo giao vien chon cho bai tap
+   * (`AssignmentDetail.outcomeSetId`). null khi bo khong con xem duoc.
+   */
+  async getOutcomeSet(outcomeSetId: string): Promise<CourseOutcomeSet | null> {
+    try {
+      const { data } = await apiClient.get<ApiResponse<CourseOutcomeSet>>(
+        Endpoints.academic.outcomeSet(outcomeSetId),
+      );
+      return data.data;
+    } catch (error) {
+      if (error instanceof AppError && OUTCOME_SET_UNAVAILABLE_CODES.includes(error.code)) {
         return null;
       }
       throw error;

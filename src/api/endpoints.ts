@@ -46,6 +46,11 @@ export const Endpoints = {
    * `paginated`. Da noi BE that.
    */
   rooms: '/rooms',
+  /**
+   * Module `center` cua BE (03/11): ten, dia chi, so dien thoai, email, gio mo cua cua trung tam.
+   * Public. Da noi BE that.
+   */
+  center: '/center',
   /** Module `registration-flow` cua BE (nhanh `dev`): du lieu cua phu huynh dang dang nhap. Da noi BE that. */
   me: {
     /**
@@ -100,6 +105,11 @@ export const Endpoints = {
      * truoc. Query `page`, `limit`, `paginated`. Con khong hoc khoa do thi 403 `FORBIDDEN`.
      */
     programOutcomeSets: (programId: string) => `/academic/programs/${programId}/outcome-sets`,
+    /**
+     * Mot bo chuan dau ra (CLO) da duyet kem `required` cua tung CLO, vd bo CLO giao vien chon cho bai.
+     * Bo chua duyet, hoac khoa cua bo khong co con nao hoc thi 403 `FORBIDDEN`.
+     */
+    outcomeSet: (outcomeSetId: string) => `/academic/outcome-sets/${outcomeSetId}`,
     /**
      * Lich hoc bu (MakeupBooking) cua cac con, moi xep truoc. App khong con goi: lich su diem danh da
      * kem lich hoc bu. Van de trong `WIRED_ROUTES` vi da wire.

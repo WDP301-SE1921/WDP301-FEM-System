@@ -15,6 +15,8 @@ const ASSIGNMENT_ID = 'cmg2x1abc0004assignment';
 const SESSION_ID = 'cmg2x1abc0005session';
 const NOTIFICATION_ID = 'cmg2x1abc0006notification';
 const FILE_ID = 'cmg2x1abc0007file';
+const PROGRAM_ID = 'cmg2x1abc0008program';
+const OUTCOME_SET_ID = 'cmg2x1abc0009outcomeset';
 
 describe('api/wired-routes', () => {
   describe('isWiredRequest', () => {
@@ -45,6 +47,8 @@ describe('api/wired-routes', () => {
       ['get', Endpoints.academic.studentAttendance(STUDENT_ID)],
       ['get', Endpoints.academic.studentGrades(STUDENT_ID)],
       ['get', Endpoints.academic.studentCurriculum(STUDENT_ID)],
+      ['get', Endpoints.academic.programOutcomeSets(PROGRAM_ID)],
+      ['get', Endpoints.academic.outcomeSet(OUTCOME_SET_ID)],
       ['get', Endpoints.academic.makeups],
       ['get', Endpoints.academic.leaves],
       ['get', Endpoints.academic.assignments],
@@ -71,6 +75,13 @@ describe('api/wired-routes', () => {
       ['tai tep ve may chua wire', 'get', `/academic/files/${FILE_ID}/download`],
       ['sai method', 'post', Endpoints.auth.avatar],
       ['sai method', 'delete', Endpoints.academic.filePreview(FILE_ID)],
+      ['route cua thiet ke giao trinh', 'delete', Endpoints.academic.outcomeSet(OUTCOME_SET_ID)],
+      ['mot CLO le chua wire', 'get', '/academic/outcomes/cmg2x1abc0010outcome'],
+      [
+        'mot CLO le chua wire',
+        'get',
+        `${Endpoints.academic.outcomeSet(OUTCOME_SET_ID)}/outcomes/cmg2x1abc0010outcome`,
+      ],
       ['route cua quan ly', 'post', `${Endpoints.academic.scheduledSession(SESSION_ID)}/cancel`],
       ['route TAM da bo', 'get', `${Endpoints.me.student(STUDENT_ID)}/registrations`],
       ['route cua nhan vien', 'post', '/registrations/cmg2x1abc0003order/confirm-payment'],

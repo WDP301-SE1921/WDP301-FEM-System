@@ -107,39 +107,41 @@ Luat bo sung:
 
 Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai cho dung that, va cap nhat bang nay.
 
-| Can gi                                                   | Dung                                                                                      | O dau                |
-| -------------------------------------------------------- | ----------------------------------------------------------------------------------------- | -------------------- |
-| Khung man hinh (safe area, scroll, ban phim)             | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`; tu nang noi dung khoi ban phim) | `components/common`  |
-| Man hinh nam tren thanh tab                              | `Screen` voi `edges={TAB_SCREEN_EDGES}` (bo safe area duoi, thanh tab da chua)            | `components/common`  |
-| Tieu de dau moi tab (kem chuong thong bao)               | `TabHeader` (`title`, `subtitle`, `trailing`), route cua tab dat `NotificationBell` vao   | `components/common`  |
-| Trang thai dang tai / loi / rong                         | `LoadingState`, `ErrorState`, `EmptyState`                                                | `components/common`  |
-| O nhap noi voi react-hook-form                           | `FormInput`                                                                               | `components/common`  |
-| O mat khau noi voi react-hook-form                       | `FormPasswordInput` (kem san nut con mat hien / an mat khau)                              | `components/common`  |
-| Loi chung cua form (loi tu server)                       | `FormError`                                                                               | `components/common`  |
-| Nut hien / an mat khau (dat o `trailing`)                | `PasswordVisibilityToggle`                                                                | `components/common`  |
-| Sheet truot tu duoi len (chon con, chon tuan)            | `BottomSheet`                                                                             | `components/common`  |
-| Hoi lai truoc thao tac kho lam lai (nop bai, dang xuat)  | `ConfirmSheet` (sheet, khong dung `Alert` de chay ca tren web)                            | `components/common`  |
-| Thanh tab duoi man hinh (`tabBar` cua `Tabs`)            | `TabBar` (nhan danh sach tab va `onPress`, layout `(tabs)` noi voi navigation)            | `components/common`  |
-| Nut, o nhap, chu, khung theo theme                       | `Button`, `Input`, `ThemedText`, `ThemedView`                                             | `components/ui`      |
-| Icon theo theme (boc Ionicons)                           | `Icon`, kieu `IconName`                                                                   | `components/ui`      |
-| Link mo trinh duyet trong app                            | `ExternalLink`                                                                            | `components/ui`      |
-| Mau theo che do sang / toi                               | `useTheme()`                                                                              | `hooks`              |
-| Tri hoan gia tri (o tim kiem)                            | `useDebounce()`                                                                           | `hooks`              |
-| Format tien, ngay, cat chuoi, chu cai dau                | `formatCurrency`, `formatDate`, `truncate`, `getInitials`                                 | `utils/format`       |
-| Format gio, thu, thoi gian tuong doi, ten                | `formatTime`, `formatWeekdayDate`, `formatRelativeTime`, `getShortName`                   | `utils/format`       |
-| Format ngay/thang, thu viet tat (`T2`, `CN`)             | `formatDayMonth`, `formatShortWeekday`, `formatIsoWeekday` (thu ISO 1-7)                  | `utils/format`       |
-| Format thang/nam (`10/2026`)                             | `formatMonthYear`                                                                         | `utils/format`       |
-| Tinh ngay, tuan (Thu Hai), khoa `YYYY-MM-DD`             | `startOfDay`, `startOfWeek`, `addDays`, `diffInCalendarDays`, `toDateKey`, `parseDateKey` | `utils/date`         |
-| Thong bao loi hien cho nguoi dung                        | `getErrorMessage()`                                                                       | `utils/error`        |
-| Chuoi loi chung (mat mang, qua thoi gian)                | `ErrorMessages`                                                                           | `constants/messages` |
-| Thong bao theo `error.code` cua BE                       | `ApiErrorMessages`, `getApiErrorMessage()`                                                | `constants`, `utils` |
-| Luu token / du lieu thuong                               | `secureStorage`, `storage`                                                                | `lib/storage`        |
-| Ghi log                                                  | `logger`                                                                                  | `lib/logger`         |
-| Ket noi realtime (Socket.IO) tu doi token                | `createRealtimeChannel`                                                                   | `lib/realtime`       |
-| Chup hoac chon anh (chi JPEG, PNG cho BE), gui multipart | `pickImage` (`PickImageOptions`: gioi han, ten file, cat theo ti le), `appendImageToForm` | `lib/image-picker`   |
-| Khoa cache cua anh lay qua link ky co han (`expo-image`) | `getSignedUrlCacheKey`                                                                    | `utils/url`          |
-| Duong dan API, query key                                 | `Endpoints`, `queryKeys`                                                                  | `api/`               |
-| Doc het cac trang cua danh sach (BE chi tra mot trang)   | `readAllPages`, kieu `Page`, `PageQuery`, `PaginatedQuery` (`@/types/api`)                | `api/pagination`     |
+| Can gi                                                   | Dung                                                                                          | O dau                |
+| -------------------------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------- |
+| Khung man hinh (safe area, scroll, ban phim)             | `Screen` (keo de tai lai qua `onRefresh`, `isRefreshing`; tu nang noi dung khoi ban phim)     | `components/common`  |
+| Man hinh nam tren thanh tab                              | `Screen` voi `edges={TAB_SCREEN_EDGES}` (bo safe area duoi, thanh tab da chua)                | `components/common`  |
+| Tieu de dau moi tab (kem chuong thong bao)               | `TabHeader` (`title`, `subtitle`, `trailing`), route cua tab dat `NotificationBell` vao       | `components/common`  |
+| Trang thai dang tai / loi / rong                         | `LoadingState`, `ErrorState`, `EmptyState` (`icon`, `actionIcon`; nut hanh dong la nut chinh) | `components/common`  |
+| Icon tron nen nhat cho man hinh trang thai               | `StateIcon` (`tone`: `primary`, `danger`)                                                     | `components/common`  |
+| O nhap noi voi react-hook-form                           | `FormInput`                                                                                   | `components/common`  |
+| O mat khau noi voi react-hook-form                       | `FormPasswordInput` (kem san nut con mat hien / an mat khau)                                  | `components/common`  |
+| Loi chung cua form (loi tu server)                       | `FormError`                                                                                   | `components/common`  |
+| Nut hien / an mat khau (dat o `trailing`)                | `PasswordVisibilityToggle`                                                                    | `components/common`  |
+| Sheet truot tu duoi len (chon con, chon tuan)            | `BottomSheet`                                                                                 | `components/common`  |
+| Hoi lai truoc thao tac kho lam lai (nop bai, dang xuat)  | `ConfirmSheet` (sheet, khong dung `Alert` de chay ca tren web)                                | `components/common`  |
+| Thanh tab duoi man hinh (`tabBar` cua `Tabs`)            | `TabBar` (nhan danh sach tab va `onPress`, layout `(tabs)` noi voi navigation)                | `components/common`  |
+| Nut, o nhap, chu, khung theo theme                       | `Button`, `Input`, `ThemedText`, `ThemedView`                                                 | `components/ui`      |
+| Icon theo theme (boc Ionicons)                           | `Icon`, kieu `IconName`                                                                       | `components/ui`      |
+| Link mo trinh duyet trong app                            | `ExternalLink`                                                                                | `components/ui`      |
+| Mau theo theme (app khoa che do sang)                    | `useTheme()`                                                                                  | `hooks`              |
+| Nap font Be Vietnam Pro luc mo app                       | `useAppFonts()`, ten font `FontFamily` (`ThemedText` tu chon theo `fontWeight`)               | `hooks`, `constants` |
+| Tri hoan gia tri (o tim kiem)                            | `useDebounce()`                                                                               | `hooks`              |
+| Format tien, ngay, cat chuoi, chu cai dau                | `formatCurrency`, `formatDate`, `truncate`, `getInitials`                                     | `utils/format`       |
+| Format gio, thu, thoi gian tuong doi, ten                | `formatTime`, `formatWeekdayDate`, `formatRelativeTime`, `getShortName`                       | `utils/format`       |
+| Format ngay/thang, thu viet tat (`T2`, `CN`)             | `formatDayMonth`, `formatShortWeekday`, `formatIsoWeekday` (thu ISO 1-7)                      | `utils/format`       |
+| Format thang/nam (`10/2026`)                             | `formatMonthYear`                                                                             | `utils/format`       |
+| Tinh ngay, tuan (Thu Hai), khoa `YYYY-MM-DD`             | `startOfDay`, `startOfWeek`, `addDays`, `diffInCalendarDays`, `toDateKey`, `parseDateKey`     | `utils/date`         |
+| Thong bao loi hien cho nguoi dung                        | `getErrorMessage()`                                                                           | `utils/error`        |
+| Chuoi loi chung (mat mang, qua thoi gian)                | `ErrorMessages`                                                                               | `constants/messages` |
+| Thong bao theo `error.code` cua BE                       | `ApiErrorMessages`, `getApiErrorMessage()`                                                    | `constants`, `utils` |
+| Luu token / du lieu thuong                               | `secureStorage`, `storage`                                                                    | `lib/storage`        |
+| Ghi log                                                  | `logger`                                                                                      | `lib/logger`         |
+| Ket noi realtime (Socket.IO) tu doi token                | `createRealtimeChannel`                                                                       | `lib/realtime`       |
+| Chup hoac chon anh (chi JPEG, PNG cho BE), gui multipart | `pickImage` (`PickImageOptions`: gioi han, ten file, cat theo ti le), `appendImageToForm`     | `lib/image-picker`   |
+| Khoa cache cua anh lay qua link ky co han (`expo-image`) | `getSignedUrlCacheKey`                                                                        | `utils/url`          |
+| Duong dan API, query key                                 | `Endpoints`, `queryKeys`                                                                      | `api/`               |
+| Doc het cac trang cua danh sach (BE chi tra mot trang)   | `readAllPages`, kieu `Page`, `PageQuery`, `PaginatedQuery` (`@/types/api`)                    | `api/pagination`     |
 
 ## Chon cong cu cho tung loai state
 
@@ -209,7 +211,7 @@ Chi dung bien co prefix `EXPO_PUBLIC_`, doc qua `src/constants/config.ts` (fail-
 | Bien                       | Bat buoc | Y nghia                                                                                                                                                            |
 | -------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `EXPO_PUBLIC_ENV`          | Khong    | `development` (mac dinh), `staging`, `production`. Tu ngay 2026-10-20 `production` khong con bi chan vi khong man hinh nao dung mock                               |
-| `EXPO_PUBLIC_CENTER_PHONE` | Khong    | So dien thoai trung tam (BE chua co). Co thi tab Hoc phi hien nut "Gọi trung tâm", de trong thi an                                                                 |
+| `EXPO_PUBLIC_CENTER_PHONE` | Khong    | So dien thoai trung tam khi BE chua khai bao `CENTER_PHONE` (`GET /center`). Co so thi tab Hoc phi hien nut "Gọi trung tâm", khong co thi an                       |
 | `EXPO_PUBLIC_API_URL`      | Co       | Dia chi BE kem prefix, vd `http://192.168.1.10:3000/api/v1`. Dien thoai that dung IP LAN cua may chay BE, Android emulator dung `10.0.2.2`, khong dung `localhost` |
 
 > `EXPO_PUBLIC_*` bi **inline thang vao file bundle** va ai cung doc duoc.

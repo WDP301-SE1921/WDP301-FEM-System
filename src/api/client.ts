@@ -97,7 +97,11 @@ apiClient.interceptors.response.use(
     const original = error.config as RetriableConfig | undefined;
     const status = error.response?.status;
 
-    if (status === 401 && original && !original._retry) {
+    // Chi request mang token moi co phien de lam moi. Dang nhap sai mat khau cung tra 401: khong duoc
+    // coi la het phien (man dang nhap se bao nham "Phiên đăng nhập đã hết hạn")
+    const hasSession = Boolean(original?.headers?.Authorization);
+
+    if (status === 401 && original && hasSession && !original._retry) {
       original._retry = true;
 
       const newToken = await refreshSession();

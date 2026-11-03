@@ -1,6 +1,6 @@
 import {
   canUseMobileApp,
-  extractVerificationToken,
+  extractVerificationCode,
   getPostSignInHref,
   getSignedOutHref,
   needsEmailVerification,
@@ -35,18 +35,20 @@ describe('features/auth/utils', () => {
     expect(getSignedOutHref(false)).toBe('/(auth)/welcome');
   });
 
-  describe('extractVerificationToken', () => {
-    const token = 'k3J9xQ2mVb7Lw0Zt5Yh8Nf1Rc4Ud6Sa-_pEgIoTqWzA';
-
-    it('lay ma trong cau email cua BE hoac khi dan kem dau cach, xuong dong', () => {
-      expect(extractVerificationToken(`Mã xác minh tài khoản EduGrade: ${token}`)).toBe(token);
-      expect(extractVerificationToken(`  ${token}  `)).toBe(token);
-      expect(extractVerificationToken(`${token}\n`)).toBe(token);
+  describe('extractVerificationCode', () => {
+    it('lay ma 6 so trong cau email cua BE, ke ca dong sau co so khac', () => {
+      const email = 'Mã xác minh tài khoản EduGrade của bạn là: 042917\nMã hết hạn sau 15 phút.';
+      expect(extractVerificationCode(email)).toBe('042917');
+      expect(extractVerificationCode('  042917  ')).toBe('042917');
     });
 
-    it('khong co doan nao du dai thi tra chu da cat khoang trang', () => {
-      expect(extractVerificationToken('  abc  ')).toBe('abc');
-      expect(extractVerificationToken('')).toBe('');
+    it('bo dau cach giua cac so khi phu huynh tu go', () => {
+      expect(extractVerificationCode('042 917')).toBe('042917');
+      expect(extractVerificationCode('')).toBe('');
+    });
+
+    it('khong lay mot phan cua day so dai hon 6 chu so', () => {
+      expect(extractVerificationCode('0429171')).toBe('0429171');
     });
   });
 });

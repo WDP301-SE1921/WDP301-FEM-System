@@ -6,6 +6,7 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 import { logger } from '@/lib/logger';
 
+import { useCenterContact } from '../hooks/use-parent-dashboard';
 import type { TuitionReceipt } from '../types';
 import { buildReceiptShareMessage } from '../utils';
 
@@ -16,11 +17,12 @@ export type ReceiptActionsProps = {
 /** Nut duoi bien lai: gui noi dung bien lai qua ung dung khac bang bang chia se cua he dieu hanh. */
 export function ReceiptActions({ receipt }: ReceiptActionsProps) {
   const [hasShareFailed, setHasShareFailed] = useState(false);
+  const center = useCenterContact();
 
   const shareReceipt = async () => {
     setHasShareFailed(false);
     try {
-      await Share.share({ message: buildReceiptShareMessage(receipt) });
+      await Share.share({ message: buildReceiptShareMessage(receipt, center.name) });
     } catch (error) {
       logger.warn('Khong mo duoc bang chia se bien lai', error);
       setHasShareFailed(true);

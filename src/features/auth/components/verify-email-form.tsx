@@ -16,11 +16,11 @@ export type VerifyEmailFormProps = {
   error: unknown;
 };
 
-/** O dan ma xac minh trong email. Viec goi API do container quyet dinh qua `onSubmit`. */
+/** O nhap ma 6 so trong email. Viec goi API do container quyet dinh qua `onSubmit`. */
 export function VerifyEmailForm({ onSubmit, isPending, error }: VerifyEmailFormProps) {
   const { control, handleSubmit } = useForm<VerifyEmailInput>({
     resolver: zodResolver(verifyEmailSchema),
-    defaultValues: { token: '' },
+    defaultValues: { code: '' },
   });
   const submit = handleSubmit(onSubmit);
 
@@ -28,14 +28,15 @@ export function VerifyEmailForm({ onSubmit, isPending, error }: VerifyEmailFormP
     <View style={styles.form}>
       <FormInput
         control={control}
-        name="token"
+        name="code"
         label="Mã xác minh"
-        placeholder="Dán mã, hoặc cả dòng chứa mã"
+        placeholder="6 chữ số trong email"
         leadingIcon="key-outline"
-        // Ma phan biet hoa thuong: khong de ban phim tu viet hoa hay tu sua
-        autoCapitalize="none"
+        keyboardType="number-pad"
+        // iOS goi y ma tu ung dung Mail, Android goi y ma tu thong bao
+        textContentType="oneTimeCode"
+        autoComplete="one-time-code"
         autoCorrect={false}
-        autoComplete="off"
         returnKeyType="done"
         onSubmitEditing={submit}
       />

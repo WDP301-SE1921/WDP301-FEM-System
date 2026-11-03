@@ -14,7 +14,9 @@ export function MobileAccessDenied() {
     <EmptyState
       title="Tài khoản không dùng được trên ứng dụng"
       description={MOBILE_ACCESS_DENIED_MESSAGE}
+      icon="desktop-outline"
       actionLabel="Đăng xuất"
+      actionIcon="log-out-outline"
       onAction={() => logout.mutate()}
     />
   );

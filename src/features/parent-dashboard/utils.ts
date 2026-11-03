@@ -83,6 +83,7 @@ import type {
   ChoiceState,
   ClassSession,
   CourseFilter,
+  CourseOutcome,
   CourseStatus,
   DayPeriod,
   EnrollmentLesson,
@@ -185,6 +186,21 @@ export function getSessionDetailStatus(
   // `null` la app khong co ket qua diem danh, khong phai giao vien chua diem danh
   const isAwaitingAttendance = timeStatus === 'FINISHED' && attendance === 'UNMARKED';
   return isAwaitingAttendance ? ATTENDANCE_STATUSES.UNMARKED : SESSION_STATUSES[timeStatus];
+}
+
+/**
+ * So bai cua buoi tren lo trinh cua mon, cung so phu huynh thay o Lo trinh. Lo trinh ghep tu giao
+ * trinh thi tim theo bai; ghep tu cac buoi (lop chua co hoc phan) thi tim theo buoi. null khi buoi
+ * khong co tren lo trinh (vd buoi bi huy cua lop chua co hoc phan).
+ */
+export function findRoadmapLessonNumber(
+  lessons: readonly Pick<EnrollmentLesson, 'id' | 'sequence' | 'session'>[],
+  session: Pick<SessionDetail, 'id' | 'lessonId'>,
+): number | null {
+  const lesson = lessons.find(
+    ({ id, session: lessonSession }) => id === session.lessonId || lessonSession?.id === session.id,
+  );
+  return lesson?.sequence ?? null;
 }
 
 /** Vd `Bài 12: Phương trình bậc nhất`; chi ten bai khi khong co thu tu bai. */
@@ -822,6 +838,11 @@ export function getMeasuredTargets(
   return detail.learningTargets.filter(({ id }) => measuredIds.has(id));
 }
 
+/** Id cac CLO mo rong (`required: false`) cua mot bo chuan dau ra. */
+export function getOptionalOutcomeIds(outcomes: readonly CourseOutcome[]): ReadonlySet<string> {
+  return new Set(outcomes.filter(({ required }) => !required).map(({ id }) => id));
+}
+
 /** Ma CLO cua tung cau, key la id cau hoi. Cau khong gan CLO (bai cu) thi khong co key. */
 export function getQuestionOutcomeCodes(
   detail: Pick<AssignmentDetail, 'learningTargets' | 'questions'>,
@@ -1418,15 +1439,13 @@ export function formatAmountInWords(amount: number): string | null {
 }
 
 /** Noi dung bien lai dang chu de chia se qua ung dung khac (tin nhan, email). */
-export function buildReceiptShareMessage({
-  payment,
-  student,
-  class: classroom,
-  term,
-}: TuitionReceipt): string {
+export function buildReceiptShareMessage(
+  { payment, student, class: classroom, term }: TuitionReceipt,
+  centerName: string = CENTER_NAME,
+): string {
   return [
     `Biên lai thu học phí #${payment.receiptNumber}`,
-    CENTER_NAME,
+    centerName,
     `Học sinh: ${student.fullName} (khối ${student.grade})`,
     `Lớp: ${classroom.name}`,
     `${formatPackageLabel(term.packageMonths)}: bắt đầu ${formatApiDate(term.startDate)}, hết hạn ${formatApiDate(term.endDate)}`,

@@ -1,6 +1,6 @@
-import { Platform, StyleSheet, Text, type TextProps } from 'react-native';
+import { Platform, StyleSheet, Text, type TextProps, type TextStyle } from 'react-native';
 
-import { Fonts, type ThemeColor } from '@/constants/theme';
+import { FontFamily, Fonts, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type TextVariant =
@@ -25,11 +25,43 @@ const VARIANT_COLORS: Partial<Record<TextVariant, ThemeColor>> = {
   linkPrimary: 'primary',
 };
 
+type LoadedWeight = 400 | 500 | 600 | 700;
+
+const FAMILY_BY_WEIGHT: Record<LoadedWeight, string> = {
+  400: FontFamily.regular,
+  500: FontFamily.medium,
+  600: FontFamily.semiBold,
+  700: FontFamily.bold,
+};
+
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
   const color = theme[themeColor ?? VARIANT_COLORS[type] ?? 'text'];
+  const textStyle = StyleSheet.flatten([{ color }, styles[type], style]);
 
-  return <Text style={[{ color }, styles[type], style]} {...rest} />;
+  return <Text style={[textStyle, getFontFace(textStyle)]} {...rest} />;
+}
+
+/**
+ * File font Be Vietnam Pro hop voi `fontWeight`, `fontStyle` cua style da gop. Tra ve `fontWeight` va
+ * `fontStyle` binh thuong vi do dam, chu nghieng da nam trong file font: giu lai thi Android to dam
+ * hoac nghieng gia them lan nua. Style tu dat `fontFamily` (vd chu `code`) giu nguyen.
+ */
+export function getFontFace({ fontFamily, fontWeight, fontStyle }: TextStyle): TextStyle {
+  if (fontFamily) return {};
+  const family =
+    fontStyle === 'italic' ? FontFamily.mediumItalic : FAMILY_BY_WEIGHT[toLoadedWeight(fontWeight)];
+  return { fontFamily: family, fontWeight: 'normal', fontStyle: 'normal' };
+}
+
+/** Lam tron xuong do dam da nap gan nhat: chi nap 400, 500, 600, 700. */
+function toLoadedWeight(weight: TextStyle['fontWeight']): LoadedWeight {
+  if (weight === 'bold') return 700;
+  const value = typeof weight === 'number' ? weight : Number(weight);
+  if (value >= 700) return 700;
+  if (value >= 600) return 600;
+  if (value >= 500) return 500;
+  return 400;
 }
 
 const styles = StyleSheet.create({

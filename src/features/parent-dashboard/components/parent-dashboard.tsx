@@ -55,7 +55,9 @@ export function ParentDashboard({
         <EmptyState
           title="Chưa có hồ sơ học sinh"
           description="Thêm học sinh vào tài khoản để theo dõi việc học."
+          icon="people-outline"
           actionLabel="Thêm học sinh"
+          actionIcon="person-add-outline"
           onAction={onAddChild}
         />
       );

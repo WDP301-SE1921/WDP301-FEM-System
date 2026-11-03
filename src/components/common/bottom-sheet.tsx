@@ -33,6 +33,9 @@ export function BottomSheet({ isVisible, title, subtitle, onClose, children }: B
       transparent
       animationType="slide"
       statusBarTranslucent
+      // Android: ve ca duoi thanh dieu huong, khong thi lo mot dai den duoi sheet (iOS da ve sat mep);
+      // safe area ben trong sheet tu chua cho thanh dieu huong
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <View style={styles.root}>

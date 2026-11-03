@@ -7,7 +7,8 @@ import { Images } from '@/constants/images';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatDate, formatTime } from '@/utils/format';
 
-import { BILL_STATUSES, CENTER_NAME } from '../constants';
+import { BILL_STATUSES } from '../constants';
+import { useCenterContact } from '../hooks/use-parent-dashboard';
 import type { TuitionBillDetail } from '../types';
 
 import { ToneBadge } from './tone-badge';
@@ -22,6 +23,7 @@ export type BillHeadingProps = {
 /** Phan dau bill: logo va ten trung tam, trang thai thanh toan, ma bill va luc nhan vien lap don. */
 export function BillHeading({ bill }: BillHeadingProps) {
   const { label, tone, icon } = BILL_STATUSES[bill.status];
+  const center = useCenterContact();
 
   return (
     <View style={styles.container}>
@@ -32,7 +34,7 @@ export function BillHeading({ bill }: BillHeadingProps) {
         accessibilityLabel="Logo EduGrade"
       />
       <ThemedText type="small" themeColor="textSecondary" style={styles.centerName}>
-        {CENTER_NAME}
+        {center.name}
       </ThemedText>
       <ThemedText type="heading" accessibilityRole="header" style={styles.title}>
         Bill học phí

@@ -1,7 +1,7 @@
 import type { ReactNode, Ref } from 'react';
 import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
 
-import { Radius, Spacing } from '@/constants/theme';
+import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon, type IconName } from './icon';
@@ -72,9 +72,10 @@ const styles = StyleSheet.create({
   wrapper: { gap: Spacing.one, width: '100%' },
   input: {
     borderWidth: 1,
-    borderRadius: Radius.md,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.three,
     paddingVertical: Spacing.three,
+    fontFamily: FontFamily.regular,
     fontSize: 16,
     minHeight: 48,
   },

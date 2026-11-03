@@ -117,8 +117,8 @@ const GRADE_NOTIFICATION: AppNotification = {
 };
 
 const SHEET_SUBTITLE = 'Chuyển hồ sơ để theo dõi tình hình học tập';
-/** Nut them con trong sheet: icon trong Button la Text chua glyph nen ten co ky tu dung truoc chu. */
-const SHEET_ADD_CHILD_BUTTON_NAME = /.Thêm học sinh$/;
+/** Nut them con trong sheet. `Button` dat `accessibilityLabel` bang chu nen ten khong co glyph cua icon. */
+const SHEET_ADD_CHILD_BUTTON_NAME = 'Thêm học sinh';
 
 /** Ten nut thanh chon con dau trang, mo sheet chon con. */
 function switcherName(student: LinkedStudent): string {

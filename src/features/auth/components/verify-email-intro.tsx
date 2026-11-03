@@ -24,7 +24,7 @@ export function VerifyEmailIntro({ email, isVerified }: VerifyEmailIntroProps) {
       <ThemedText type="smallBold" selectable>
         {email}
       </ThemedText>
-      . Dán mã vào ô bên dưới để tạo được hồ sơ học sinh.
+      . Nhập mã 6 số trong email vào ô bên dưới để tạo được hồ sơ học sinh. Mã có hiệu lực 15 phút.
     </AccountIntro>
   );
 }

@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
-import { Config } from '@/constants/config';
 import { Radius, Spacing } from '@/constants/theme';
 import { logger } from '@/lib/logger';
+
+import { useCenterContact } from '../hooks/use-parent-dashboard';
 
 import { ToneIcon } from './tone-icon';
 
@@ -17,10 +18,10 @@ const NON_DIAL_CHARACTERS = /[^\d+]/g;
 
 /**
  * Quy dinh xac nhan hoc phi va noi lien he khi co thac mac, dat cuoi man hinh hoc phi. Co so dien thoai
- * trung tam (`EXPO_PUBLIC_CENTER_PHONE`, BE chua tra) thi them nut goi.
+ * trung tam (GET /center, BE chua khai bao thi `EXPO_PUBLIC_CENTER_PHONE`) thi them nut goi.
  */
 export function TuitionPolicyCard() {
-  const phone = Config.centerPhone;
+  const { phone } = useCenterContact();
 
   return (
     <ThemedView type="backgroundElement" style={styles.card}>

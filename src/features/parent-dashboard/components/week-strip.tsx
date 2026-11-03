@@ -48,7 +48,10 @@ type DayCellProps = {
 
 function DayCell({ day, isSelected, isToday, onPress }: DayCellProps) {
   const theme = useTheme();
-  const dotColor = getDotColor(day, isSelected);
+  // Android: view trong suot duoc to mau sau thi mat bo goc (o ngay chon thanh o vuong), nen o va cham
+  // luon co mau, khi khong noi bat thi trung mau nen phia sau
+  const cellColor: ThemeColor = isSelected ? 'primary' : 'backgroundElement';
+  const dotColor = getDotColor(day, isSelected) ?? cellColor;
 
   return (
     <Pressable
@@ -58,7 +61,7 @@ function DayCell({ day, isSelected, isToday, onPress }: DayCellProps) {
       onPress={onPress}
       style={({ pressed }) => [
         styles.cell,
-        isSelected && { backgroundColor: theme.primary },
+        { backgroundColor: theme[cellColor] },
         pressed && styles.pressed,
       ]}
     >
@@ -75,7 +78,7 @@ function DayCell({ day, isSelected, isToday, onPress }: DayCellProps) {
       >
         {day.date.getDate()}
       </ThemedText>
-      <View style={[styles.dot, dotColor && { backgroundColor: theme[dotColor] }]} />
+      <View style={[styles.dot, { backgroundColor: theme[dotColor] }]} />
     </Pressable>
   );
 }
@@ -91,7 +94,7 @@ function getDateColor(isSelected: boolean, isToday: boolean): ThemeColor {
   return isToday ? 'primary' : 'text';
 }
 
-/** null: ngay khong co buoi hoc, cham trong suot de cac o van cao bang nhau. */
+/** null: ngay khong co buoi hoc, cham trung mau o de cac o van cao bang nhau. */
 function getDotColor(day: WeekDay, isSelected: boolean): ThemeColor | null {
   if (day.sessions.length === 0) return null;
   if (day.hasScheduleChange) return 'accent';

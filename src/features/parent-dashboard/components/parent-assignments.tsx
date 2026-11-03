@@ -54,7 +54,9 @@ export function ParentAssignments({
         <EmptyState
           title="Chưa có hồ sơ học sinh"
           description="Thêm học sinh vào tài khoản để xem bài tập và điểm."
+          icon="people-outline"
           actionLabel="Thêm học sinh"
+          actionIcon="person-add-outline"
           onAction={onAddChild}
         />
       );

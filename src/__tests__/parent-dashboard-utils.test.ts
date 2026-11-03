@@ -16,6 +16,7 @@ import {
   filterEnrollments,
   findNearestDueAssignment,
   findNextFreeDay,
+  findRoadmapLessonNumber,
   formatAssignmentDue,
   formatAssignmentSubmitted,
   formatAttendanceBreakdown,
@@ -129,6 +130,21 @@ describe('features/parent-dashboard/utils', () => {
         tone,
         icon: 'checkmark-circle',
       });
+    });
+
+    it('findRoadmapLessonNumber: so bai tren lo trinh theo bai, lo trinh ghep tu buoi thi theo buoi', () => {
+      const session = { id: 'session-9', lessonId: 'lesson-9' };
+      const step = (id: string, sequence: number, sessionId: string | null = null) => ({
+        id,
+        sequence,
+        session: sessionId ? { id: sessionId, startsAt: '', status: 'SCHEDULED' as const } : null,
+      });
+
+      expect(findRoadmapLessonNumber([step('lesson-1', 1), step('lesson-9', 9)], session)).toBe(9);
+      expect(
+        findRoadmapLessonNumber([step('session-1', 1), step('x', 4, 'session-9')], session),
+      ).toBe(4);
+      expect(findRoadmapLessonNumber([step('lesson-1', 1)], session)).toBeNull();
     });
 
     it('formatLessonTitle kem thu tu bai khi co', () => {
