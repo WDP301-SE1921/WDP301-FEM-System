@@ -53,6 +53,8 @@ export const queryKeys = {
     studentAssignments: (studentId: string) =>
       ['parent', 'students', studentId, 'assignments'] as const,
   },
+  /** Thong tin lien he cua trung tam (GET /center), chung moi tai khoan. */
+  center: ['center'] as const,
   /** Hop thu thong bao cua tai khoan dang dang nhap, chung moi con. */
   notifications: {
     /** Tien to cua moi key thong bao, dung khi BE bao co thong bao moi hoac da doc. */
@@ -82,6 +84,8 @@ export const queryKeys = {
     /** Bo chuan dau ra moi nhat cua mot khoa hoc. */
     programOutcomeSet: (programId: string) =>
       ['academic', 'programs', programId, 'outcome-set'] as const,
+    /** Mot bo chuan dau ra theo id, vd bo CLO cua mot bai tap. */
+    outcomeSet: (outcomeSetId: string) => ['academic', 'outcome-sets', outcomeSetId] as const,
     /** Link xem mot anh bai lam da nop. */
     filePreview: (fileId: string) => ['academic', 'files', fileId, 'preview'] as const,
   },

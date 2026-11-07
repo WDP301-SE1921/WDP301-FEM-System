@@ -37,6 +37,7 @@ export function EnrollmentRoadmap({
     return (
       <EmptyState
         title="Chưa có lộ trình"
+        icon="map-outline"
         description={`Trung tâm chưa công bố các bài học của lớp ${enrollment.className}.`}
       />
     );

@@ -3,13 +3,18 @@ import { render, screen, userEvent } from '@testing-library/react-native';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { ParentSessionDetail } from '@/features/parent-dashboard/components/parent-session-detail';
-import type { LinkedStudent, SessionDetail } from '@/features/parent-dashboard/types';
+import type {
+  EnrollmentLesson,
+  LinkedStudent,
+  SessionDetail,
+} from '@/features/parent-dashboard/types';
 import { AppError } from '@/types/api';
 
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
     getStudents: jest.fn(),
     getSessionDetail: jest.fn(),
+    getEnrollmentLessons: jest.fn(),
   },
 }));
 
@@ -52,6 +57,8 @@ const COMPLETED_MAKEUP: SessionDetail = {
   checkedInAt: at(17, 55),
   teacherComment: 'Minh Anh tiếp thu bài tốt.',
   materials: [{ id: 'material-1', name: 'Phiếu bài tập số 12', note: 'Đã phát trên lớp' }],
+  enrollmentId: null,
+  lessonId: 'lesson-quadratic',
 };
 
 const UPCOMING_REGULAR: SessionDetail = {
@@ -123,6 +130,37 @@ describe('features/parent-dashboard/ParentSessionDetail', () => {
     expect(screen.getByText('“Minh Anh tiếp thu bài tốt.”')).toBeOnTheScreen();
     expect(screen.getByText('Phiếu bài tập số 12')).toBeOnTheScreen();
     expect(screen.getByText('Điểm danh đã được giáo viên xác nhận')).toBeOnTheScreen();
+  });
+
+  it('so bai lay tu lo trinh cua mon, khong lay thu tu trong hoc phan cua BE', async () => {
+    const lesson: EnrollmentLesson = {
+      id: 'lesson-identities',
+      sequence: 7,
+      title: 'Hằng đẳng thức đáng nhớ',
+      description: null,
+      kind: 'LESSON',
+      session: null,
+      assignment: null,
+    };
+    api.getSessionDetail.mockResolvedValue({
+      ...BACKEND_SESSION,
+      enrollmentId: 'enrollment-math',
+      lessonId: lesson.id,
+    });
+    api.getEnrollmentLessons.mockResolvedValue([
+      { ...lesson, id: 'lesson-other', sequence: 6 },
+      lesson,
+    ]);
+    await renderDetail();
+
+    expect(
+      await screen.findByText(
+        'Bài 7: Hằng đẳng thức đáng nhớ',
+        {},
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
+    expect(api.getEnrollmentLessons).toHaveBeenCalledWith(MINH_ANH.id, 'enrollment-math');
   });
 
   it('buoi sap toi: chua diem danh, chua co nhan xet; bam quay lai', async () => {

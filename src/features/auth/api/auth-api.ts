@@ -4,13 +4,14 @@ import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
 import { AppError, type ApiResponse } from '@/types/api';
 import type { AuthSession, User } from '@/types/auth';
 
-import type { LoginInput, VerifyEmailInput } from '../schemas';
+import type { LoginInput } from '../schemas';
 import type {
   AvatarAccess,
   ChangePasswordPayload,
   RegisterPayload,
   ResendVerificationResult,
   UpdateProfilePayload,
+  VerifyEmailPayload,
 } from '../types';
 
 /** Anh dai dien toi da 5 MB, BE con day tiep len kho luu tru (cho toi 30 giay). */
@@ -122,8 +123,11 @@ export const authApi = {
     });
   },
 
-  /** Xac minh email bang ma BE gui qua email. Ma sai, da dung hoac qua 24 gio thi BE tra 400. */
-  async verifyEmail(payload: VerifyEmailInput): Promise<void> {
+  /**
+   * Xac minh email bang ma 6 so BE gui qua email. Ma sai, da dung, qua 15 phut hay da co ma moi hon
+   * thi BE tra 400; sai 5 lan thi ma do het hieu luc.
+   */
+  async verifyEmail(payload: VerifyEmailPayload): Promise<void> {
     await apiClient.post(Endpoints.auth.verifyEmail, payload);
   },
 

@@ -23,12 +23,14 @@ export function useRefreshedUser() {
   });
 }
 
-/** Xac minh email bang ma trong email, xong thi doc lai tai khoan de cap nhat phien da luu. */
-export function useVerifyEmail() {
+/**
+ * Xac minh email `email` bang ma trong email, xong thi doc lai tai khoan de cap nhat phien da luu.
+ */
+export function useVerifyEmail(email: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: VerifyEmailInput) => authApi.verifyEmail(input),
+    mutationFn: ({ code }: VerifyEmailInput) => authApi.verifyEmail({ email, code }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.auth.me }),
   });
 }

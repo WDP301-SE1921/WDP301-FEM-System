@@ -19,6 +19,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     getStudents: jest.fn(),
     getTuitionEnrollments: jest.fn(),
     getStudentBills: jest.fn(),
+    getCenterInfo: jest.fn(),
   },
 }));
 
@@ -203,7 +204,16 @@ function receiptButtonLabels() {
 }
 
 describe('features/parent-dashboard/ParentTuition', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    api.getCenterInfo.mockResolvedValue({
+      name: null,
+      address: null,
+      phone: null,
+      email: null,
+      openingHours: null,
+    });
+  });
 
   it('hien don cho xac nhan, goi con hieu luc va lich su moi xac nhan truoc', async () => {
     mockTwoChildren();
@@ -260,6 +270,26 @@ describe('features/parent-dashboard/ParentTuition', () => {
     expect(screen.getByText('#PT-0741')).toBeOnTheScreen();
     expect(screen.getByText(formatCurrency(1_800_000))).toBeOnTheScreen();
     expect(screen.getByText('Quy định xác nhận học phí')).toBeOnTheScreen();
+  });
+
+  it('BE khai bao so dien thoai trung tam thi co nut goi trung tam', async () => {
+    mockTwoChildren();
+    api.getCenterInfo.mockResolvedValue({
+      name: null,
+      address: null,
+      phone: '028 1234 5678',
+      email: null,
+      openingHours: null,
+    });
+    await renderTuition();
+
+    expect(
+      await screen.findByRole(
+        'button',
+        { name: 'Gọi trung tâm, số 028 1234 5678' },
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
   });
 
   it('bam mot lan dong hoc phi thi mo bien lai cua don dang ky do', async () => {

@@ -3,6 +3,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 import { useAuth } from '@/features/auth';
+import { useAppFonts } from '@/hooks/use-app-fonts';
 import { AppProviders } from '@/providers/app-providers';
 
 SplashScreen.preventAutoHideAsync();
@@ -17,13 +18,15 @@ export default function RootLayout() {
 
 function RootNavigator() {
   const { isHydrated } = useAuth();
+  const isFontReady = useAppFonts();
+  const isReady = isHydrated && isFontReady;
 
   useEffect(() => {
-    // Chi an splash khi da doc xong phien dang nhap -> khong nhay man hinh
-    if (isHydrated) void SplashScreen.hideAsync();
-  }, [isHydrated]);
+    // Chi an splash khi da doc xong phien dang nhap va nap xong font -> khong nhay man hinh
+    if (isReady) void SplashScreen.hideAsync();
+  }, [isReady]);
 
-  if (!isHydrated) return null;
+  if (!isReady) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>

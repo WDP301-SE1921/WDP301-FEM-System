@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { extractVerificationToken } from './utils';
+import { extractVerificationCode } from './utils';
 
 /** Gioi han theo LoginDto, RegisterParentDto va ChangePasswordDto cua BE. */
 const PASSWORD_MIN_LENGTH = 8;
@@ -10,8 +10,8 @@ const DISPLAY_NAME_MIN_LENGTH = 2;
 const DISPLAY_NAME_MAX_LENGTH = 255;
 /** Tu 8 toi 20 chu so va khoang trang ngan cach, cho phep dau `+` o dau; BE chi gioi han 32 ky tu. */
 const PHONE_PATTERN = /^\+?\d[\d\s]{6,18}\d$/;
-/** Gioi han cua VerifyEmailDto; ma BE gui qua email dai 43 ky tu. */
-const VERIFY_TOKEN_MIN_LENGTH = 32;
+/** Ma xac minh BE gui qua email: dung 6 chu so (VerifyEmailDto). */
+const VERIFICATION_CODE_PATTERN = /^\d{6}$/;
 
 const passwordSchema = z
   .string()
@@ -60,16 +60,22 @@ export const registerSchema = loginSchema
     path: ['confirmPassword'],
   });
 
-/** Body POST /auth/verify-email. Phu huynh dan tu email, co the dan ca cau chua ma. */
+/**
+ * Form xac minh email: ma 6 so trong email. Phu huynh go ma, hoac dan ca cau chua ma. Email gui kem
+ * lay tu phien dang nhap (`VerifyEmailPayload`).
+ */
 export const verifyEmailSchema = z.object({
-  token: z
+  code: z
     .string()
-    .transform(extractVerificationToken)
+    .transform(extractVerificationCode)
     .pipe(
       z
         .string()
-        .min(1, 'Vui lòng dán mã xác minh')
-        .min(VERIFY_TOKEN_MIN_LENGTH, 'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email'),
+        .min(1, 'Vui lòng nhập mã xác minh')
+        .regex(
+          VERIFICATION_CODE_PATTERN,
+          'Mã xác minh gồm 6 chữ số, xem trong email trung tâm gửi',
+        ),
     ),
 });
 

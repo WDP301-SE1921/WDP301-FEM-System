@@ -7,7 +7,8 @@ import { Images } from '@/constants/images';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatDate, formatTime } from '@/utils/format';
 
-import { CENTER_NAME, PAYMENT_METHOD_LABEL, RECEIPT_PAID_STATUS } from '../constants';
+import { PAYMENT_METHOD_LABEL, RECEIPT_PAID_STATUS } from '../constants';
+import { useCenterContact } from '../hooks/use-parent-dashboard';
 import type { TuitionReceipt } from '../types';
 
 import { ToneBadge } from './tone-badge';
@@ -21,6 +22,8 @@ export type ReceiptHeadingProps = {
 
 /** Phan dau bien lai: logo va ten trung tam, trang thai, ma bien lai, thoi gian va hinh thuc thu. */
 export function ReceiptHeading({ payment }: ReceiptHeadingProps) {
+  const center = useCenterContact();
+
   return (
     <View style={styles.container}>
       <Image
@@ -30,7 +33,7 @@ export function ReceiptHeading({ payment }: ReceiptHeadingProps) {
         accessibilityLabel="Logo EduGrade"
       />
       <ThemedText type="small" themeColor="textSecondary" style={styles.centerName}>
-        {CENTER_NAME}
+        {center.name}
       </ThemedText>
       <ThemedText type="heading" accessibilityRole="header" style={styles.title}>
         Biên lai thu học phí

@@ -1,8 +1,7 @@
 import { focusManager, QueryClientProvider } from '@tanstack/react-query';
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { useEffect, type PropsWithChildren } from 'react';
-import { AppState, Platform, StyleSheet } from 'react-native';
+import { AppState, Platform, StatusBar, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -39,7 +38,17 @@ export function AppProviders({ children }: PropsWithChildren) {
       <SafeAreaProvider>
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <StatusBar style="auto" />
+            {/*
+              StatusBar cua React Native mac dinh `translucent: false` va nen den tren Android. Ban
+              build ve tran vien nen bo qua hai gia tri nay, nhung Expo Go tren Android thi khong: thanh
+              trang thai bi to den, icon gio va pin mau toi chim mat, noi dung bi day xuong. Dat ro
+              trong suot de Android giong iOS, safe area tu chua cho thanh trang thai.
+            */}
+            <StatusBar
+              barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
+              translucent
+              backgroundColor="transparent"
+            />
             {children}
           </ThemeProvider>
         </QueryClientProvider>

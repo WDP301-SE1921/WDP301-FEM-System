@@ -37,7 +37,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: current.scheme,
-  userInterfaceStyle: 'automatic',
+  // Khoa che do sang (nguoi dung chot ngay 2026-11-03): may bat che do toi van hien giao dien sang
+  userInterfaceStyle: 'light',
   ios: {
     supportsTablet: true,
     bundleIdentifier: current.bundleId,

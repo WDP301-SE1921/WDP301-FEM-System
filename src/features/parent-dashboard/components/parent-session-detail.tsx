@@ -5,8 +5,13 @@ import { ErrorState } from '@/components/common/error-state';
 import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 
-import { useLinkedStudents, useSessionDetail } from '../hooks/use-parent-dashboard';
-import type { SessionRef } from '../types';
+import {
+  useEnrollmentLessons,
+  useLinkedStudents,
+  useSessionDetail,
+} from '../hooks/use-parent-dashboard';
+import type { SessionDetail, SessionRef } from '../types';
+import { findRoadmapLessonNumber } from '../utils';
 
 import { DetailHeader } from './detail-header';
 import { SessionHero } from './session-hero';
@@ -24,6 +29,13 @@ export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSess
   // Chi de hien ten va khoi cua con; mo tu lich hoc thi danh sach con da co san trong cache
   const students = useLinkedStudents();
   const student = students.data?.find((item) => item.id === studentId);
+  // So bai lay tu lo trinh cua mon (chung cache voi man Lo trinh): BE chi dem bai trong tung hoc phan
+  const roadmap = useEnrollmentLessons(studentId, detail.data?.enrollmentId ?? null);
+  const withLessonNumber = (session: SessionDetail): SessionDetail => {
+    if (!session.lesson || !roadmap.data) return session;
+    const sequence = findRoadmapLessonNumber(roadmap.data, session);
+    return { ...session, lesson: { ...session.lesson, sequence } };
+  };
 
   const renderBody = () => {
     if (detail.isPending) return <LoadingState />;
@@ -31,8 +43,7 @@ export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSess
       return <ErrorState error={detail.error} onRetry={() => void detail.refetch()} />;
     }
 
-    const session = detail.data;
-    if (!session) {
+    if (!detail.data) {
       return (
         <EmptyState
           title="Không tìm thấy buổi học"
@@ -41,6 +52,7 @@ export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSess
       );
     }
 
+    const session = withLessonNumber(detail.data);
     // BE chua tra tai lieu cua buoi, nhan xet chi co khi giao vien ghi luc chot diem danh
     const hasReview = Boolean(session.teacherComment) || session.materials.length > 0;
     return (

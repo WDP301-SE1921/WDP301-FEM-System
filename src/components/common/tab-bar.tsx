@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
-import { Radius, Spacing } from '@/constants/theme';
+import { Spacing, type ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 const ICON_SIZE = 24;
@@ -65,8 +65,7 @@ export function TabBar({ items, bottomInset, onPress, onLongPress }: TabBarProps
                 <View
                   style={[
                     styles.indicator,
-                    pressed && { backgroundColor: theme.backgroundElement },
-                    isFocused && { backgroundColor: theme.primarySoft },
+                    { backgroundColor: getIndicatorBackground(theme, isFocused, pressed) },
                   ]}
                 >
                   <Icon name={isFocused ? focusedIcon : icon} size={ICON_SIZE} themeColor={color} />
@@ -89,6 +88,21 @@ export function TabBar({ items, bottomInset, onPress, onLongPress }: TabBarProps
   );
 }
 
+/**
+ * Tab khong chon dung mau nen cua thanh tab chu khong de trong suot: Android khong tao lop nen cho
+ * view trong suot, toi luc doi sang mau that thi lop nen moi khong co bo goc (nen tab vua chon thanh
+ * o vuong).
+ */
+function getIndicatorBackground(
+  theme: Record<ThemeColor, string>,
+  isFocused: boolean,
+  isPressed: boolean,
+): string {
+  if (isFocused) return theme.primarySoft;
+  if (isPressed) return theme.backgroundElement;
+  return theme.background;
+}
+
 const styles = StyleSheet.create({
   bar: {
     flexDirection: 'row',
@@ -107,7 +121,7 @@ const styles = StyleSheet.create({
     height: INDICATOR_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: Radius.full,
+    borderRadius: INDICATOR_HEIGHT / 2,
   },
   label: { fontSize: LABEL_FONT_SIZE, lineHeight: LABEL_LINE_HEIGHT },
 });

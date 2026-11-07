@@ -16,6 +16,7 @@ import {
   getAssignmentMaxScore,
   getChoiceState,
   getMeasuredTargets,
+  getOptionalOutcomeIds,
   getPublishedGrade,
   getQuestionOutcomeCodes,
   getUnansweredPositions,
@@ -140,6 +141,13 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       };
 
       expect(getQuestionOutcomeCodes(detail)).toEqual({ q1: 'MATH-8-02' });
+    });
+
+    it('getOptionalOutcomeIds chi lay CLO mo rong (required: false)', () => {
+      const outcomes = TARGETS.map((target) => ({ ...target, required: target.id !== 'clo-2' }));
+
+      expect([...getOptionalOutcomeIds(outcomes)]).toEqual(['clo-2']);
+      expect(getOptionalOutcomeIds([]).size).toBe(0);
     });
   });
 

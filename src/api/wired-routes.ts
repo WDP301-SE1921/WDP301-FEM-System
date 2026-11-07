@@ -9,6 +9,7 @@ const ASSIGNMENT_ID_PARAM = ':assignmentId';
 const SESSION_ID_PARAM = ':sessionId';
 const NOTIFICATION_ID_PARAM = ':notificationId';
 const PROGRAM_ID_PARAM = ':programId';
+const OUTCOME_SET_ID_PARAM = ':outcomeSetId';
 const FILE_ID_PARAM = ':fileId';
 
 /**
@@ -39,12 +40,14 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'get', url: Endpoints.registrations.receipt(REGISTRATION_ID_PARAM) },
   { method: 'get', url: Endpoints.registrations.bill(REGISTRATION_ID_PARAM) },
   { method: 'get', url: Endpoints.rooms },
+  { method: 'get', url: Endpoints.center },
   { method: 'get', url: Endpoints.academic.scheduledSessions },
   { method: 'get', url: Endpoints.academic.scheduledSession(SESSION_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.studentAttendance(STUDENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.studentGrades(STUDENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.studentCurriculum(STUDENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.programOutcomeSets(PROGRAM_ID_PARAM) },
+  { method: 'get', url: Endpoints.academic.outcomeSet(OUTCOME_SET_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.makeups },
   { method: 'get', url: Endpoints.academic.leaves },
   { method: 'get', url: Endpoints.academic.assignments },

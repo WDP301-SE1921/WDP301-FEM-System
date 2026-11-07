@@ -11,7 +11,7 @@ import { AppError } from '@/types/api';
 import { formatCurrency } from '@/utils/format';
 
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
-  parentDashboardApi: { getReceipt: jest.fn() },
+  parentDashboardApi: { getReceipt: jest.fn(), getCenterInfo: jest.fn() },
 }));
 // Jest khong tim thay `@/assets/*`, xem `src/constants/images.ts`
 jest.mock('@/constants/images', () => ({ Images: { logo: 1 } }));
@@ -20,6 +20,9 @@ jest.mock('@/lib/logger', () => ({
 }));
 
 const api = jest.mocked(parentDashboardApi);
+
+/** BE chua khai bao thong tin trung tam (hoac BE cu chua co GET /center). */
+const NO_CENTER_INFO = { name: null, address: null, phone: null, email: null, openingHours: null };
 const shareSpy = jest.spyOn(Share, 'share');
 
 /** Lan render day du dau tien phai transform nhieu module, xem `parent-dashboard.test.tsx`. */
@@ -71,6 +74,7 @@ async function renderReceipt() {
 describe('features/parent-dashboard/ParentReceiptDetail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    api.getCenterInfo.mockResolvedValue(NO_CENTER_INFO);
     shareSpy.mockResolvedValue({ action: 'sharedAction' });
   });
 

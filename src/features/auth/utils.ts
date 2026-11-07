@@ -1,17 +1,16 @@
 import type { User } from '@/types/auth';
 
-/** Doan ky tu co the la ma xac minh: BE phat 32 byte dang base64url (43 ky tu). */
-const VERIFICATION_TOKEN_RUN = /[A-Za-z0-9_-]{32,}/g;
+/** Ma xac minh dung rieng trong mot cau: 6 chu so khong dinh vao chu so khac (nhom 1). */
+const STANDALONE_CODE = /(?:^|\D)(\d{6})(?!\d)/;
+const NON_DIGITS = /\D/g;
 
 /**
- * Lay ma xac minh tu chu phu huynh dan vao. Email cua BE ghi "Mã xác minh tài khoản EduGrade: <mã>"
- * va nhan giu de chep thuong lay ca cau, nen lay doan dang ma dai nhat. Khong co doan nao du dai thi
- * tra chu da cat khoang trang de schema bao ma chua du.
+ * Lay ma 6 so tu chu phu huynh nhap. Email cua BE ghi "Mã xác minh tài khoản EduGrade của bạn là:
+ * <mã>", nhan giu de chep thuong lay ca cau, nen uu tien nhom 6 chu so dung rieng. Khong co thi bo
+ * moi ky tu khong phai so (vd go "123 456"), de schema bao ma sai do dai.
  */
-export function extractVerificationToken(text: string): string {
-  const runs = text.match(VERIFICATION_TOKEN_RUN) ?? [];
-  const longest = runs.reduce((best, run) => (run.length > best.length ? run : best), '');
-  return longest || text.trim();
+export function extractVerificationCode(text: string): string {
+  return STANDALONE_CODE.exec(text)?.[1] ?? text.replace(NON_DIGITS, '');
 }
 
 /**

@@ -348,6 +348,9 @@ export const ANSWER_RESULTS: Record<'correct' | 'wrong', StatusAppearance> = {
   wrong: { label: 'Học sinh trả lời chưa đúng', tone: 'danger', icon: 'close-circle' },
 };
 
+/** Ghi chu duoi CLO co `required: false`, o muc tieu khoa hoc va muc tieu bai. */
+export const OPTIONAL_OUTCOME_NOTE = 'Mục tiêu mở rộng, không bắt buộc';
+
 /** Gioi han `fileIds` cua SubmissionDto. */
 export const MAX_SUBMISSION_FILES = 5;
 
@@ -375,8 +378,10 @@ export const DEADLINE_APPEARANCES: Record<'urgent' | 'normal', { tone: Tone; ico
   normal: { tone: 'neutral', icon: 'hourglass-outline' },
 };
 
-/** Ten trung tam in tren bien lai. BE chua co thong tin trung tam nen dat co dinh o day. */
+/** Ten trung tam khi BE chua khai bao `CENTER_NAME` (GET /center). */
 export const CENTER_NAME = 'Trung tâm bồi dưỡng văn hóa EduGrade';
+/** Thong tin lien he cua trung tam it khi doi: tai lai sau moi gio. */
+export const CENTER_INFO_STALE_MS = 60 * 60 * 1000;
 
 /** BE chi ghi nhan hoc phi thu tai trung tam (khong co thanh toan online) nen hinh thuc la co dinh. */
 export const PAYMENT_METHOD_LABEL = 'Đóng tại trung tâm';

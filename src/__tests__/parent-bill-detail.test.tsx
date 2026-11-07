@@ -9,12 +9,15 @@ import { AppError } from '@/types/api';
 import { formatCurrency } from '@/utils/format';
 
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
-  parentDashboardApi: { getBill: jest.fn() },
+  parentDashboardApi: { getBill: jest.fn(), getCenterInfo: jest.fn() },
 }));
 // Jest khong tim thay `@/assets/*`, xem `src/constants/images.ts`
 jest.mock('@/constants/images', () => ({ Images: { logo: 1 } }));
 
 const api = jest.mocked(parentDashboardApi);
+
+/** BE chua khai bao thong tin trung tam (hoac BE cu chua co GET /center). */
+const NO_CENTER_INFO = { name: null, address: null, phone: null, email: null, openingHours: null };
 
 /** Lan render day du dau tien phai transform nhieu module, xem `parent-dashboard.test.tsx`. */
 const FIRST_RENDER_TIMEOUT_MS = 5000;
@@ -77,7 +80,25 @@ function findBillHeader() {
 }
 
 describe('features/parent-dashboard/ParentBillDetail', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    api.getCenterInfo.mockResolvedValue(NO_CENTER_INFO);
+  });
+
+  it('BE khai bao ten trung tam thi bill in ten do', async () => {
+    api.getBill.mockResolvedValue(UNPAID_BILL);
+    api.getCenterInfo.mockResolvedValue({ ...NO_CENTER_INFO, name: 'Trung tâm EduGrade Gò Vấp' });
+    await renderBill();
+
+    expect(
+      await screen.findByText(
+        'Trung tâm EduGrade Gò Vấp',
+        {},
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(CENTER_NAME)).not.toBeOnTheScreen();
+  });
 
   it('bill chua thanh toan: ma bill, hoc sinh, phu huynh, goi hoc, hoc phi va loi nhan dong tai trung tam', async () => {
     api.getBill.mockResolvedValue(UNPAID_BILL);

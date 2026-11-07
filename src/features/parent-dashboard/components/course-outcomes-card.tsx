@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
 
+import { OPTIONAL_OUTCOME_NOTE } from '../constants';
 import { useCourseOutcomeSet } from '../hooks/use-parent-dashboard';
 
 import { LearningTargetRow } from './learning-target-row';
@@ -58,7 +59,7 @@ export function CourseOutcomesCard({ programId }: CourseOutcomesCardProps) {
             key={id}
             code={code}
             title={title}
-            note={required ? undefined : 'Mục tiêu mở rộng, không bắt buộc'}
+            note={required ? undefined : OPTIONAL_OUTCOME_NOTE}
           />
         ))}
       </View>

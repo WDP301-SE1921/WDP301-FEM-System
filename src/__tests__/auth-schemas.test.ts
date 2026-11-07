@@ -89,27 +89,30 @@ describe('features/auth/schemas', () => {
   });
 
   describe('verifyEmailSchema', () => {
-    /** BE phat ma 43 ky tu (32 byte dang base64url). */
-    const token = 'k3J9xQ2mVb7Lw0Zt5Yh8Nf1Rc4Ud6Sa-_pEgIoTqWzA';
+    /** BE gui ma 6 chu so qua email. */
+    const code = '042917';
 
-    it('chap nhan ma BE gui va cat khoang trang khi dan tu email', () => {
-      expect(verifyEmailSchema.safeParse({ token: ` ${token}\n` }).data).toEqual({ token });
+    it('chap nhan ma 6 so va cat khoang trang', () => {
+      expect(verifyEmailSchema.safeParse({ code: ` ${code}\n` }).data).toEqual({ code });
     });
 
     it('lay ma khi phu huynh chep ca dong trong email', () => {
-      const line = `Mã xác minh tài khoản EduGrade: ${token}`;
-      expect(verifyEmailSchema.safeParse({ token: line }).data).toEqual({ token });
+      const line = `Mã xác minh tài khoản EduGrade của bạn là: ${code}`;
+      expect(verifyEmailSchema.safeParse({ code: line }).data).toEqual({ code });
     });
 
-    it('bo trong thi nhac dan ma', () => {
-      const result = verifyEmailSchema.safeParse({ token: '   ' });
-      expect(firstError(result, 'token')).toBe('Vui lòng dán mã xác minh');
+    it('bo trong hoac khong co chu so nao thi nhac nhap ma', () => {
+      expect(firstError(verifyEmailSchema.safeParse({ code: '   ' }), 'code')).toBe(
+        'Vui lòng nhập mã xác minh',
+      );
+      expect(firstError(verifyEmailSchema.safeParse({ code: 'abcdef' }), 'code')).toBe(
+        'Vui lòng nhập mã xác minh',
+      );
     });
 
-    it('ma ngan hon 32 ky tu nhu VerifyEmailDto thi bao dan thieu', () => {
-      const result = verifyEmailSchema.safeParse({ token: token.slice(0, 31) });
-      expect(firstError(result, 'token')).toBe(
-        'Mã xác minh chưa đủ, hãy dán toàn bộ mã trong email',
+    it.each(['04291', '0429171'])('ma "%s" khong dung 6 chu so thi bao loi', (input) => {
+      expect(firstError(verifyEmailSchema.safeParse({ code: input }), 'code')).toBe(
+        'Mã xác minh gồm 6 chữ số, xem trong email trung tâm gửi',
       );
     });
   });

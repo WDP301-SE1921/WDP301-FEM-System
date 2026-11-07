@@ -106,6 +106,10 @@ export type SessionDetail = ScheduleSession & {
   /** Nhan xet chung cua giao vien ve buoi hoc, ghi khi chot diem danh. */
   teacherComment: string | null;
   materials: SessionMaterial[];
+  /** Ghi danh cua con o buoi nay, de tim so bai tren lo trinh. null khi con khong co cho trong buoi. */
+  enrollmentId: string | null;
+  /** Bai hoc cua buoi trong giao trinh. */
+  lessonId: string;
 };
 
 /** `ParticipantKind` cua BE: con hoc buoi co dinh cua lop hay buoi hoc bu. */
@@ -363,6 +367,15 @@ export type TeacherRef = {
   id: string;
   /** null khi giao vien chua dat ten hien thi. */
   displayName: string | null;
+};
+
+/** Response GET /center (CenterInfoDto). Truong nao trung tam chua khai bao o BE thi null. */
+export type CenterInfo = {
+  name: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  openingHours: string | null;
 };
 
 /** Mot phan tu cua response GET /rooms, cung la `room` cua buoi hoc. */
@@ -728,6 +741,11 @@ export type TuitionClass = {
   programId: string;
   /** Phong cua lop (xem GET /rooms), null khi lop chua xep phong. */
   roomId: string | null;
+  /**
+   * Phong cua lop kem ten, null khi chua xep phong. BE tra tu ngay 03/11; BE cu khong co field nay thi
+   * app doi `roomId` ra ten qua GET /rooms.
+   */
+  room?: Room | null;
   program: { name: string; subject: string; grade: number };
   weeklySchedules: WeeklySlot[];
   /** Giao vien hien tai cua lop, null khi lop chua co giao vien. */
@@ -995,7 +1013,8 @@ export type CourseOutcome = LearningTarget & {
 /**
  * Mot phan tu cua GET /academic/programs/:id/outcome-sets voi role PARENT: bo chuan dau ra (CLO) da
  * duyet cua khoa hoc ma con dang hoc hoac da hoc, phien ban moi nhat truoc, CLO theo ma. BE chua tinh
- * muc dat CLO cua hoc sinh nen app khong ghi "đạt chuẩn".
+ * muc dat CLO cua hoc sinh nen app khong ghi "đạt chuẩn". GET /academic/outcome-sets/:id tra cung
+ * dang nay kem `program`, `status` (app khong dung).
  */
 export type CourseOutcomeSet = {
   id: string;

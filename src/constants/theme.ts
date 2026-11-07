@@ -93,6 +93,19 @@ export const Fonts = Platform.select({
   },
 });
 
+/**
+ * Ten cac file font Be Vietnam Pro nap luc mo app (`useAppFonts`), font chu cua design-mobile.md, de
+ * Android va iOS hien chu giong nhau. Font tu nap phai goi dung ten tung do dam: chi dat `fontWeight`
+ * thi Android to dam gia. `ThemedText` tu chon ten theo `fontWeight`, `fontStyle`.
+ */
+export const FontFamily = {
+  regular: 'BeVietnamPro_400Regular',
+  medium: 'BeVietnamPro_500Medium',
+  semiBold: 'BeVietnamPro_600SemiBold',
+  bold: 'BeVietnamPro_700Bold',
+  mediumItalic: 'BeVietnamPro_500Medium_Italic',
+} as const;
+
 export const Spacing = {
   half: 2,
   one: 4,

@@ -63,6 +63,8 @@ export function Button({
   return (
     <Pressable
       accessibilityRole="button"
+      // Icon chi de trang tri: trinh doc man hinh doc dung chu tren nut, khong doc ky tu cua icon
+      accessibilityLabel={title}
       accessibilityState={{ disabled: isDisabled, busy: loading }}
       disabled={isDisabled}
       style={({ pressed }) => [
@@ -97,7 +99,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: Spacing.two,
-    borderRadius: Radius.md,
+    borderRadius: Radius.control,
   },
   // Nut hep (trong the, man hinh 360dp, chu he thong phong to) thi chu xuong dong thay vi day icon
   // va chu tran ra ngoai nut

@@ -43,12 +43,16 @@ export function AssignmentWorkspace({
   const canSubmit = canSubmitAssignment(detail, attemptsUsed);
   const remainingAttempts = canSubmit ? detail.maxAttempts - attemptsUsed : 0;
   const outcomeCodes = getQuestionOutcomeCodes(detail);
+  // Bai cu khong co bo CLO va khong cau nao gan CLO: khong hien khoi muc tieu
+  const measuredTargets = getMeasuredTargets(detail);
   const stopRetrying = () => setIsRetrying(false);
 
   return (
     <>
       <AssignmentSummaryCard detail={detail} className={className} latest={latest} />
-      <AssignmentLearningTargets targets={getMeasuredTargets(detail)} />
+      {detail.outcomeSetId && measuredTargets.length > 0 ? (
+        <AssignmentLearningTargets outcomeSetId={detail.outcomeSetId} targets={measuredTargets} />
+      ) : null}
       {canSubmit && (!latest || isRetrying) ? (
         <AssignmentAnswerForm
           studentId={studentId}

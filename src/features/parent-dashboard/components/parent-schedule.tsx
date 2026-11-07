@@ -81,7 +81,9 @@ export function ParentSchedule({
         <EmptyState
           title="Chưa có hồ sơ học sinh"
           description="Thêm học sinh vào tài khoản để xem lịch học."
+          icon="people-outline"
           actionLabel="Thêm học sinh"
+          actionIcon="person-add-outline"
           onAction={onAddChild}
         />
       );

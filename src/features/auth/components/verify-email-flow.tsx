@@ -19,13 +19,13 @@ export type VerifyEmailFlowProps = {
 };
 
 /**
- * Phu huynh dan ma BE gui qua email de xac minh tai khoan. BE chi cho tao va sua ho so con sau buoc
+ * Phu huynh nhap ma 6 so BE gui qua email de xac minh tai khoan. BE chi cho tao va sua ho so con sau buoc
  * nay; SRS muc 6.1 khong co buoc xac minh nen phu huynh van bo qua duoc de xem app.
  */
 export function VerifyEmailFlow({ user, onDone }: VerifyEmailFlowProps) {
   // Mo man hinh thi doc lai tai khoan: email co the da duoc xac minh tu lan truoc
   useRefreshedUser();
-  const verifyEmail = useVerifyEmail();
+  const verifyEmail = useVerifyEmail(user.email);
   const isVerified = verifyEmail.isSuccess || !needsEmailVerification(user);
 
   return (

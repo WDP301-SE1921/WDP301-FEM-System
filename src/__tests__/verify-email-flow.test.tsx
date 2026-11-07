@@ -21,8 +21,8 @@ jest.mock('@/lib/logger', () => ({
 
 const api = jest.mocked(authApi);
 
-/** BE phat ma 43 ky tu (32 byte dang base64url). */
-const TOKEN = 'k3J9xQ2mVb7Lw0Zt5Yh8Nf1Rc4Ud6Sa-_pEgIoTqWzA';
+/** BE gui ma 6 chu so qua email. */
+const CODE = '042917';
 /** Lan render dau phai transform nhieu module, mat hon 1 giay mac dinh cua findBy khi CI. */
 const FIRST_RENDER_TIMEOUT_MS = 5000;
 
@@ -75,17 +75,17 @@ describe('features/auth/VerifyEmailFlow', () => {
 
     await user.press(screen.getByRole('button', { name: 'Xác minh email' }));
 
-    expect(await screen.findByText('Vui lòng dán mã xác minh')).toBeOnTheScreen();
+    expect(await screen.findByText('Vui lòng nhập mã xác minh')).toBeOnTheScreen();
     expect(api.verifyEmail).not.toHaveBeenCalled();
   });
 
-  it('dan ma dung: xac minh, doc lai tai khoan vao phien roi cho di tiep', async () => {
+  it('nhap ma dung: xac minh, doc lai tai khoan vao phien roi cho di tiep', async () => {
     api.verifyEmail.mockResolvedValue();
     // Lan dau la luc mo man hinh, lan sau la sau khi xac minh xong
     api.me.mockResolvedValueOnce(UNVERIFIED).mockResolvedValue(VERIFIED);
     const { onDone, user } = await renderFlow();
 
-    await user.type(screen.getByLabelText('Mã xác minh'), ` ${TOKEN} `);
+    await user.type(screen.getByLabelText('Mã xác minh'), ` ${CODE} `);
     await user.press(screen.getByRole('button', { name: 'Xác minh email' }));
 
     expect(
@@ -95,7 +95,7 @@ describe('features/auth/VerifyEmailFlow', () => {
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     ).toBeOnTheScreen();
-    expect(api.verifyEmail).toHaveBeenCalledWith({ token: TOKEN });
+    expect(api.verifyEmail).toHaveBeenCalledWith({ email: 'phuhuynh@example.com', code: CODE });
     await waitFor(() => expect(mockSetUser).toHaveBeenCalledWith(VERIFIED));
     expect(screen.queryByLabelText('Mã xác minh')).not.toBeOnTheScreen();
 
@@ -109,7 +109,7 @@ describe('features/auth/VerifyEmailFlow', () => {
     );
     const { user } = await renderFlow();
 
-    await user.type(screen.getByLabelText('Mã xác minh'), TOKEN);
+    await user.type(screen.getByLabelText('Mã xác minh'), CODE);
     await user.press(screen.getByRole('button', { name: 'Xác minh email' }));
 
     expect(

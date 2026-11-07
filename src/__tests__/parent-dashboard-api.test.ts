@@ -337,6 +337,27 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       });
     });
 
+    it('BE tra ten phong kem lop thi khong goi GET /rooms', async () => {
+      respond = (request) =>
+        request.path === ROUTES.enrollments
+          ? page([
+              {
+                ...ENROLLMENT,
+                class: {
+                  ...ENROLLMENT.class,
+                  roomId: 'room-b201',
+                  room: { id: 'room-b201', name: 'Phòng B201' },
+                },
+              },
+            ])
+          : respondEmpty(request);
+
+      const [course] = await parentDashboardApi.getStudentEnrollments(STUDENT_ID);
+
+      expect(course?.room).toBe('Phòng B201');
+      expect(sentTo(ROUTES.rooms)).toHaveLength(0);
+    });
+
     it('khong tai duoc phong hay diem thi an phan do, van hien mon', async () => {
       respond = (request) =>
         request.path === ROUTES.rooms || request.path === ROUTES.grades
@@ -455,6 +476,55 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
 
       respond = () => new BeError(500, 'INTERNAL_ERROR');
       await expect(parentDashboardApi.getCourseOutcomeSet(PROGRAM_ID)).rejects.toMatchObject({
+        code: 'INTERNAL_ERROR',
+      });
+    });
+  });
+
+  describe('getOutcomeSet', () => {
+    const OUTCOME_SET_ID = 'set-2';
+    const OUTCOME_SET_ROUTE = `/academic/outcome-sets/${OUTCOME_SET_ID}`;
+    const outcomeSet: CourseOutcomeSet = {
+      id: OUTCOME_SET_ID,
+      programId: 'program-math',
+      level: 'Lớp 8 - cơ bản',
+      version: 2,
+      outcomes: [
+        {
+          id: 'clo-4',
+          code: 'MATH-8-04',
+          title: 'Bài toán thực tế',
+          statement: 'Vận dụng hằng đẳng thức giải bài toán thực tế.',
+          required: false,
+        },
+      ],
+    };
+
+    it('doc mot bo theo id, khong gui query', async () => {
+      // BE tra them `program`, `status`; app khong dung
+      respond = () => ({
+        ...outcomeSet,
+        program: { id: 'program-math', name: 'Toán 8', subject: 'Toán', grade: 8 },
+        status: 'APPROVED',
+      });
+
+      await expect(parentDashboardApi.getOutcomeSet(OUTCOME_SET_ID)).resolves.toMatchObject(
+        outcomeSet,
+      );
+      expect(sent).toEqual([
+        { method: 'get', path: OUTCOME_SET_ROUTE, query: {}, body: undefined },
+      ]);
+    });
+
+    it('bo da xoa, hoac BE khong cho xem (con khong hoc khoa cua bo) thi null', async () => {
+      respond = () => new BeError(404, 'OUTCOME_SET_NOT_FOUND');
+      await expect(parentDashboardApi.getOutcomeSet(OUTCOME_SET_ID)).resolves.toBeNull();
+
+      respond = () => new BeError(403, 'FORBIDDEN');
+      await expect(parentDashboardApi.getOutcomeSet(OUTCOME_SET_ID)).resolves.toBeNull();
+
+      respond = () => new BeError(500, 'INTERNAL_ERROR');
+      await expect(parentDashboardApi.getOutcomeSet(OUTCOME_SET_ID)).rejects.toMatchObject({
         code: 'INTERNAL_ERROR',
       });
     });

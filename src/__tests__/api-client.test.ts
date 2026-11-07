@@ -205,6 +205,20 @@ describe('api/client', () => {
     expect(onUnauthorized).toHaveBeenCalledTimes(1);
   });
 
+  it('dang nhap sai mat khau (401, chua co phien) khong refresh va khong bao het phien', async () => {
+    const onUnauthorized = jest.fn();
+    setUnauthorizedHandler(onUnauthorized);
+    respond = () => fail(401, 'AUTH_INVALID_CREDENTIALS');
+
+    const error: unknown = await apiClient
+      .post(Endpoints.auth.login, { email: 'phuhuynh@example.com', password: 'SaiMatKhau1' })
+      .catch((reason: unknown) => reason);
+
+    expect(error).toMatchObject({ status: 401, code: 'AUTH_INVALID_CREDENTIALS' });
+    expect(sent.map(({ url }) => url)).toEqual([`${API_URL}/auth/login`]);
+    expect(onUnauthorized).not.toHaveBeenCalled();
+  });
+
   it('endpoint chua wire bi server gia chan voi 404, khong ra mang', async () => {
     const error: unknown = await apiClient
       .get(`/parent/students/${STUDENT_ID}/dashboard`)

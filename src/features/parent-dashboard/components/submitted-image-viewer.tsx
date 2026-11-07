@@ -39,6 +39,8 @@ export function SubmittedImageViewer({
       visible={fileId !== undefined}
       animationType="fade"
       statusBarTranslucent
+      // Android: ve ca duoi thanh dieu huong (khong thi lo dai den), safe area chua cho thanh do
+      navigationBarTranslucent
       onRequestClose={onClose}
     >
       <ThemedView accessibilityViewIsModal style={styles.root}>

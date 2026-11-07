@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 
 import { queryKeys } from '@/api/query-client';
+import { Config } from '@/constants/config';
 
 import { parentDashboardApi } from '../api/parent-dashboard-api';
-import { FILE_PREVIEW_STALE_MS } from '../constants';
+import { CENTER_INFO_STALE_MS, CENTER_NAME, FILE_PREVIEW_STALE_MS } from '../constants';
 import type { ScheduleRange, SessionRef } from '../types';
 
 export function useLinkedStudents() {
@@ -41,10 +42,12 @@ export function useStudentEnrollments(studentId: string) {
   });
 }
 
-export function useEnrollmentLessons(studentId: string, enrollmentId: string) {
+/** Lo trinh cua mot mon. `enrollmentId` null thi khong tai (vd buoi con khong co cho). */
+export function useEnrollmentLessons(studentId: string, enrollmentId: string | null) {
   return useQuery({
-    queryKey: queryKeys.parent.enrollmentLessons(studentId, enrollmentId),
-    queryFn: () => parentDashboardApi.getEnrollmentLessons(studentId, enrollmentId),
+    queryKey: queryKeys.parent.enrollmentLessons(studentId, enrollmentId ?? ''),
+    queryFn: () => parentDashboardApi.getEnrollmentLessons(studentId, enrollmentId ?? ''),
+    enabled: enrollmentId !== null,
   });
 }
 
@@ -52,6 +55,14 @@ export function useCourseOutcomeSet(programId: string) {
   return useQuery({
     queryKey: queryKeys.academic.programOutcomeSet(programId),
     queryFn: () => parentDashboardApi.getCourseOutcomeSet(programId),
+  });
+}
+
+/** Mot bo chuan dau ra theo id, vd bo CLO giao vien chon cho bai tap. */
+export function useOutcomeSet(outcomeSetId: string) {
+  return useQuery({
+    queryKey: queryKeys.academic.outcomeSet(outcomeSetId),
+    queryFn: () => parentDashboardApi.getOutcomeSet(outcomeSetId),
   });
 }
 
@@ -97,6 +108,24 @@ export function useFilePreview(fileId: string) {
     queryFn: () => parentDashboardApi.getFilePreview(fileId),
     staleTime: FILE_PREVIEW_STALE_MS,
   });
+}
+
+/**
+ * Ten va so dien thoai cua trung tam de hien tren bill, bien lai va man hoc phi. BE chua khai bao (hoac
+ * BE cu chua co GET /center) thi dung ten mac dinh cua app va `EXPO_PUBLIC_CENTER_PHONE`.
+ */
+export function useCenterContact(): { name: string; phone: string | null } {
+  const { data } = useQuery({
+    queryKey: queryKeys.center,
+    queryFn: () => parentDashboardApi.getCenterInfo(),
+    staleTime: CENTER_INFO_STALE_MS,
+    // BE cu tra 404: dung gia tri mac dinh, khong thu lai
+    retry: false,
+  });
+  return {
+    name: data?.name ?? CENTER_NAME,
+    phone: data?.phone ?? Config.centerPhone,
+  };
 }
 
 export function useTuitionEnrollments(studentId: string) {

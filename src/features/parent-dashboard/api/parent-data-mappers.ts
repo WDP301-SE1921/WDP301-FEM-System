@@ -128,6 +128,23 @@ export function findRoomName(rooms: readonly Room[], roomId: string | null): str
   return rooms.find(({ id }) => id === roomId)?.name ?? null;
 }
 
+/** Ten phong cua lop: lay tu `room` BE tra kem lop, BE cu chua tra thi tim trong `rooms`. */
+function getClassRoomName(classroom: TuitionClass, rooms: readonly Room[]): string | null {
+  if (classroom.room !== undefined) return classroom.room?.name ?? null;
+  return findRoomName(rooms, classroom.roomId);
+}
+
+/**
+ * Moi lop con dang hoc da kem ten phong (BE tu ngay 03/11), nen khong can GET /rooms de doi id ra
+ * ten.
+ */
+export function hasClassRoomNames(
+  enrollments: readonly TuitionEnrollment[],
+  now: Date = new Date(),
+): boolean {
+  return enrollments.every((enrollment) => getCurrentClass(enrollment, now).room !== undefined);
+}
+
 /** Chi tiet mot buoi cua con. Buoi da huy van hien, kem ly do huy cua trung tam. */
 export function toSessionDetail(detail: ScheduledSessionDetail): SessionDetail {
   const { participation } = detail;
@@ -144,13 +161,15 @@ export function toSessionDetail(detail: ScheduledSessionDetail): SessionDetail {
     topic: detail.lesson.title,
     note: detail.status === 'CANCELLED' ? detail.cancelReason : null,
     status: detail.status,
-    // `sequence` cua BE dem trong tung hoc phan (thang), khong khop so bai tren lo trinh cua mon
+    // `sequence` cua BE dem trong tung hoc phan (thang): so bai lay tu lo trinh (`findRoadmapLessonNumber`)
     lesson: { sequence: null, title: detail.lesson.title, description: null },
     attendance: participation?.attendance ?? null,
     checkedInAt: null,
     // BE luu chuoi rong khi giao vien khong ghi
     teacherComment: detail.summary || null,
     materials: [],
+    enrollmentId: participation?.enrollmentId ?? null,
+    lessonId: detail.lesson.id,
   };
 }
 
@@ -184,6 +203,7 @@ export type EnrollmentSources = {
   pauses: readonly LeaveRequest[];
   /** Buoi cua con tu hom nay tro di, theo gio tang dan. */
   upcomingSessions: readonly ScheduledSession[];
+  /** Moi phong cua trung tam; chi dung khi BE chua tra ten phong kem lop (`hasClassRoomNames`). */
   rooms: readonly Room[];
   /** Diem trung binh theo mon cua con. */
   subjectGrades: readonly SubjectGradeAverage[];
@@ -229,7 +249,7 @@ export function toStudentEnrollments({
       subjectName,
       className: currentClass.name,
       teacherName: currentClass.teacher?.displayName ?? null,
-      room: findRoomName(rooms, currentClass.roomId),
+      room: getClassRoomName(currentClass, rooms),
       weeklySlots: currentClass.weeklySchedules,
       completedSessions: termSessions?.elapsed ?? 0,
       totalSessions: termSessions?.total ?? 0,
@@ -326,7 +346,8 @@ export type LessonSources = {
 
 /**
  * Lo trinh cua ghi danh: bai cua hoc phan da duyet (ca bai chua xep buoi), kem buoi day bai. Lop chua
- * co hoc phan nao (vd ky hoc chua bat dau, BE chi tra hoc phan cua ky dang hoc) thi moi buoi la mot bai.
+ * co hoc phan nao (vd ky sap hoc voi BE truoc 03/11, BE do chi tra hoc phan cua ky dang hoc) thi moi
+ * buoi la mot bai.
  */
 export function toEnrollmentLessons({
   enrollment,

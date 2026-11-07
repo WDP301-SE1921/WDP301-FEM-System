@@ -272,6 +272,8 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
         checkedInAt: null,
         teacherComment: 'Cả lớp làm tốt phần luyện tập.',
         materials: [],
+        enrollmentId: 'enrollment-math',
+        lessonId: 'lesson-1',
       });
     });
 

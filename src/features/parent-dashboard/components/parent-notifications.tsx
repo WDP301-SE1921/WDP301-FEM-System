@@ -58,6 +58,7 @@ export function ParentNotifications({ onBack, onOpenNotification }: ParentNotifi
       return (
         <EmptyState
           title="Chưa có thông báo"
+          icon="notifications-outline"
           description="Thông báo về lịch học, điểm danh, bài tập và học phí của con sẽ hiện ở đây."
         />
       );
