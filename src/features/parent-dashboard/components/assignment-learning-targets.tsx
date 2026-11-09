@@ -32,10 +32,9 @@ export function AssignmentLearningTargets({
   return (
     <SectionCard title="Mục tiêu bài" icon="locate-outline">
       <View style={styles.list}>
-        {targets.map(({ id, code, title }) => (
+        {targets.map(({ id, title }) => (
           <LearningTargetRow
             key={id}
-            code={code}
             title={title}
             note={optionalIds.has(id) ? OPTIONAL_OUTCOME_NOTE : undefined}
           />

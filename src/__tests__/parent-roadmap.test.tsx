@@ -298,7 +298,7 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
 
       expect(await screen.findByText('Mục tiêu khóa học')).toBeOnTheScreen();
       expect(api.getCourseOutcomeSet).toHaveBeenCalledWith('program-math');
-      expect(screen.getByLabelText('MATH-8-03: Mục tiêu 3')).toBeOnTheScreen();
+      expect(screen.getByLabelText('Mục tiêu 3')).toBeOnTheScreen();
       expect(screen.queryByText('Mục tiêu 4')).not.toBeOnTheScreen();
       // BE chua tinh muc dat CLO nen khong ghi "đạt chuẩn"
       expect(screen.queryByText(/đạt chuẩn/i)).not.toBeOnTheScreen();
@@ -306,9 +306,12 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
       await user.press(screen.getByRole('button', { name: /Xem cả 4 mục tiêu$/ }));
 
       expect(
-        screen.getByLabelText('MATH-8-04: Mục tiêu 4. Mục tiêu mở rộng, không bắt buộc'),
+        screen.getByLabelText('Mục tiêu 4. Mục tiêu mở rộng, không bắt buộc'),
       ).toBeOnTheScreen();
       expect(screen.getByRole('button', { name: /Thu gọn$/ })).toBeOnTheScreen();
+      // Ma CLO la ma ky thuat: chi hien ten muc tieu, ke ca nhan doc man hinh
+      expect(screen.queryAllByText(/MATH-8-0\d/)).toHaveLength(0);
+      expect(screen.queryAllByLabelText(/MATH-8-0\d/)).toHaveLength(0);
     });
 
     it('khoa chua co bo CLO da duyet thi khong hien khoi', async () => {
@@ -333,7 +336,7 @@ describe('features/parent-dashboard/StudentRoadmap', () => {
         }),
       );
 
-      expect(await screen.findByLabelText('MATH-8-01: Mục tiêu 1')).toBeOnTheScreen();
+      expect(await screen.findByLabelText('Mục tiêu 1')).toBeOnTheScreen();
       expect(screen.getByText('Đã học 2/8 bài')).toBeOnTheScreen();
     });
   });

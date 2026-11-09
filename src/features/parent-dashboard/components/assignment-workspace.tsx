@@ -5,7 +5,6 @@ import {
   canSubmitAssignment,
   findLatestSubmission,
   getMeasuredTargets,
-  getQuestionOutcomeCodes,
   toAnswerDraft,
   toDraftAttachments,
 } from '../utils';
@@ -42,7 +41,6 @@ export function AssignmentWorkspace({
   const attemptsUsed = latest?.attemptNo ?? 0;
   const canSubmit = canSubmitAssignment(detail, attemptsUsed);
   const remainingAttempts = canSubmit ? detail.maxAttempts - attemptsUsed : 0;
-  const outcomeCodes = getQuestionOutcomeCodes(detail);
   // Bai cu khong co bo CLO va khong cau nao gan CLO: khong hien khoi muc tieu
   const measuredTargets = getMeasuredTargets(detail);
   const stopRetrying = () => setIsRetrying(false);
@@ -59,7 +57,6 @@ export function AssignmentWorkspace({
           assignmentId={assignmentId}
           recipientId={recipientId}
           questions={detail.questions}
-          outcomeCodes={outcomeCodes}
           // Nop lai giu ca anh cua lan truoc; con xoa duoc neu muon gui anh khac
           initialDraft={
             latest
@@ -73,7 +70,6 @@ export function AssignmentWorkspace({
       ) : (
         <AssignmentReview
           questions={detail.questions}
-          outcomeCodes={outcomeCodes}
           submission={latest}
           remainingAttempts={remainingAttempts}
           onRetry={() => setIsRetrying(true)}

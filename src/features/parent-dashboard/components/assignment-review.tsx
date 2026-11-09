@@ -14,8 +14,6 @@ import { SubmittedFiles } from './submitted-files';
 
 export type AssignmentReviewProps = {
   questions: AssignmentQuestion[];
-  /** Ma CLO cua tung cau theo id cau hoi, xem `getQuestionOutcomeCodes`. */
-  outcomeCodes: Partial<Record<string, string>>;
   /** Lan nop dang xem; null khi con chua nop va khong nop duoc nua. */
   submission: SubmissionRecord | null;
   /** So lan con con duoc nop; 0 thi khong hien nut nop lai. */
@@ -29,7 +27,6 @@ export type AssignmentReviewProps = {
  */
 export function AssignmentReview({
   questions,
-  outcomeCodes,
   submission,
   remainingAttempts,
   onRetry,
@@ -83,7 +80,6 @@ export function AssignmentReview({
           review={getQuestionReview(question, submission)}
           hasSubmission={submission !== null}
           hasAttachments={fileCount > 0}
-          outcomeCode={outcomeCodes[question.id]}
         />
       ))}
 

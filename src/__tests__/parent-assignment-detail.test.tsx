@@ -527,12 +527,18 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
   });
 
   describe('bai co CLO', () => {
-    // BE tra ca bo CLO; bai chi do MATH-8-02 va MATH-8-03
+    // BE tra ca bo CLO, xep theo ma; bai chi do "Hằng đẳng thức" va "Phân tích nhân tử"
     const LEARNING_TARGETS = [
       { id: 'clo-1', code: 'MATH-8-01', title: 'Đa thức nhiều biến', statement: '…' },
       { id: 'clo-2', code: 'MATH-8-02', title: 'Hằng đẳng thức', statement: '…' },
       { id: 'clo-3', code: 'MATH-8-03', title: 'Phân tích nhân tử', statement: '…' },
     ];
+    const TARGET_ROW_LABEL = /^(Đa thức nhiều biến|Hằng đẳng thức|Phân tích nhân tử)/;
+    /** Ma CLO la ma ky thuat: khong duoc hien o dau ca, ke ca nhan doc man hinh. */
+    const expectNoOutcomeCode = () => {
+      expect(screen.queryAllByText(/MATH-8-0\d/)).toHaveLength(0);
+      expect(screen.queryAllByLabelText(/MATH-8-0\d/)).toHaveLength(0);
+    };
 
     beforeEach(() => {
       api.getAssignmentSubmissions.mockResolvedValue([]);
@@ -547,7 +553,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
       });
     });
 
-    it('chi hien muc tieu cau hoi do, ghi chu muc tieu mo rong, gan ma CLO canh cau', async () => {
+    it('chi hien ten muc tieu cau hoi do, ghi chu muc tieu mo rong, khong hien ma CLO', async () => {
       api.getOutcomeSet.mockResolvedValue({
         id: 'set-1',
         programId: 'program-math',
@@ -562,7 +568,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
 
       expect(
         await screen.findByLabelText(
-          'MATH-8-03: Phân tích nhân tử. Mục tiêu mở rộng, không bắt buộc',
+          'Phân tích nhân tử. Mục tiêu mở rộng, không bắt buộc',
           {},
           { timeout: FIRST_RENDER_TIMEOUT_MS },
         ),
@@ -571,14 +577,12 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
       expect(screen.getByText('Mục tiêu bài')).toBeOnTheScreen();
       // Giu thu tu trong bo, khong theo thu tu cau
       expect(
-        screen.getAllByLabelText(/^MATH-8-0\d: /).map((row) => row.props.accessibilityLabel),
-      ).toEqual([
-        'MATH-8-02: Hằng đẳng thức',
-        'MATH-8-03: Phân tích nhân tử. Mục tiêu mở rộng, không bắt buộc',
-      ]);
+        screen.getAllByLabelText(TARGET_ROW_LABEL).map((row) => row.props.accessibilityLabel),
+      ).toEqual(['Hằng đẳng thức', 'Phân tích nhân tử. Mục tiêu mở rộng, không bắt buộc']);
       expect(screen.queryByText('Đa thức nhiều biến')).not.toBeOnTheScreen();
-      expect(screen.getByLabelText('Mục tiêu MATH-8-03')).toBeOnTheScreen();
-      expect(screen.getByLabelText('Mục tiêu MATH-8-02')).toBeOnTheScreen();
+      // Ca khung cau hoi luc lam bai cung khong gan ma CLO canh "Câu N"
+      expect(screen.getByText('Câu 1')).toBeOnTheScreen();
+      expectNoOutcomeCode();
     });
 
     it('khong tai duoc bo CLO thi van hien muc tieu, chi khong co ghi chu', async () => {
@@ -589,9 +593,39 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
         await screen.findByText('Mục tiêu bài', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
       ).toBeOnTheScreen();
       expect(
-        screen.getAllByLabelText(/^MATH-8-0\d: /).map((row) => row.props.accessibilityLabel),
-      ).toEqual(['MATH-8-02: Hằng đẳng thức', 'MATH-8-03: Phân tích nhân tử']);
+        screen.getAllByLabelText(TARGET_ROW_LABEL).map((row) => row.props.accessibilityLabel),
+      ).toEqual(['Hằng đẳng thức', 'Phân tích nhân tử']);
       expect(screen.queryByText('Mục tiêu mở rộng, không bắt buộc')).not.toBeOnTheScreen();
+    });
+
+    it('xem lai bai da cham cung khong hien ma CLO canh cau', async () => {
+      api.getOutcomeSet.mockRejectedValue(new AppError('Lỗi máy chủ', 500, 'INTERNAL_ERROR'));
+      api.getAssignmentSubmissions.mockResolvedValue([
+        {
+          ...SUBMITTED,
+          grades: [
+            {
+              id: 'grade-1',
+              scores: [
+                { questionId: 'q1', score: 0, feedback: '' },
+                { questionId: 'q2', score: 5.5, feedback: '' },
+              ],
+              totalScore: 5.5,
+              feedback: '',
+              publishedAt: daysFromToday(0),
+            },
+          ],
+        },
+      ]);
+      await renderDetail();
+
+      expect(
+        await screen.findByText('Kết quả', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+      ).toBeOnTheScreen();
+      expect(screen.getByText('Bài làm của học sinh')).toBeOnTheScreen();
+      expect(screen.getByText('5.5 / 6 điểm')).toBeOnTheScreen();
+      expect(screen.getByLabelText('Hằng đẳng thức')).toBeOnTheScreen();
+      expectNoOutcomeCode();
     });
   });
 
@@ -603,7 +637,6 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
       await screen.findByText(DETAIL.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
     expect(screen.queryByText('Mục tiêu bài')).not.toBeOnTheScreen();
-    expect(screen.queryByLabelText(/^Mục tiêu /)).not.toBeOnTheScreen();
     expect(api.getOutcomeSet).not.toHaveBeenCalled();
   });
 

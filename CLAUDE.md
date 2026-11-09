@@ -116,3 +116,5 @@ Day la cac pattern repo da dung. Code moi di theo dung cac pattern nay, khong tu
 @docs/ARCHITECTURE.md
 
 @docs/CODING_CONVENTIONS.md
+
+@docs/design-mobile.md

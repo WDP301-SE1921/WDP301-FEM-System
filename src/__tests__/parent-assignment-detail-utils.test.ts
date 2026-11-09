@@ -18,7 +18,6 @@ import {
   getMeasuredTargets,
   getOptionalOutcomeIds,
   getPublishedGrade,
-  getQuestionOutcomeCodes,
   getUnansweredPositions,
   getQuestionReview,
   getSubmitConfirmMessage,
@@ -119,28 +118,11 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         ],
       };
 
-      expect(getMeasuredTargets(detail).map(({ code }) => code)).toEqual([
-        'MATH-8-01',
-        'MATH-8-03',
-      ]);
+      expect(getMeasuredTargets(detail).map(({ id }) => id)).toEqual(['clo-1', 'clo-3']);
     });
 
     it('bai cu khong co CLO thi rong', () => {
       expect(getMeasuredTargets({ learningTargets: [], questions: QUESTIONS })).toEqual([]);
-      expect(getQuestionOutcomeCodes({ learningTargets: [], questions: QUESTIONS })).toEqual({});
-    });
-
-    it('getQuestionOutcomeCodes bo cau khong gan CLO hoac gan CLO ngoai bo', () => {
-      const detail = {
-        learningTargets: TARGETS,
-        questions: [
-          { ...CHOICE, outcomeId: 'clo-2' },
-          { ...ESSAY, outcomeId: 'clo-ngoai-bo' },
-          { ...ESSAY, id: 'q3', outcomeId: null },
-        ],
-      };
-
-      expect(getQuestionOutcomeCodes(detail)).toEqual({ q1: 'MATH-8-02' });
     });
 
     it('getOptionalOutcomeIds chi lay CLO mo rong (required: false)', () => {

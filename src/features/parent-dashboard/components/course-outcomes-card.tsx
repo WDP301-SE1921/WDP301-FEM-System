@@ -54,10 +54,9 @@ export function CourseOutcomesCard({ programId }: CourseOutcomesCardProps) {
         Những gì học sinh hướng tới sau khi học xong khóa này.
       </ThemedText>
       <View style={styles.list}>
-        {visibleOutcomes.map(({ id, code, title, required }) => (
+        {visibleOutcomes.map(({ id, title, required }) => (
           <LearningTargetRow
             key={id}
-            code={code}
             title={title}
             note={required ? undefined : OPTIONAL_OUTCOME_NOTE}
           />

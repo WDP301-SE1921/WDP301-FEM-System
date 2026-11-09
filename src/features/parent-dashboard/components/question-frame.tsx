@@ -16,17 +16,17 @@ export type QuestionFrameProps = PropsWithChildren<{
   points: string;
   /** Con bam nop khi cau nay chua tra loi: vien do va nhan "Chưa trả lời". */
   isMissing?: boolean;
-  /** Ma CLO cau nay do, canh so thu tu cau. Bo trong voi bai cu. */
-  outcomeCode?: string;
 }>;
 
-/** Khung mot cau hoi: so thu tu, ma muc tieu, diem, de bai; phan tra loi hoac ket qua nam ben duoi. */
+/**
+ * Khung mot cau hoi: so thu tu, diem, de bai; phan tra loi hoac ket qua nam ben duoi. Khong hien ma
+ * CLO cua cau: ma ky thuat khong co nghia voi hoc sinh, ten muc tieu da co o khoi "Mục tiêu bài".
+ */
 export function QuestionFrame({
   position,
   prompt,
   points,
   isMissing = false,
-  outcomeCode,
   children,
 }: QuestionFrameProps) {
   const theme = useTheme();
@@ -45,11 +45,6 @@ export function QuestionFrame({
           <ThemedText type="smallBold" themeColor="primary">
             Câu {position}
           </ThemedText>
-          {outcomeCode ? (
-            <View accessible accessibilityLabel={`Mục tiêu ${outcomeCode}`}>
-              <ToneBadge label={outcomeCode} tone="neutral" />
-            </View>
-          ) : null}
           {isMissing ? <ToneBadge label="Chưa trả lời" tone="danger" icon="alert-circle" /> : null}
         </View>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.points}>

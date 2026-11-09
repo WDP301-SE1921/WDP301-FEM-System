@@ -573,7 +573,10 @@ export type AssignmentQuestion = {
 /** Mot muc tieu bai (CLO trong bo chuan dau ra cua khoa hoc). */
 export type LearningTarget = {
   id: string;
-  /** Ma CLO trong bo, vd `MATH-6-01`. */
+  /**
+   * Ma CLO trong bo, vd `MATH-6-01`. BE xep muc tieu theo ma nay; app khong hien cho phu huynh vi la ma
+   * ky thuat, khong co nghia voi hoc sinh.
+   */
   code: string;
   title: string;
   /** Mo ta day du muc tieu. */

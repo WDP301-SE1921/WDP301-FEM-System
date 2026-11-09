@@ -843,19 +843,6 @@ export function getOptionalOutcomeIds(outcomes: readonly CourseOutcome[]): Reado
   return new Set(outcomes.filter(({ required }) => !required).map(({ id }) => id));
 }
 
-/** Ma CLO cua tung cau, key la id cau hoi. Cau khong gan CLO (bai cu) thi khong co key. */
-export function getQuestionOutcomeCodes(
-  detail: Pick<AssignmentDetail, 'learningTargets' | 'questions'>,
-): Partial<Record<string, string>> {
-  const codeById = new Map(detail.learningTargets.map(({ id, code }) => [id, code]));
-  return Object.fromEntries(
-    detail.questions.flatMap(({ id, outcomeId }) => {
-      const code = outcomeId ? codeById.get(outcomeId) : undefined;
-      return code ? [[id, code]] : [];
-    }),
-  );
-}
-
 /** Lan nop moi nhat cua con. null khi con chua nop. */
 export function findLatestSubmission(
   submissions: readonly SubmissionRecord[],
