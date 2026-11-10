@@ -1,6 +1,7 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
-import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
+import type { PickedImage } from '@/lib/image-picker';
+import { appendFileToForm } from '@/lib/upload-file';
 import { AppError, type ApiResponse } from '@/types/api';
 import type { AuthSession, User } from '@/types/auth';
 
@@ -27,6 +28,8 @@ const AVATAR_TOO_LARGE_MESSAGE = 'Ảnh đại diện phải nhỏ hơn 5 MB.';
  */
 const AVATAR_UPLOAD_CODE_MESSAGES: Partial<Record<string, string>> = {
   INVALID_FILE_SIZE: AVATAR_TOO_LARGE_MESSAGE,
+  // Thong bao chung cua ma nay noi ca PDF (bai lam nhan PDF), anh dai dien chi nhan anh
+  INVALID_FILE_TYPE: 'Chỉ dùng được ảnh JPG hoặc PNG làm ảnh đại diện.',
 };
 const AVATAR_UPLOAD_STATUS_MESSAGES: Partial<Record<number, string>> = {
   [HTTP_PAYLOAD_TOO_LARGE]: AVATAR_TOO_LARGE_MESSAGE,
@@ -91,7 +94,7 @@ export const authApi = {
   /** Thay anh dai dien (PNG hoac JPEG toi da 5 MB), BE tra link xem anh moi. */
   async uploadAvatar(image: PickedImage): Promise<AvatarAccess> {
     const form = new FormData();
-    await appendImageToForm(form, 'file', image);
+    await appendFileToForm(form, 'file', image);
     try {
       const { data } = await apiClient.put<ApiResponse<AvatarAccess>>(Endpoints.auth.avatar, form, {
         // apiClient mac dinh gui JSON: axios se doi FormData thanh JSON neu khong doi header

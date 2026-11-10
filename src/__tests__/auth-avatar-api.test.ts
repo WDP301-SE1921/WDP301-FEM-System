@@ -138,9 +138,10 @@ describe('features/auth/api/authApi: anh dai dien', () => {
       message: 'Ảnh đại diện vừa được đổi ở nơi khác. Vui lòng thử lại.',
     });
 
+    // Thong bao chung cua ma nay noi ca PDF (bai lam), anh dai dien chi nhan anh
     respond = () => new BeError(400, 'INVALID_FILE_TYPE');
     await expect(authApi.uploadAvatar(IMAGE)).rejects.toMatchObject({
-      message: 'Chỉ gửi được ảnh JPG hoặc PNG.',
+      message: 'Chỉ dùng được ảnh JPG hoặc PNG làm ảnh đại diện.',
     });
   });
 

@@ -7,6 +7,7 @@ import type { AssignmentQuestion } from '../types';
 import { formatPoints } from '../utils';
 
 import { ChoiceOption } from './choice-option';
+import { QuestionFileNote } from './question-file-note';
 import { QuestionFrame } from './question-frame';
 
 /** Du cho vai dong bai lam truoc khi o nhap tu cao len. */
@@ -22,15 +23,21 @@ export type QuestionAnswerCardProps = {
   value: string;
   /** Con da bam nop ma cau nay con trong. */
   isMissing: boolean;
+  /** Nhan cac tep bai lam phu huynh da gan voi cau nay, vd `["Ảnh 1"]`. */
+  fileLabels: readonly string[];
   onChange: (answer: string) => void;
 };
 
-/** Mot cau khi con lam bai: cau trac nghiem chon mot lua chon, cau tu luan nhap bai lam. */
+/**
+ * Mot cau khi con lam bai: cau trac nghiem chon mot lua chon, cau tu luan nhap bai lam. Cau da gan
+ * anh hoac PDF bai lam thi ghi them tep nao co bai lam cua cau.
+ */
 export function QuestionAnswerCard({
   position,
   question,
   value,
   isMissing,
+  fileLabels,
   onChange,
 }: QuestionAnswerCardProps) {
   const label = `Câu ${position}`;
@@ -64,6 +71,7 @@ export function QuestionAnswerCard({
           style={styles.essay}
         />
       )}
+      {fileLabels.length > 0 ? <QuestionFileNote labels={fileLabels} /> : null}
     </QuestionFrame>
   );
 }

@@ -6,7 +6,6 @@ import {
   type ImagePickerAsset,
   type ImagePickerOptions,
 } from 'expo-image-picker';
-import { Platform } from 'react-native';
 
 import { logger } from './logger';
 
@@ -145,23 +144,4 @@ export async function pickImage(
     logger.warn('[image-picker] Khong mo duoc camera hoac thu vien anh', error);
     return { status: 'FAILED' };
   }
-}
-
-/**
- * Them anh vao FormData de gui multipart. Native nhan doi tuong `{ uri, name, type }` va tu doc file;
- * web khong hieu doi tuong do nen phai doi `uri` (blob:, data:) thanh Blob.
- */
-export async function appendImageToForm(
-  form: FormData,
-  field: string,
-  image: PickedImage,
-): Promise<void> {
-  if (Platform.OS === 'web') {
-    const blob = await (await fetch(image.uri)).blob();
-    form.append(field, blob, image.name);
-    return;
-  }
-  // FormData cua React Native nhan `{ uri, name, type }` cho file, kieu cua DOM chi khai bao Blob
-  const file = { uri: image.uri, name: image.name, type: image.mimeType } as unknown as Blob;
-  form.append(field, file);
 }

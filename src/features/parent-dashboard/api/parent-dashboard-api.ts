@@ -1,8 +1,8 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import { readAllPages } from '@/api/pagination';
-import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
 import { logger } from '@/lib/logger';
+import { appendFileToForm, type UploadableFile } from '@/lib/upload-file';
 import {
   AppError,
   type ApiResponse,
@@ -78,12 +78,12 @@ import {
 const UPLOAD_TIMEOUT_MS = 90_000;
 const HTTP_PAYLOAD_TOO_LARGE = 413;
 const HTTP_SERVICE_UNAVAILABLE = 503;
-/** Loi BE chi tra `HTTP_ERROR` khi gui anh, phan biet bang status. */
+/** Loi BE chi tra `HTTP_ERROR` khi gui tep, phan biet bang status. */
 const UPLOAD_STATUS_MESSAGES: Partial<Record<number, string>> = {
-  [HTTP_PAYLOAD_TOO_LARGE]: 'Ảnh phải nhỏ hơn 10 MB.',
-  // Kho luu tru anh cua BE chua cau hinh
+  [HTTP_PAYLOAD_TOO_LARGE]: 'Tệp phải nhỏ hơn 10 MB.',
+  // Kho luu tru tep cua BE chua cau hinh
   [HTTP_SERVICE_UNAVAILABLE]:
-    'Trung tâm chưa nhận ảnh bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
+    'Trung tâm chưa nhận ảnh hoặc tệp bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
 };
 
 /** Tim buoi tiep theo cua mon trong 30 ngay toi, bang khoang BE mac dinh cho phu huynh. */
@@ -400,10 +400,10 @@ export const parentDashboardApi = {
     });
   },
 
-  /** Tai mot anh bai lam len de gui kem bai nop. */
-  async uploadSubmissionImage(image: PickedImage): Promise<UploadedFile> {
+  /** Tai mot anh hoac tep PDF bai lam len de gui kem bai nop. */
+  async uploadSubmissionFile(file: UploadableFile): Promise<UploadedFile> {
     const form = new FormData();
-    await appendImageToForm(form, 'file', image);
+    await appendFileToForm(form, 'file', file);
     try {
       const { data } = await apiClient.post<ApiResponse<UploadedFile>>(
         Endpoints.academic.files,
@@ -424,7 +424,7 @@ export const parentDashboardApi = {
     }
   },
 
-  /** Link xem lai mot anh bai lam da nop (chi phu huynh da tai anh len xem duoc). */
+  /** Link xem lai mot anh hoac tep bai lam da nop, hoac tep de giao vien cho hoc sinh xem. */
   async getFilePreview(fileId: string): Promise<SignedFileUrl> {
     const { data } = await apiClient.get<ApiResponse<SignedFileUrl>>(
       Endpoints.academic.filePreview(fileId),

@@ -24,13 +24,21 @@ import {
   getUnansweredPositions,
   getQuestionReview,
   isImageFile,
+  getAttachmentLabels,
+  getBlankCoveredPositions,
+  getFileKind,
+  getQuestionFileLabels,
   getSubmitConfirmMessage,
   getSubmitHint,
-  hasEmptyEssay,
+  formatAttachmentCount,
+  formatAttachmentScope,
+  isCoveredByAttachments,
   toAnswerDraft,
   toAssignmentDraft,
   toDraftAttachments,
   toSubmissionAnswers,
+  toSubmitAssignmentPayload,
+  toSubmittedFiles,
 } from '@/features/parent-dashboard/utils';
 
 const NOW = new Date(2026, 9, 16, 10, 0);
@@ -186,36 +194,111 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(formatQuestionPositions([2, 5])).toBe('Câu 2, Câu 5');
   });
 
-  it('co anh bai lam thi cau tu luan de trong duoc, cau trac nghiem van phai chon', () => {
-    expect(getUnansweredPositions(QUESTIONS, {}, true)).toEqual([1]);
-    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, true)).toEqual([]);
-    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9' })).toBe(true);
-    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9', q2: 'Bài làm' })).toBe(false);
+  describe('tep bai lam gui kem', () => {
+    const MC_2: AssignmentQuestion = { ...CHOICE, id: 'q3' };
+    const THREE = [CHOICE, ESSAY, MC_2];
+    const WHOLE = { questionIds: [] };
+    const ONLY_Q2 = { questionIds: ['q2'] };
+
+    it('tep cua ca bai: moi cau de trong duoc, ke ca trac nghiem', () => {
+      expect(isCoveredByAttachments('q1', [WHOLE])).toBe(true);
+      expect(getUnansweredPositions(QUESTIONS, {}, [WHOLE])).toEqual([]);
+      expect(getBlankCoveredPositions(QUESTIONS, { q2: 'Bài làm' }, [WHOLE])).toEqual([1]);
+    });
+
+    it('tep chi gan voi mot cau: cau khac de trong van bi chi ra', () => {
+      expect(isCoveredByAttachments('q1', [ONLY_Q2])).toBe(false);
+      expect(getUnansweredPositions(THREE, {}, [ONLY_Q2])).toEqual([1, 3]);
+      expect(getBlankCoveredPositions(THREE, {}, [ONLY_Q2])).toEqual([2]);
+      // Them mot tep cua ca bai thi het cau thieu
+      expect(getUnansweredPositions(THREE, {}, [ONLY_Q2, WHOLE])).toEqual([]);
+    });
+
+    it('khong co tep thi cau nao cung phai tra loi', () => {
+      expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, [])).toEqual([2]);
+      expect(getBlankCoveredPositions(QUESTIONS, {}, [])).toEqual([]);
+    });
+
+    it('nhan tep dem rieng anh va PDF, dem so tep theo loai', () => {
+      const files = [
+        { kind: 'IMAGE' as const },
+        { kind: 'PDF' as const },
+        { kind: 'IMAGE' as const },
+      ];
+      expect(getAttachmentLabels(files)).toEqual(['Ảnh 1', 'PDF 1', 'Ảnh 2']);
+      expect(formatAttachmentCount(files)).toBe('2 ảnh và 1 tệp PDF');
+      expect(formatAttachmentCount([{ kind: 'PDF' }])).toBe('1 tệp PDF');
+      expect(getFileKind('application/pdf')).toBe('PDF');
+      expect(getFileKind('image/png')).toBe('IMAGE');
+      // BE cu khong tra loai tep: luc do chi gui duoc anh
+      expect(getFileKind(undefined)).toBe('IMAGE');
+    });
+
+    it('getQuestionFileLabels va formatAttachmentScope theo thu tu de', () => {
+      const files = [
+        { kind: 'IMAGE' as const, questionIds: [] },
+        { kind: 'PDF' as const, questionIds: ['q3', 'q1'] },
+        { kind: 'IMAGE' as const, questionIds: ['q1'] },
+      ];
+      expect(getQuestionFileLabels('q1', files)).toEqual(['PDF 1', 'Ảnh 2']);
+      expect(getQuestionFileLabels('q2', files)).toEqual([]);
+      expect(formatAttachmentScope(['q3', 'q1'], THREE)).toBe('Câu 1, Câu 3');
+      expect(formatAttachmentScope([], THREE)).toBe('Cả bài');
+    });
   });
 
-  it('getSubmitHint nhac cau thieu, cau tu luan cham theo anh va so lan nop con lai', () => {
-    expect(getSubmitHint({ unanswered: [2], remainingAttempts: 2, hasEmptyEssay: false })).toBe(
+  it('getSubmitHint nhac cau thieu, cau de trong cham theo tep va so lan nop con lai', () => {
+    expect(getSubmitHint({ unanswered: [2], remainingAttempts: 2, blankPositions: [] })).toBe(
       'Còn 1 câu chưa trả lời: Câu 2.',
     );
-    expect(getSubmitHint({ unanswered: [], remainingAttempts: 2, hasEmptyEssay: true })).toBe(
-      'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm. Sau lần này học sinh còn 1 lần nộp lại.',
+    expect(getSubmitHint({ unanswered: [], remainingAttempts: 2, blankPositions: [1, 2] })).toBe(
+      'Câu 1, Câu 2 để trống: giáo viên chấm theo bài làm gửi kèm. Sau lần này học sinh còn 1 lần nộp lại.',
     );
-    expect(getSubmitHint({ unanswered: [], remainingAttempts: 1, hasEmptyEssay: false })).toBe(
+    expect(
+      getSubmitHint({ unanswered: [], remainingAttempts: 2, blankPositions: [1, 2, 3, 4] }),
+    ).toBe(
+      '4 câu để trống: giáo viên chấm theo bài làm gửi kèm. Sau lần này học sinh còn 1 lần nộp lại.',
+    );
+    expect(getSubmitHint({ unanswered: [], remainingAttempts: 1, blankPositions: [] })).toBe(
       'Đã trả lời đủ. Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.',
     );
   });
 
-  it('getSubmitConfirmMessage ke so anh gui kem', () => {
-    expect(getSubmitConfirmMessage(2, 2, 0)).toBe(
+  it('getSubmitConfirmMessage ke tep gui kem va cau de trong', () => {
+    const base = { questionCount: 2, attachments: [], blankPositions: [] };
+    expect(getSubmitConfirmMessage({ ...base, remainingAttempts: 2 })).toBe(
       'Đã trả lời đủ 2 câu. Sau khi nộp, học sinh còn 1 lần nộp lại.',
     );
-    expect(getSubmitConfirmMessage(2, 1, 3)).toBe(
+    expect(
+      getSubmitConfirmMessage({
+        ...base,
+        remainingAttempts: 1,
+        attachments: [{ kind: 'IMAGE' }, { kind: 'IMAGE' }, { kind: 'IMAGE' }],
+      }),
+    ).toBe(
       'Đã trả lời đủ 2 câu, kèm 3 ảnh bài làm. Đây là lần nộp cuối, nộp xong không sửa được nữa.',
+    );
+    expect(
+      getSubmitConfirmMessage({
+        ...base,
+        remainingAttempts: 2,
+        attachments: [{ kind: 'PDF' }],
+        blankPositions: [1],
+      }),
+    ).toBe(
+      'Nộp 2 câu, kèm 1 tệp PDF bài làm. Câu 1 để trống, giáo viên chấm theo bài làm gửi kèm. Sau khi nộp, học sinh còn 1 lần nộp lại.',
     );
   });
 
   it('toAssignmentDraft doc ban nhap moi, ban cu chi co cau tra loi, bo phan hong', () => {
-    const attachment = { fileId: 'file-1', uri: 'file:///a.jpg' };
+    const attachment = {
+      fileId: 'file-1',
+      uri: null,
+      kind: 'PDF',
+      name: 'bai-lam.pdf',
+      size: 800_000,
+      questionIds: ['q2'],
+    };
     expect(toAssignmentDraft({ answers: { q1: 'x² + 9' }, attachments: [attachment] })).toEqual({
       answers: { q1: 'x² + 9' },
       attachments: [attachment],
@@ -227,17 +310,63 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(
       toAssignmentDraft({
         answers: 'hong',
-        attachments: [{ fileId: 1 }, { fileId: 'f', uri: null }],
+        attachments: [{ fileId: 1 }, { fileId: 'f', uri: null, questionIds: ['q1', 2] }],
       }),
-    ).toEqual({ answers: {}, attachments: [{ fileId: 'f', uri: null }] });
+    ).toEqual({
+      answers: {},
+      attachments: [
+        { fileId: 'f', uri: null, kind: 'IMAGE', name: null, size: null, questionIds: ['q1'] },
+      ],
+    });
     expect(toAssignmentDraft(null)).toBeNull();
     expect(toAssignmentDraft([])).toBeNull();
   });
 
-  it('toDraftAttachments lay anh cua lan nop truoc, chua co anh xem truoc', () => {
-    expect(toDraftAttachments(submission({ files: [{ fileId: 'file-old' }] }))).toEqual([
-      { fileId: 'file-old', uri: null },
+  it('ban nhap luu truoc khi co PDF (chi fileId, uri) thanh anh cua ca bai', () => {
+    expect(
+      toAssignmentDraft({ answers: {}, attachments: [{ fileId: 'f', uri: 'file:///a.jpg' }] }),
+    ).toEqual({
+      answers: {},
+      attachments: [
+        {
+          fileId: 'f',
+          uri: 'file:///a.jpg',
+          kind: 'IMAGE',
+          name: null,
+          size: null,
+          questionIds: [],
+        },
+      ],
+    });
+  });
+
+  it('toDraftAttachments lay tep cua lan nop truoc kem loai tep va cac cau da gan', () => {
+    const previous = submission({
+      answers: [
+        { questionId: 'q1', answer: '', fileIds: ['file-pdf'] },
+        { questionId: 'q2', answer: '' },
+      ],
+      files: [
+        { fileId: 'file-old' },
+        {
+          fileId: 'file-pdf',
+          file: { name: 'bai-lam.pdf', mimeType: 'application/pdf', size: 800_000 },
+        },
+      ],
+    });
+
+    expect(toDraftAttachments(previous)).toEqual([
+      { fileId: 'file-old', uri: null, kind: 'IMAGE', name: null, size: null, questionIds: [] },
+      {
+        fileId: 'file-pdf',
+        uri: null,
+        kind: 'PDF',
+        name: 'bai-lam.pdf',
+        size: 800_000,
+        questionIds: ['q1'],
+      },
     ]);
+    expect(toSubmittedFiles(previous.files).map(({ label }) => label)).toEqual(['Ảnh 1', 'PDF 1']);
     expect(toDraftAttachments(null)).toEqual([]);
   });
 
@@ -258,6 +387,35 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     ]);
   });
 
+  it('toSubmitAssignmentPayload: fileIds theo thu tu chon, cau nao co tep gan rieng thi kem fileIds', () => {
+    const file = (fileId: string, questionIds: string[]) => ({
+      fileId,
+      uri: null,
+      kind: 'IMAGE' as const,
+      name: null,
+      size: null,
+      questionIds,
+    });
+
+    expect(
+      toSubmitAssignmentPayload('recipient-1', QUESTIONS, {
+        answers: { q2: '  ' },
+        attachments: [file('file-a', []), file('file-b', ['q1', 'q2']), file('file-c', ['q2'])],
+      }),
+    ).toEqual({
+      recipientId: 'recipient-1',
+      answers: [
+        { questionId: 'q1', answer: '', fileIds: ['file-b'] },
+        { questionId: 'q2', answer: '', fileIds: ['file-b', 'file-c'] },
+      ],
+      fileIds: ['file-a', 'file-b', 'file-c'],
+    });
+    // Khong co tep thi khong gui fileIds
+    expect(
+      toSubmitAssignmentPayload('recipient-1', QUESTIONS, { answers: {}, attachments: [] }),
+    ).not.toHaveProperty('fileIds');
+  });
+
   it('toAnswerDraft dua bai da nop ve cau tra loi dang lam de nop lai', () => {
     expect(toAnswerDraft(submission().answers)).toEqual({ q1: 'x² + 9', q2: '(x − 2)(x − 3)' });
   });
@@ -271,6 +429,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         correctAnswer: null,
         isCorrect: null,
         criteria: [],
+        fileLabels: [],
       });
     });
 
@@ -284,6 +443,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         correctAnswer: 'x² + 6x + 9',
         isCorrect: false,
         criteria: [],
+        fileLabels: [],
       });
       expect(getQuestionReview({ ...ESSAY, correctAnswer: '(x − 2)(x − 3).' }, graded)).toEqual({
         answer: '(x − 2)(x − 3)',
@@ -293,6 +453,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         // Cau tu luan do giao vien cham, khong so chuoi
         isCorrect: null,
         criteria: [],
+        fileLabels: [],
       });
     });
 
@@ -354,6 +515,27 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       expect(getQuestionReview(ESSAY, graded).criteria).toEqual([
         { id: 'c9', title: 'Tiêu chí 1', score: 3, maxScore: null, feedback: null },
       ]);
+    });
+
+    it('cau trac nghiem de trong vi lam trong tep: khong bao sai, kem nhan tep da gan', () => {
+      const graded = submission({
+        answers: [
+          { questionId: 'q1', answer: '', fileIds: ['file-pdf'] },
+          { questionId: 'q2', answer: '' },
+        ],
+        files: [
+          { fileId: 'file-img' },
+          { fileId: 'file-pdf', file: { name: 'a.pdf', mimeType: 'application/pdf', size: 1 } },
+        ],
+        grades: [GRADE],
+      });
+
+      expect(getQuestionReview({ ...CHOICE, correctAnswer: 'x² + 6x + 9' }, graded)).toMatchObject({
+        answer: '',
+        isCorrect: null,
+        fileLabels: ['PDF 1'],
+      });
+      expect(getQuestionReview(ESSAY, graded).fileLabels).toEqual([]);
     });
 
     it('con chua nop: khong co cau tra loi va khong xet dung sai', () => {

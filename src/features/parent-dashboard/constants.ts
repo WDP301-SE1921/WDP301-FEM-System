@@ -18,9 +18,11 @@ import type {
   NotificationTargetKind,
   NotificationType,
   PaymentStatus,
+  PdfPickProblem,
   ScheduleSessionType,
   ScheduleView,
   SessionStatus,
+  SubmissionFileKind,
   TermStatus,
   TestType,
 } from './types';
@@ -355,6 +357,18 @@ export const OPTIONAL_OUTCOME_NOTE = 'Mục tiêu mở rộng, không bắt bu�
 /** Gioi han `fileIds` cua SubmissionDto. */
 export const MAX_SUBMISSION_FILES = 5;
 
+/** Ten ngan cua loai tep bai lam, dung trong nhan `Ảnh 1`, `PDF 1`. */
+export const FILE_KIND_LABELS: Record<SubmissionFileKind, string> = { IMAGE: 'Ảnh', PDF: 'PDF' };
+
+/** Ten day du cho trinh doc man hinh, vd `Xoá ảnh bài làm 1`. */
+export const FILE_KIND_SPOKEN: Record<SubmissionFileKind, string> = {
+  IMAGE: 'ảnh bài làm',
+  PDF: 'tệp PDF bài làm',
+};
+
+/** Nhieu cau de trong hon so nay thi chi dem so cau, khong ke tung cau. */
+export const MAX_LISTED_BLANK_QUESTIONS = 3;
+
 /**
  * Link xem anh bai lam BE ky 300 giay: lay link moi truoc khi het han mot phut, de anh chua co trong
  * cache van tai duoc.
@@ -368,6 +382,13 @@ export const IMAGE_PICK_PROBLEMS: Record<ImagePickProblem, string> = {
   UNSUPPORTED: 'Chỉ gửi được ảnh JPG hoặc PNG. Hãy bấm "Chụp ảnh" để chụp lại bài làm.',
   TOO_LARGE: 'Ảnh lớn hơn 10 MB. Hãy chụp lại hoặc chọn ảnh khác.',
   FAILED: 'Không mở được camera hoặc thư viện ảnh trên máy này.',
+};
+
+/** Bao khi mo trinh chon tep ma khong co tep PDF gui duoc. */
+export const PDF_PICK_PROBLEMS: Record<PdfPickProblem, string> = {
+  UNSUPPORTED: 'Chỉ gửi được tệp PDF. Ảnh bài làm thì bấm "Chụp ảnh" hoặc "Chọn ảnh".',
+  TOO_LARGE: 'Tệp PDF lớn hơn 10 MB. Hãy chọn tệp nhỏ hơn hoặc chụp ảnh từng trang.',
+  FAILED: 'Không mở được nơi chọn tệp trên máy này.',
 };
 
 /** Bai con han nop trong chung nay ngay (ke ca hom nay) thi can nhac gap. */

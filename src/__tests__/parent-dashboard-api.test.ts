@@ -888,7 +888,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
     });
   });
 
-  describe('uploadSubmissionImage', () => {
+  describe('uploadSubmissionFile', () => {
     const image = {
       uri: 'file:///cache/bai-lam.jpg',
       name: 'bai-lam-1.jpg',
@@ -906,7 +906,7 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       respond = () => uploaded;
       const append = jest.spyOn(FormData.prototype, 'append');
 
-      await expect(parentDashboardApi.uploadSubmissionImage(image)).resolves.toEqual(uploaded);
+      await expect(parentDashboardApi.uploadSubmissionFile(image)).resolves.toEqual(uploaded);
       const [request] = sentTo('/academic/files');
       expect(request?.method).toBe('post');
       expect(request?.body).toBeInstanceOf(FormData);
@@ -920,23 +920,42 @@ describe('features/parent-dashboard/api/parentDashboardApi', () => {
       expect(lastConfig?.timeout).toBe(90_000);
     });
 
-    it('BE chua co kho anh (503) hay anh qua lon (413) thi bao ro cho phu huynh', async () => {
+    it('gui tep PDF cung truong file, giu ten va loai tep', async () => {
+      const pdf = {
+        uri: 'file:///cache/DocumentPicker/bai-kiem-tra.pdf',
+        name: 'bai-kiem-tra.pdf',
+        mimeType: 'application/pdf',
+      };
+      respond = () => ({ id: 'file-pdf', name: pdf.name, mimeType: pdf.mimeType, size: 800_000 });
+      const append = jest.spyOn(FormData.prototype, 'append');
+
+      await expect(parentDashboardApi.uploadSubmissionFile(pdf)).resolves.toMatchObject({
+        id: 'file-pdf',
+      });
+      expect(append).toHaveBeenCalledWith('file', {
+        uri: pdf.uri,
+        name: pdf.name,
+        type: 'application/pdf',
+      });
+    });
+
+    it('BE chua co kho tep (503) hay tep qua lon (413) thi bao ro cho phu huynh', async () => {
       respond = () => new BeError(503, 'HTTP_ERROR');
-      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
+      await expect(parentDashboardApi.uploadSubmissionFile(image)).rejects.toMatchObject({
         status: 503,
         message:
-          'Trung tâm chưa nhận ảnh bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
+          'Trung tâm chưa nhận ảnh hoặc tệp bài làm qua ứng dụng. Học sinh gõ bài làm, hoặc nộp bài giấy cho giáo viên.',
       });
 
       respond = () => new BeError(413, 'HTTP_ERROR');
-      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
-        message: 'Ảnh phải nhỏ hơn 10 MB.',
+      await expect(parentDashboardApi.uploadSubmissionFile(image)).rejects.toMatchObject({
+        message: 'Tệp phải nhỏ hơn 10 MB.',
       });
 
       respond = () => new BeError(409, 'INVALID_FILE_TYPE');
-      await expect(parentDashboardApi.uploadSubmissionImage(image)).rejects.toMatchObject({
+      await expect(parentDashboardApi.uploadSubmissionFile(image)).rejects.toMatchObject({
         code: 'INVALID_FILE_TYPE',
-        message: 'Chỉ gửi được ảnh JPG hoặc PNG.',
+        message: 'Chỉ gửi được ảnh JPG, PNG hoặc tệp PDF.',
       });
     });
   });

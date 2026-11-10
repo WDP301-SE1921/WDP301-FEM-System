@@ -4,6 +4,7 @@
  * `./api/parent-data-mappers.ts`.
  */
 import type { IconName } from '@/components/ui/icon';
+import type { PickPdfProblem } from '@/lib/document-picker';
 import type { PickImageProblem } from '@/lib/image-picker';
 import type { Page, PageQuery, PaginatedQuery } from '@/types/api';
 
@@ -627,9 +628,16 @@ export type AssignmentDetail = {
   learningTargets: LearningTarget[];
 };
 
+/** Mot cau tra loi (AnswerDto): gui khi nop va BE tra lai nguyen trong lan nop. */
 export type SubmissionAnswer = {
   questionId: string;
+  /** Chuoi rong duoc khi lan nop co tep bai lam (ca cau trac nghiem, xem `isCoveredByAttachments`). */
   answer: string;
+  /**
+   * Tep bai lam co cau nay, phai nam trong `fileIds` cua lan nop (`INVALID_FILE_QUESTION`). Khong gui
+   * khi tep dung cho ca bai: BE de giao vien hoac AI tu tim cau trong tep.
+   */
+  fileIds?: string[];
 };
 
 /** Diem mot tieu chi cua cau tu luan cham theo rubric (CriterionScoreDto, BE PR #12). */
@@ -684,20 +692,28 @@ export type SubmissionRecord = {
   attemptNo: number;
   answers: SubmissionAnswer[];
   submittedAt: string;
-  /** Anh bai lam gui kem lan nop. BE chi tra id; link xem anh lay qua `GET /academic/files/:id/preview`. */
-  files: { fileId: string }[];
+  /** Anh, PDF bai lam gui kem lan nop; link xem lay qua `GET /academic/files/:id/preview`. */
+  files: SubmittedFileRecord[];
   /** Chi gom diem da cong bo, ban sua moi nhat truoc. Rong khi giao vien chua cong bo. */
   grades: SubmissionGrade[];
+};
+
+/** Mot tep cua lan nop (SubmissionFile). */
+export type SubmittedFileRecord = {
+  fileId: string;
+  /** Ten, loai va dung luong tep. Thieu voi BE truoc ngay 2026-11-10 (luc do chi nop duoc anh). */
+  file?: { name: string; mimeType: string; size: number };
 };
 
 /** Body POST /academic/submissions (SubmissionDto): dung mot cau tra loi cho moi cau hoi. */
 export type SubmitAssignmentPayload = {
   recipientId: string;
-  /** Cau tu luan duoc de trong khi co anh bai lam (BE cho `answer` rong). */
+  /** Cau co tep bai lam duoc de trong (BE cho `answer` rong khi lan nop co tep). */
   answers: SubmissionAnswer[];
   /**
-   * Id anh bai lam (`POST /academic/files`), toi da `MAX_SUBMISSION_FILES`, phai do chinh phu huynh
-   * tai len (`INVALID_FILES`). Khong co anh thi khong gui.
+   * Id anh, PDF bai lam (`POST /academic/files`) theo thu tu phu huynh chon, toi da
+   * `MAX_SUBMISSION_FILES`, phai do chinh phu huynh tai len (`INVALID_FILES`). Khong co tep thi khong
+   * gui.
    */
   fileIds?: string[];
 };
@@ -719,13 +735,35 @@ export type SignedFileUrl = {
   expiresIn: number;
 };
 
-/**
- * Anh bai lam gui kem lan nop. `uri` la anh tren may de xem truoc; null voi anh lay lai tu lan nop
- * truoc khi con nop lai, app tai anh do tu BE theo `fileId`.
- */
+/** Loai tep bai lam: anh xem ngay trong app, PDF mo bang trinh duyet. */
+export type SubmissionFileKind = 'IMAGE' | 'PDF';
+
+/** Tep bai lam gui kem lan nop dang lam (da tai len BE). */
 export type SubmissionAttachment = {
   fileId: string;
+  /**
+   * Anh tren may de xem truoc. null voi PDF va voi anh lay lai tu lan nop truoc khi con nop lai (app
+   * tai anh do tu BE theo `fileId`).
+   */
   uri: string | null;
+  kind: SubmissionFileKind;
+  /** Ten tep, hien cho PDF. null khi khong biet (tep cua lan nop truoc voi BE cu). */
+  name: string | null;
+  /** Byte, null khi khong biet. */
+  size: number | null;
+  /** Id cac cau co bai lam trong tep, theo thu tu de. Rong: tep dung cho ca bai. */
+  questionIds: string[];
+};
+
+/** Tep cua lan nop dang xem lai, kem nhan (vd `Ảnh 2`, `PDF 1`). */
+export type SubmittedFileView = {
+  fileId: string;
+  kind: SubmissionFileKind;
+  /** null khi BE khong tra ten tep. */
+  name: string | null;
+  size: number | null;
+  /** Nhan ngan, dem rieng anh va PDF theo thu tu gui, xem `getAttachmentLabels`. */
+  label: string;
 };
 
 /** Response POST /academic/submissions. */
@@ -742,7 +780,14 @@ export type AnswerDraft = Partial<Record<string, string>>;
 /** Ly do khong co anh de gui sau khi mo camera hoac thu vien (nguoi dung tu huy thi khong bao). */
 export type ImagePickProblem = PickImageProblem;
 
-/** Bai lam dang do luu tren may: cau tra loi va anh bai lam da tai len. */
+/** Ly do khong co tep PDF de gui sau khi mo trinh chon tep. */
+export type PdfPickProblem = PickPdfProblem;
+
+/** Ly do khong them duoc tep bai lam, theo loai tep dang chon (thong bao khac nhau). */
+export type AttachmentPickProblem =
+  { kind: 'IMAGE'; reason: ImagePickProblem } | { kind: 'PDF'; reason: PdfPickProblem };
+
+/** Bai lam dang do luu tren may: cau tra loi va tep bai lam da tai len. */
 export type AssignmentDraft = {
   answers: AnswerDraft;
   attachments: SubmissionAttachment[];
@@ -760,10 +805,15 @@ export type QuestionReview = {
   feedback: string | null;
   /** null khi giao vien chua cong bo dap an. */
   correctAnswer: string | null;
-  /** Chi tinh duoc voi cau trac nghiem da co dap an. */
+  /**
+   * Chi tinh duoc voi cau trac nghiem da co dap an va con da chon: cau de trong vi lam trong tep bai
+   * lam thi giao vien cham theo tep, app khong tu bao sai.
+   */
   isCorrect: boolean | null;
   /** Diem theo tung tieu chi, theo thu tu rubric. Rong khi cau khong cham theo tieu chi. */
   criteria: CriterionReview[];
+  /** Nhan cac tep phu huynh da gan voi cau nay, vd `["Ảnh 1", "PDF 1"]`. */
+  fileLabels: string[];
 };
 
 /** Mot tieu chi khi xem lai diem. */

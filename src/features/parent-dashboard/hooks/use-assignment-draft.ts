@@ -10,8 +10,9 @@ import { toAssignmentDraft } from '../utils';
 export type DraftRestoreStatus = 'PENDING' | 'RESTORED' | 'NONE';
 
 /**
- * Bai lam dang do cua con (cau tra loi va anh bai lam da tai len), luu tren may sau moi lan sua. Roi
- * man hinh, bam nham nut quay lai, het phien dang nhap hay app bi tat thi lan sau mo bai van con.
+ * Bai lam dang do cua con (cau tra loi, anh va PDF bai lam da tai len kem cac cau da gan), luu tren
+ * may sau moi lan sua. Roi man hinh, bam nham nut quay lai, het phien dang nhap hay app bi tat thi lan
+ * sau mo bai van con.
  */
 export function useAssignmentDraft(
   { studentId, assignmentId }: AssignmentRef,
@@ -59,8 +60,25 @@ export function useAssignmentDraft(
       attachments: current.attachments.filter((attachment) => attachment.fileId !== fileId),
     }));
 
+  /** Gan tep voi cac cau co bai lam trong tep; mang rong la tep cua ca bai. */
+  const setAttachmentQuestions = (fileId: string, questionIds: string[]) =>
+    change((current) => ({
+      ...current,
+      attachments: current.attachments.map((attachment) =>
+        attachment.fileId === fileId ? { ...attachment, questionIds } : attachment,
+      ),
+    }));
+
   /** Xoa ban nhap khi da nop xong hoac phu huynh bo lan nop lai. */
   const discard = () => storage.remove(key);
 
-  return { draft, restoreStatus, updateAnswer, addAttachment, removeAttachment, discard };
+  return {
+    draft,
+    restoreStatus,
+    updateAnswer,
+    addAttachment,
+    removeAttachment,
+    setAttachmentQuestions,
+    discard,
+  };
 }

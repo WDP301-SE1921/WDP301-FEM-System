@@ -1,6 +1,7 @@
 import type { Href } from 'expo-router';
 
 import type { IconName } from '@/components/ui/icon';
+import { PDF_MIME_TYPE } from '@/lib/upload-file';
 import type { Page } from '@/types/api';
 import {
   addDays,
@@ -38,6 +39,8 @@ import {
   DEADLINE_APPEARANCES,
   DEFAULT_SUBJECT_ICON,
   FAILING_SCORE_LEVEL,
+  FILE_KIND_LABELS,
+  MAX_LISTED_BLANK_QUESTIONS,
   GRADED_STATUS,
   GRADING_STATUS,
   LEAVE_REASON_NOTE,
@@ -114,8 +117,12 @@ import type {
   StudentEnrollment,
   SubmissionAnswer,
   SubmissionAttachment,
+  SubmissionFileKind,
   SubmissionGrade,
   SubmissionRecord,
+  SubmitAssignmentPayload,
+  SubmittedFileRecord,
+  SubmittedFileView,
   TermSessionCount,
   TermStatus,
   TuitionBill,
@@ -900,32 +907,69 @@ export function countUnanswered(
   return questions.filter(({ id }) => isUnanswered(id, draft)).length;
 }
 
+type AttachmentScope = Pick<SubmissionAttachment, 'questionIds'>;
+
 /**
- * Thu tu (tinh tu 1) cac cau chua tra loi, de chi cho con biet con thieu cau nao. Co anh bai lam thi
- * cau tu luan duoc de trong: con lam ra giay va giao vien cham theo anh (anh gui kem ca bai, khong
- * theo tung cau).
+ * Cau co tep bai lam: tep dung cho ca bai (chua gan cau nao) hoac tep da gan voi cau nay. Cau do de
+ * trong duoc, ke ca cau trac nghiem: con lam ra giay va giao vien cham theo tep (BE cho `answer` rong
+ * khi lan nop co tep). Tep chi gan voi cau khac thi khong tinh, de cau con quen lam van bi chi ra.
+ */
+export function isCoveredByAttachments(
+  questionId: string,
+  attachments: readonly AttachmentScope[],
+): boolean {
+  return attachments.some(
+    ({ questionIds }) => questionIds.length === 0 || questionIds.includes(questionId),
+  );
+}
+
+/**
+ * Thu tu (tinh tu 1) cac cau chua tra loi, de chi cho con biet con thieu cau nao. Cau co tep bai lam
+ * thi khong tinh (xem `isCoveredByAttachments`).
  */
 export function getUnansweredPositions(
-  questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
+  questions: readonly Pick<AssignmentQuestion, 'id'>[],
   draft: AnswerDraft,
-  hasAttachments = false,
+  attachments: readonly AttachmentScope[] = [],
 ): number[] {
-  return questions.flatMap(({ id, kind }, index) => {
-    if (hasAttachments && kind === 'ESSAY') return [];
-    return isUnanswered(id, draft) ? [index + 1] : [];
-  });
+  return questions.flatMap(({ id }, index) =>
+    isUnanswered(id, draft) && !isCoveredByAttachments(id, attachments) ? [index + 1] : [],
+  );
+}
+
+/** Thu tu cac cau de trong vi bai lam nam trong tep gui kem, de bao lai truoc khi nop. */
+export function getBlankCoveredPositions(
+  questions: readonly Pick<AssignmentQuestion, 'id'>[],
+  draft: AnswerDraft,
+  attachments: readonly AttachmentScope[],
+): number[] {
+  return questions.flatMap(({ id }, index) =>
+    isUnanswered(id, draft) && isCoveredByAttachments(id, attachments) ? [index + 1] : [],
+  );
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isAttachment(value: unknown): value is SubmissionAttachment {
-  return (
-    isRecord(value) &&
-    typeof value.fileId === 'string' &&
-    (value.uri === null || typeof value.uri === 'string')
-  );
+const FILE_KINDS: readonly SubmissionFileKind[] = ['IMAGE', 'PDF'];
+
+/**
+ * Mot tep trong ban nhap luu tren may. Ban luu truoc khi co PDF va gan cau chi co `fileId`, `uri`
+ * (luc do chi gui duoc anh, cho ca bai) nen thieu thi coi la anh cua ca bai.
+ */
+function toDraftAttachment(value: unknown): SubmissionAttachment | null {
+  if (!isRecord(value) || typeof value.fileId !== 'string') return null;
+  return {
+    fileId: value.fileId,
+    uri: typeof value.uri === 'string' ? value.uri : null,
+    kind: FILE_KINDS.find((kind) => kind === value.kind) ?? 'IMAGE',
+    name: typeof value.name === 'string' ? value.name : null,
+    size: typeof value.size === 'number' ? value.size : null,
+    questionIds: Array.isArray(value.questionIds)
+      ? value.questionIds.filter((id): id is string => typeof id === 'string')
+      : [],
+  };
 }
 
 function toAnswerDraftRecord(value: unknown): AnswerDraft {
@@ -945,16 +989,95 @@ export function toAssignmentDraft(saved: unknown): AssignmentDraft | null {
   if (!isRecord(saved)) return null;
   if (!('answers' in saved)) return { answers: toAnswerDraftRecord(saved), attachments: [] };
   const attachments = Array.isArray(saved.attachments)
-    ? saved.attachments.filter(isAttachment)
+    ? saved.attachments.flatMap((item) => {
+        const attachment = toDraftAttachment(item);
+        return attachment ? [attachment] : [];
+      })
     : [];
   return { answers: toAnswerDraftRecord(saved.answers), attachments };
 }
 
-/** Anh cua lan nop truoc, de lan nop lai giu anh cu neu con khong doi (app khong co anh de xem truoc). */
+/** Loai tep theo `mimeType`. Khong biet loai (BE cu) thi coi la anh: truoc khi co PDF chi gui duoc anh. */
+export function getFileKind(mimeType: string | null | undefined): SubmissionFileKind {
+  return mimeType === PDF_MIME_TYPE ? 'PDF' : 'IMAGE';
+}
+
+/**
+ * Tep cua lan nop truoc va cac cau da gan (`answers[].fileIds`), de lan nop lai giu nguyen neu con
+ * khong doi. Anh khong con tren may nen app tai lai tu BE.
+ */
 export function toDraftAttachments(
-  submission: Pick<SubmissionRecord, 'files'> | null,
+  submission: Pick<SubmissionRecord, 'files' | 'answers'> | null,
 ): SubmissionAttachment[] {
-  return (submission?.files ?? []).map(({ fileId }) => ({ fileId, uri: null }));
+  if (!submission) return [];
+  return submission.files.map(({ fileId, file }) => ({
+    fileId,
+    uri: null,
+    kind: getFileKind(file?.mimeType),
+    name: file?.name ?? null,
+    size: file?.size ?? null,
+    questionIds: submission.answers
+      .filter(({ fileIds }) => fileIds?.includes(fileId))
+      .map(({ questionId }) => questionId),
+  }));
+}
+
+/** So thu tu cua tung tep theo thu tu gui, dem rieng anh va PDF: anh, PDF, anh thanh 1, 1, 2. */
+export function getAttachmentNumbers(files: readonly { kind: SubmissionFileKind }[]): number[] {
+  const counts: Record<SubmissionFileKind, number> = { IMAGE: 0, PDF: 0 };
+  return files.map(({ kind }) => {
+    counts[kind] += 1;
+    return counts[kind];
+  });
+}
+
+/** Nhan ngan cua tung tep theo thu tu gui: `Ảnh 1`, `PDF 1`, `Ảnh 2`. */
+export function getAttachmentLabels(files: readonly { kind: SubmissionFileKind }[]): string[] {
+  const numbers = getAttachmentNumbers(files);
+  return files.map(({ kind }, index) => `${FILE_KIND_LABELS[kind]} ${numbers[index] ?? 0}`);
+}
+
+/** Vd `2 ảnh`, `1 tệp PDF`, `2 ảnh và 1 tệp PDF`. */
+export function formatAttachmentCount(files: readonly { kind: SubmissionFileKind }[]): string {
+  const images = files.filter(({ kind }) => kind === 'IMAGE').length;
+  const pdfs = files.length - images;
+  return [images > 0 ? `${images} ảnh` : null, pdfs > 0 ? `${pdfs} tệp PDF` : null]
+    .filter((part) => part !== null)
+    .join(' và ');
+}
+
+/** Nhan cac tep da gan rieng voi mot cau, theo thu tu gui. Tep cua ca bai khong tinh. */
+export function getQuestionFileLabels(
+  questionId: string,
+  files: readonly Pick<SubmissionAttachment, 'kind' | 'questionIds'>[],
+): string[] {
+  const labels = getAttachmentLabels(files);
+  return files.flatMap(({ questionIds }, index) =>
+    questionIds.includes(questionId) ? [labels[index] ?? ''] : [],
+  );
+}
+
+/** Cac cau cua mot tep, vd `Câu 1, Câu 3`; `Cả bài` khi tep chua gan cau nao. */
+export function formatAttachmentScope(
+  questionIds: readonly string[],
+  questions: readonly Pick<AssignmentQuestion, 'id'>[],
+): string {
+  const positions = questions.flatMap(({ id }, index) =>
+    questionIds.includes(id) ? [index + 1] : [],
+  );
+  return positions.length > 0 ? formatQuestionPositions(positions) : 'Cả bài';
+}
+
+/** Tep cua lan nop dang xem lai theo thu tu gui, kem loai va nhan. */
+export function toSubmittedFiles(files: readonly SubmittedFileRecord[]): SubmittedFileView[] {
+  const views = files.map(({ fileId, file }) => ({
+    fileId,
+    kind: getFileKind(file?.mimeType),
+    name: file?.name ?? null,
+    size: file?.size ?? null,
+  }));
+  const labels = getAttachmentLabels(views);
+  return views.map((view, index) => ({ ...view, label: labels[index] ?? '' }));
 }
 
 /** Vd `Câu 2, Câu 5`. */
@@ -962,12 +1085,11 @@ export function formatQuestionPositions(positions: readonly number[]): string {
   return positions.map((position) => `Câu ${position}`).join(', ');
 }
 
-/** Co cau tu luan con de trong (duoc phep khi co anh bai lam). */
-export function hasEmptyEssay(
-  questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
-  draft: AnswerDraft,
-): boolean {
-  return questions.some(({ id, kind }) => kind === 'ESSAY' && isUnanswered(id, draft));
+/** Vd `Câu 2, Câu 5`; nhieu cau thi chi dem, vd `6 câu`. */
+function formatBlankQuestions(positions: readonly number[]): string {
+  return positions.length > MAX_LISTED_BLANK_QUESTIONS
+    ? `${positions.length} câu`
+    : formatQuestionPositions(positions);
 }
 
 export type SubmitHintInput = {
@@ -975,51 +1097,92 @@ export type SubmitHintInput = {
   unanswered: readonly number[];
   /** So lan con duoc nop, tinh ca lan nay. */
   remainingAttempts: number;
-  /** Co cau tu luan de trong vi da gui anh bai lam. */
-  hasEmptyEssay: boolean;
+  /** Thu tu cac cau de trong vi bai lam nam trong tep gui kem, xem `getBlankCoveredPositions`. */
+  blankPositions: readonly number[];
 };
 
-/** Dong nhac duoi bai lam: cau con thieu, hoac so lan nop con lai sau lan nay. */
+/** Dong nhac duoi bai lam: cau con thieu, cau de trong cho giao vien cham theo tep, so lan nop con lai. */
 export function getSubmitHint({
   unanswered,
   remainingAttempts,
-  hasEmptyEssay: hasEmpty,
+  blankPositions,
 }: SubmitHintInput): string {
   if (unanswered.length > 0) {
     return `Còn ${unanswered.length} câu chưa trả lời: ${formatQuestionPositions(unanswered)}.`;
   }
-  const essayNote = hasEmpty ? ' Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm.' : '';
+  const status =
+    blankPositions.length > 0
+      ? `${formatBlankQuestions(blankPositions)} để trống: giáo viên chấm theo bài làm gửi kèm.`
+      : 'Đã trả lời đủ.';
   const attemptsAfterSubmit = remainingAttempts - 1;
   return attemptsAfterSubmit > 0
-    ? `Đã trả lời đủ.${essayNote} Sau lần này học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
-    : `Đã trả lời đủ.${essayNote} Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.`;
+    ? `${status} Sau lần này học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
+    : `${status} Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.`;
 }
 
-/** Cau hoi lai truoc khi nop: so cau, so anh gui kem va con nop lai duoc khong. */
-export function getSubmitConfirmMessage(
-  questionCount: number,
-  remainingAttempts: number,
-  attachmentCount: number,
-): string {
-  const files = attachmentCount > 0 ? `, kèm ${attachmentCount} ảnh bài làm` : '';
+export type SubmitConfirmInput = {
+  questionCount: number;
+  /** So lan con duoc nop, tinh ca lan nay. */
+  remainingAttempts: number;
+  attachments: readonly { kind: SubmissionFileKind }[];
+  /** Thu tu cac cau de trong vi bai lam nam trong tep gui kem. */
+  blankPositions: readonly number[];
+};
+
+/** Cau hoi lai truoc khi nop: so cau, tep gui kem, cau de trong va con nop lai duoc khong. */
+export function getSubmitConfirmMessage({
+  questionCount,
+  remainingAttempts,
+  attachments,
+  blankPositions,
+}: SubmitConfirmInput): string {
+  const files = attachments.length > 0 ? `, kèm ${formatAttachmentCount(attachments)} bài làm` : '';
+  const answers =
+    blankPositions.length > 0
+      ? `Nộp ${questionCount} câu${files}. ${formatBlankQuestions(blankPositions)} để trống, giáo viên chấm theo bài làm gửi kèm.`
+      : `Đã trả lời đủ ${questionCount} câu${files}.`;
   const attemptsAfterSubmit = remainingAttempts - 1;
   const attempts =
     attemptsAfterSubmit > 0
       ? `Sau khi nộp, học sinh còn ${attemptsAfterSubmit} lần nộp lại.`
       : 'Đây là lần nộp cuối, nộp xong không sửa được nữa.';
-  return `Đã trả lời đủ ${questionCount} câu${files}. ${attempts}`;
+  return `${answers} ${attempts}`;
 }
 
-/** Body nop bai: dung mot cau tra loi cho moi cau hoi, theo thu tu de. */
+/**
+ * Cau tra loi gui BE: dung mot cau cho moi cau hoi, theo thu tu de. Cau co tep gan rieng thi kem
+ * `fileIds` theo thu tu gui; tep cua ca bai khong gan vao cau nao.
+ */
 export function toSubmissionAnswers(
   questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
   draft: AnswerDraft,
+  attachments: readonly Pick<SubmissionAttachment, 'fileId' | 'questionIds'>[] = [],
 ): SubmissionAnswer[] {
   return questions.map(({ id, kind }) => {
     const answer = draft[id] ?? '';
-    // Lua chon trac nghiem phai khop tung ky tu voi de nen giu nguyen
-    return { questionId: id, answer: kind === 'ESSAY' ? answer.trim() : answer };
+    const fileIds = attachments
+      .filter(({ questionIds }) => questionIds.includes(id))
+      .map(({ fileId }) => fileId);
+    return {
+      questionId: id,
+      // Lua chon trac nghiem phai khop tung ky tu voi de nen giu nguyen
+      answer: kind === 'ESSAY' ? answer.trim() : answer,
+      ...(fileIds.length > 0 ? { fileIds } : {}),
+    };
   });
+}
+
+/** Body nop bai: cau tra loi, roi id moi tep theo thu tu phu huynh chon (khong co tep thi bo). */
+export function toSubmitAssignmentPayload(
+  recipientId: string,
+  questions: readonly Pick<AssignmentQuestion, 'id' | 'kind'>[],
+  { answers, attachments }: AssignmentDraft,
+): SubmitAssignmentPayload {
+  return {
+    recipientId,
+    answers: toSubmissionAnswers(questions, answers, attachments),
+    ...(attachments.length > 0 ? { fileIds: attachments.map(({ fileId }) => fileId) } : {}),
+  };
 }
 
 /** Bai lam cua mot lan nop sang cau tra loi dang lam, de con sua tu bai cu khi nop lai. */
@@ -1032,14 +1195,19 @@ export function getQuestionReview(
   question: AssignmentQuestion,
   submission: SubmissionRecord | null,
 ): QuestionReview {
-  const answer =
-    submission?.answers.find(({ questionId }) => questionId === question.id)?.answer ?? '';
+  const submitted = submission?.answers.find(({ questionId }) => questionId === question.id);
+  const answer = submitted?.answer ?? '';
   const grade = getPublishedGrade(submission);
   const questionScore = grade?.scores.find(({ questionId }) => questionId === question.id);
   const correctAnswer = question.correctAnswer ?? null;
+  // Cau trac nghiem de trong la con lam trong tep bai lam: giao vien cham theo tep, app khong tu bao sai
   const canJudge =
-    question.kind === 'MULTIPLE_CHOICE' && correctAnswer !== null && submission !== null;
+    question.kind === 'MULTIPLE_CHOICE' &&
+    correctAnswer !== null &&
+    submission !== null &&
+    answer !== '';
   const feedback = questionScore?.feedback ?? '';
+  const mappedFileIds = submitted?.fileIds ?? [];
 
   return {
     answer,
@@ -1049,6 +1217,9 @@ export function getQuestionReview(
     correctAnswer,
     isCorrect: canJudge ? answer === correctAnswer : null,
     criteria: questionScore ? getCriterionReviews(questionScore, grade) : [],
+    fileLabels: toSubmittedFiles(submission?.files ?? [])
+      .filter(({ fileId }) => mappedFileIds.includes(fileId))
+      .map(({ label }) => label),
   };
 }
 

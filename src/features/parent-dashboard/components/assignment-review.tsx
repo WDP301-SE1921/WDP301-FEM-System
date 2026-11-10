@@ -5,7 +5,12 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 
 import type { AssignmentQuestion, SubmissionRecord } from '../types';
-import { getAssignmentMaxScore, getPublishedGrade, getQuestionReview } from '../utils';
+import {
+  getAssignmentMaxScore,
+  getPublishedGrade,
+  getQuestionReview,
+  toSubmittedFiles,
+} from '../utils';
 
 import { GradeResultCard } from './grade-result-card';
 import { QuestionReviewCard } from './question-review-card';
@@ -70,7 +75,7 @@ export function AssignmentReview({
         {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
       {submission && fileCount > 0 ? (
-        <SubmittedFiles fileIds={submission.files.map(({ fileId }) => fileId)} />
+        <SubmittedFiles files={toSubmittedFiles(submission.files)} />
       ) : null}
       {questions.map((question, index) => (
         <QuestionReviewCard

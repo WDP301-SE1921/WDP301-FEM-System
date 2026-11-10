@@ -48,10 +48,12 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   ATTEMPTS_EXHAUSTED: 'Học sinh đã dùng hết số lần nộp bài.',
   INVALID_ANSWERS: 'Cần trả lời đủ tất cả câu hỏi trước khi nộp.',
   INVALID_CHOICE: 'Có câu trả lời không nằm trong các lựa chọn của đề.',
-  /** Ma cua POST /academic/files va ảnh gui kem bai nop. */
-  INVALID_FILE_TYPE: 'Chỉ gửi được ảnh JPG hoặc PNG.',
-  INVALID_FILE_SIZE: 'Ảnh phải nhỏ hơn 10 MB.',
-  INVALID_FILES: 'Có ảnh bài làm không còn dùng được. Hãy xoá ảnh đó và gửi lại.',
+  /** Ma cua POST /academic/files va tep gui kem bai nop (anh dai dien ghi de trong `auth-api`). */
+  INVALID_FILE_TYPE: 'Chỉ gửi được ảnh JPG, PNG hoặc tệp PDF.',
+  INVALID_FILE_SIZE: 'Tệp phải lớn hơn 0 và nhỏ hơn 10 MB.',
+  INVALID_FILES: 'Có ảnh hoặc tệp bài làm không còn dùng được. Hãy xoá tệp đó và gửi lại.',
+  INVALID_FILE_QUESTION:
+    'Có tệp được gắn với câu hỏi nhưng không có trong bài nộp. Hãy xoá tệp đó và gửi lại.',
   /** Hai lan doi anh dai dien cung luc (vd tren hai may): lan den sau bi tu choi. */
   AVATAR_CONFLICT: 'Ảnh đại diện vừa được đổi ở nơi khác. Vui lòng thử lại.',
 };

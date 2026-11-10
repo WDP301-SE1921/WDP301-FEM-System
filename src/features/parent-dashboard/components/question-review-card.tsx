@@ -9,6 +9,7 @@ import type { AssignmentQuestion, CriterionReview, QuestionReview } from '../typ
 import { formatPoints, getChoiceState } from '../utils';
 
 import { ChoiceOption } from './choice-option';
+import { QuestionFileNote } from './question-file-note';
 import { QuestionFrame } from './question-frame';
 import { ToneBadge } from './tone-badge';
 
@@ -19,7 +20,7 @@ export type QuestionReviewCardProps = {
   review: QuestionReview;
   /** false khi con chua nop bai: chi hien de (va dap an neu da cong bo). */
   hasSubmission: boolean;
-  /** Lan nop co anh bai lam: cau tu luan de trong la con tra loi bang anh. */
+  /** Lan nop co anh hoac PDF bai lam: cau de trong (ca trac nghiem) la con tra loi trong tep. */
   hasAttachments: boolean;
 };
 
@@ -51,14 +52,20 @@ export function QuestionReviewCard({
           ))}
         </View>
       ) : null}
+      {question.choices && hasSubmission && review.answer === '' ? (
+        <ThemedText type="small" themeColor="textSecondary">
+          {getBlankAnswerText(hasAttachments)}
+        </ThemedText>
+      ) : null}
 
       {!question.choices && hasSubmission ? (
         <AnswerBlock
           label="Câu trả lời của học sinh"
-          text={getEssayAnswerText(review.answer, hasAttachments)}
+          text={review.answer === '' ? getBlankAnswerText(hasAttachments) : review.answer}
           background="background"
         />
       ) : null}
+      {review.fileLabels.length > 0 ? <QuestionFileNote labels={review.fileLabels} /> : null}
       {!question.choices && review.correctAnswer ? (
         <AnswerBlock
           label="Đáp án tham khảo"
@@ -82,11 +89,9 @@ export function QuestionReviewCard({
   );
 }
 
-function getEssayAnswerText(answer: string, hasAttachments: boolean): string {
-  if (answer !== '') return answer;
-  return hasAttachments
-    ? 'Học sinh trả lời bằng ảnh bài làm gửi kèm.'
-    : 'Học sinh để trống câu này.';
+/** Cau con de trong: co tep bai lam thi con lam cau nay trong tep, giao vien cham theo tep. */
+function getBlankAnswerText(hasAttachments: boolean): string {
+  return hasAttachments ? 'Học sinh trả lời bằng bài làm gửi kèm.' : 'Học sinh để trống câu này.';
 }
 
 /** Diem tung tieu chi giao vien cham cho cau tu luan (BE PR #12). */
