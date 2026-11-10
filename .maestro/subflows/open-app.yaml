@@ -1,0 +1,31 @@
+# Mo app EduGrade trong Expo Go (emulator Android) voi trang thai sach (chua dang nhap).
+# METRO_URL mac dinh exp://10.0.2.2:8081 (10.0.2.2 = may host nhin tu emulator).
+appId: host.exp.exponent
+---
+- launchApp:
+    clearState: true
+    stopApp: true
+- openLink: ${METRO_URL || 'exp://10.0.2.2:8081'}
+# Lan bundle dau cua Metro co the mat toi ~4 phut. Cho app len, hoac dev menu / hop thoai ANR che app.
+- extendedWaitUntil:
+    visible: '(Continue|Wait|Đăng nhập|Tạo tài khoản)'
+    timeout: 300000
+# Emulator cham hay hien hop thoai ANR cua Android: bam Wait cho no di.
+- runFlow:
+    when:
+      visible: 'Wait'
+    commands:
+      - tapOn: 'Wait'
+# Sau khi bundle xong, Expo Go hien gioi thieu dev menu (vi clearState xoa trang thai cua no).
+- extendedWaitUntil:
+    visible: 'Continue'
+    timeout: 15000
+    optional: true
+- runFlow:
+    when:
+      visible: 'Continue'
+    commands:
+      - tapOn: 'Continue'
+- extendedWaitUntil:
+    visible: '(Đăng nhập|Tạo tài khoản)'
+    timeout: 60000
