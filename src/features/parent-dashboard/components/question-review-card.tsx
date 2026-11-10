@@ -5,7 +5,7 @@ import { ThemedView } from '@/components/ui/themed-view';
 import { Radius, Spacing, type ThemeColor } from '@/constants/theme';
 
 import { ANSWER_RESULTS } from '../constants';
-import type { AssignmentQuestion, QuestionReview } from '../types';
+import type { AssignmentQuestion, CriterionReview, QuestionReview } from '../types';
 import { formatPoints, getChoiceState } from '../utils';
 
 import { ChoiceOption } from './choice-option';
@@ -72,6 +72,7 @@ export function QuestionReviewCard({
           <ToneBadge label={result.label} tone={result.tone} icon={result.icon} />
         </View>
       ) : null}
+      {review.criteria.length > 0 ? <CriteriaBlock criteria={review.criteria} /> : null}
       {review.feedback ? (
         <ThemedText type="small" style={styles.feedback}>
           Nhận xét: {review.feedback}
@@ -86,6 +87,36 @@ function getEssayAnswerText(answer: string, hasAttachments: boolean): string {
   return hasAttachments
     ? 'Học sinh trả lời bằng ảnh bài làm gửi kèm.'
     : 'Học sinh để trống câu này.';
+}
+
+/** Diem tung tieu chi giao vien cham cho cau tu luan (BE PR #12). */
+function CriteriaBlock({ criteria }: { criteria: CriterionReview[] }) {
+  return (
+    <ThemedView type="background" style={styles.block}>
+      <ThemedText type="smallBold" themeColor="textSecondary">
+        Điểm theo tiêu chí
+      </ThemedText>
+      {criteria.map((criterion) => (
+        <View key={criterion.id} style={styles.criterion}>
+          <View style={styles.criterionHeader}>
+            <ThemedText type="small" style={styles.criterionTitle}>
+              {criterion.title}
+            </ThemedText>
+            <ThemedText type="smallBold">
+              {criterion.maxScore === null
+                ? formatPoints(criterion.score)
+                : `${criterion.score} / ${formatPoints(criterion.maxScore)}`}
+            </ThemedText>
+          </View>
+          {criterion.feedback ? (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.feedback}>
+              {criterion.feedback}
+            </ThemedText>
+          ) : null}
+        </View>
+      ))}
+    </ThemedView>
+  );
 }
 
 function AnswerBlock({
@@ -112,4 +143,7 @@ const styles = StyleSheet.create({
   block: { gap: Spacing.one, padding: Spacing.two, borderRadius: Radius.control },
   result: { flexDirection: 'row' },
   feedback: { fontStyle: 'italic' },
+  criterion: { gap: Spacing.half },
+  criterionHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.two },
+  criterionTitle: { flex: 1 },
 });

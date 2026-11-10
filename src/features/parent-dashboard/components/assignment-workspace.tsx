@@ -4,12 +4,14 @@ import type { AssignmentDetail, AssignmentRef, SubmissionRecord } from '../types
 import {
   canSubmitAssignment,
   findLatestSubmission,
+  getAssignmentFiles,
   getMeasuredTargets,
   toAnswerDraft,
   toDraftAttachments,
 } from '../utils';
 
 import { AssignmentAnswerForm } from './assignment-answer-form';
+import { AssignmentFiles } from './assignment-files';
 import { AssignmentLearningTargets } from './assignment-learning-targets';
 import { AssignmentReview } from './assignment-review';
 import { AssignmentSummaryCard } from './assignment-summary-card';
@@ -43,6 +45,8 @@ export function AssignmentWorkspace({
   const remainingAttempts = canSubmit ? detail.maxAttempts - attemptsUsed : 0;
   // Bai cu khong co bo CLO va khong cau nao gan CLO: khong hien khoi muc tieu
   const measuredTargets = getMeasuredTargets(detail);
+  // De bai PDF hoac anh giao vien gui kem (BE PR #12); tep chi giao vien xem BE khong tra
+  const files = getAssignmentFiles(detail);
   const stopRetrying = () => setIsRetrying(false);
 
   return (
@@ -51,6 +55,7 @@ export function AssignmentWorkspace({
       {detail.outcomeSetId && measuredTargets.length > 0 ? (
         <AssignmentLearningTargets outcomeSetId={detail.outcomeSetId} targets={measuredTargets} />
       ) : null}
+      {files.length > 0 ? <AssignmentFiles files={files} /> : null}
       {canSubmit && (!latest || isRetrying) ? (
         <AssignmentAnswerForm
           studentId={studentId}

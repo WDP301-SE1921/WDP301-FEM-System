@@ -583,6 +583,18 @@ export type LearningTarget = {
   statement: string;
 };
 
+/**
+ * Tep giao vien dinh kem bai (AssignmentFile, BE PR #12): de bai PDF hoac anh. BE chi tra phu huynh tep
+ * `teacherOnly: false`; link xem lay qua `GET /academic/files/:id/preview` nhu anh bai lam.
+ */
+export type AssignmentFile = {
+  fileId: string;
+  teacherOnly: boolean;
+  /** Vi tri cau trong de, tinh tu 0; null khi tep dung cho ca bai. */
+  questionPosition: number | null;
+  file: { name: string; mimeType: string; size: number };
+};
+
 /** Con duoc giao bai (AssignmentRecipient): mot ghi danh cua con trong lop cua bai. */
 export type AssignmentRecipient = {
   id: string;
@@ -598,6 +610,8 @@ export type AssignmentDetail = {
   testType: TestType | null;
   title: string;
   instructions: string;
+  /** Tep giao vien dinh kem cho hoc sinh. Thieu voi BE truoc PR #12. */
+  files?: AssignmentFile[];
   dueAt: string;
   status: AssignmentStatus;
   maxAttempts: number;
@@ -618,18 +632,45 @@ export type SubmissionAnswer = {
   answer: string;
 };
 
+/** Diem mot tieu chi cua cau tu luan cham theo rubric (CriterionScoreDto, BE PR #12). */
+export type CriterionScore = {
+  criterionId: string;
+  score: number;
+  /** Chuoi rong khi giao vien khong ghi. */
+  feedback: string;
+};
+
 /** Diem mot cau trong GradeReview. */
 export type QuestionScore = {
   questionId: string;
   score: number;
   /** Nhan xet rieng cho cau, chuoi rong khi giao vien khong ghi. */
   feedback: string;
+  /** Chi co voi cau tu luan cham theo tieu chi; `score` la tong cac tieu chi. */
+  criteria?: CriterionScore[];
+};
+
+/** Mot tieu chi cua rubric (RubricCriterionDto). */
+export type RubricCriterion = {
+  id: string;
+  title: string;
+  description: string;
+  maxScore: number;
+};
+
+/** Rubric cua mot cau luc giao vien cham, BE chup lai cung ban diem (`rubricSnapshot`). */
+export type RubricSnapshotItem = {
+  questionId: string;
+  maxScore: number;
+  criteria: RubricCriterion[] | null;
 };
 
 /** GradeReview da cong bo cua mot lan nop. */
 export type SubmissionGrade = {
   id: string;
   scores: QuestionScore[];
+  /** Ten va diem toi da cua tung tieu chi luc cham. null hoac thieu voi ban diem truoc BE PR #12. */
+  rubricSnapshot?: RubricSnapshotItem[] | null;
   totalScore: number;
   feedback: string;
   publishedAt: string | null;
@@ -721,6 +762,18 @@ export type QuestionReview = {
   correctAnswer: string | null;
   /** Chi tinh duoc voi cau trac nghiem da co dap an. */
   isCorrect: boolean | null;
+  /** Diem theo tung tieu chi, theo thu tu rubric. Rong khi cau khong cham theo tieu chi. */
+  criteria: CriterionReview[];
+};
+
+/** Mot tieu chi khi xem lai diem. */
+export type CriterionReview = {
+  id: string;
+  title: string;
+  score: number;
+  /** null khi BE khong con ten va diem toi da cua tieu chi (ban diem cu). */
+  maxScore: number | null;
+  feedback: string | null;
 };
 
 /**
@@ -1062,7 +1115,9 @@ export type NotificationType =
   | 'CURRICULUM_CHANGES_REQUESTED'
   | 'CURRICULUM_APPROVED'
   | 'FEEDBACK_CREATED'
-  | 'FEEDBACK_RESOLVED';
+  | 'FEEDBACK_RESOLVED'
+  /** Chat chi cho nhan su trung tam (`CHAT_ROLES` cua BE), phu huynh khong nhan. */
+  | 'CHAT_MESSAGE';
 
 /** Loai ban ghi ma thong bao tro toi. App tu chon man hinh theo loai nay. */
 export type NotificationTargetKind =
@@ -1075,7 +1130,8 @@ export type NotificationTargetKind =
   | 'ENROLLMENT'
   | 'REGISTRATION'
   | 'CURRICULUM_UNIT'
-  | 'FEEDBACK';
+  | 'FEEDBACK'
+  | 'CHAT_CONVERSATION';
 
 /** Mot thong bao trong hop thu (GET /notifications, PATCH /notifications/:id/read). */
 export type AppNotification = {

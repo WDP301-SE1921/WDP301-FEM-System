@@ -186,6 +186,7 @@ export const NOTIFICATION_TARGET_APPEARANCES: Record<
   REGISTRATION: { icon: 'wallet-outline', tone: 'accent' },
   CURRICULUM_UNIT: { icon: 'book-outline', tone: 'neutral' },
   FEEDBACK: { icon: 'chatbubble-outline', tone: 'neutral' },
+  CHAT_CONVERSATION: { icon: 'chatbubble-outline', tone: 'neutral' },
 };
 
 export const NOTIFICATION_TYPE_APPEARANCES: Partial<

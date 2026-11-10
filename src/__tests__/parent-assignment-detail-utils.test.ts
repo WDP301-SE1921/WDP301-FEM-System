@@ -10,9 +10,12 @@ import {
   findLatestSubmission,
   findStudentRecipient,
   formatAttempt,
+  formatFileSize,
   formatQuestionPositions,
   formatPoints,
   getAssignmentDetailStatus,
+  getAssignmentFiles,
+  getAssignmentFileScope,
   getAssignmentMaxScore,
   getChoiceState,
   getMeasuredTargets,
@@ -20,6 +23,7 @@ import {
   getPublishedGrade,
   getUnansweredPositions,
   getQuestionReview,
+  isImageFile,
   getSubmitConfirmMessage,
   getSubmitHint,
   hasEmptyEssay,
@@ -266,6 +270,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         feedback: null,
         correctAnswer: null,
         isCorrect: null,
+        criteria: [],
       });
     });
 
@@ -278,6 +283,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         feedback: null,
         correctAnswer: 'x² + 6x + 9',
         isCorrect: false,
+        criteria: [],
       });
       expect(getQuestionReview({ ...ESSAY, correctAnswer: '(x − 2)(x − 3).' }, graded)).toEqual({
         answer: '(x − 2)(x − 3)',
@@ -286,7 +292,68 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         correctAnswer: '(x − 2)(x − 3).',
         // Cau tu luan do giao vien cham, khong so chuoi
         isCorrect: null,
+        criteria: [],
       });
+    });
+
+    it('cham theo tieu chi: ten va diem toi da lay tu rubric luc cham, giu thu tu cua ban diem', () => {
+      const graded = submission({
+        grades: [
+          {
+            ...GRADE,
+            scores: [
+              { questionId: 'q1', score: 0, feedback: '' },
+              {
+                questionId: 'q2',
+                score: 5,
+                feedback: '',
+                criteria: [
+                  { criterionId: 'c2', score: 2, feedback: 'Thiếu kết luận.' },
+                  { criterionId: 'c1', score: 3, feedback: '' },
+                ],
+              },
+            ],
+            rubricSnapshot: [
+              {
+                questionId: 'q2',
+                maxScore: 6,
+                criteria: [
+                  { id: 'c1', title: 'Phương pháp', description: 'Tách hạng tử', maxScore: 4 },
+                  { id: 'c2', title: 'Trình bày', description: '', maxScore: 2 },
+                ],
+              },
+            ],
+          },
+        ],
+      });
+
+      expect(getQuestionReview(ESSAY, graded).criteria).toEqual([
+        { id: 'c2', title: 'Trình bày', score: 2, maxScore: 2, feedback: 'Thiếu kết luận.' },
+        { id: 'c1', title: 'Phương pháp', score: 3, maxScore: 4, feedback: null },
+      ]);
+    });
+
+    it('ban diem khong co rubric chup lai: van hien diem tung tieu chi voi ten mac dinh', () => {
+      const graded = submission({
+        grades: [
+          {
+            ...GRADE,
+            scores: [
+              {
+                questionId: 'q2',
+                score: 3,
+                feedback: '',
+                criteria: [{ criterionId: 'c9', score: 3, feedback: '' }],
+              },
+            ],
+            rubricSnapshot: null,
+          },
+        ],
+      });
+
+      expect(getQuestionReview(ESSAY, graded).criteria).toEqual([
+        { id: 'c9', title: 'Tiêu chí 1', score: 3, maxScore: null, feedback: null },
+      ]);
     });
 
     it('con chua nop: khong co cau tra loi va khong xet dung sai', () => {
@@ -306,6 +373,44 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(getChoiceState('x² + 6x + 9', published)).toBe('CORRECT');
     expect(getChoiceState('x² + 9', published)).toBe('WRONG');
     expect(getChoiceState('x²', published)).toBe('IDLE');
+  });
+
+  describe('tep giao vien dinh kem bai', () => {
+    const file = (
+      fileId: string,
+      questionPosition: number | null,
+      mimeType = 'application/pdf',
+      teacherOnly = false,
+    ) => ({
+      fileId,
+      teacherOnly,
+      questionPosition,
+      file: { name: `${fileId}.pdf`, mimeType, size: 1000 },
+    });
+
+    it('getAssignmentFiles: bo tep chi giao vien xem, tep ca bai truoc roi theo cau', () => {
+      const files = getAssignmentFiles({
+        files: [
+          file('q2', 1),
+          file('key', null, 'application/pdf', true),
+          file('all', null),
+          file('q1', 0),
+        ],
+      });
+      expect(files.map(({ fileId }) => fileId)).toEqual(['all', 'q1', 'q2']);
+      // BE truoc PR #12 khong tra `files`
+      expect(getAssignmentFiles({})).toEqual([]);
+    });
+
+    it('getAssignmentFileScope, isImageFile va formatFileSize', () => {
+      expect(getAssignmentFileScope({ questionPosition: null })).toBe('Cả bài');
+      expect(getAssignmentFileScope({ questionPosition: 1 })).toBe('Câu 2');
+      expect(isImageFile(file('a', null, 'image/png'))).toBe(true);
+      expect(isImageFile(file('b', null))).toBe(false);
+      expect(formatFileSize(300)).toBe('1 KB');
+      expect(formatFileSize(850 * 1024)).toBe('850 KB');
+      expect(formatFileSize(1.5 * 1024 * 1024)).toBe('1,5 MB');
+    });
   });
 
   it('formatPoints va formatAttempt', () => {

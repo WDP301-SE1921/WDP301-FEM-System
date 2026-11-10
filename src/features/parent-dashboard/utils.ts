@@ -67,6 +67,7 @@ import type {
   AppNotification,
   AttentionItem,
   AssignmentDetail,
+  AssignmentFile,
   AssignmentFormat,
   AssignmentGrade,
   AssignmentQuestion,
@@ -83,6 +84,7 @@ import type {
   ChoiceState,
   ClassSession,
   CourseFilter,
+  CriterionReview,
   CourseOutcome,
   CourseStatus,
   DayPeriod,
@@ -98,6 +100,7 @@ import type {
   ParentDestination,
   QuestionKind,
   QuestionReview,
+  QuestionScore,
   RoadmapLesson,
   RoadmapSummary,
   ScheduleRange,
@@ -1031,9 +1034,8 @@ export function getQuestionReview(
 ): QuestionReview {
   const answer =
     submission?.answers.find(({ questionId }) => questionId === question.id)?.answer ?? '';
-  const questionScore = getPublishedGrade(submission)?.scores.find(
-    ({ questionId }) => questionId === question.id,
-  );
+  const grade = getPublishedGrade(submission);
+  const questionScore = grade?.scores.find(({ questionId }) => questionId === question.id);
   const correctAnswer = question.correctAnswer ?? null;
   const canJudge =
     question.kind === 'MULTIPLE_CHOICE' && correctAnswer !== null && submission !== null;
@@ -1046,7 +1048,57 @@ export function getQuestionReview(
     feedback: feedback === '' ? null : feedback,
     correctAnswer,
     isCorrect: canJudge ? answer === correctAnswer : null,
+    criteria: questionScore ? getCriterionReviews(questionScore, grade) : [],
   };
+}
+
+/**
+ * Diem tung tieu chi cua mot cau (BE PR #12). Ten va diem toi da lay tu rubric BE chup luc cham
+ * (`rubricSnapshot`), khong lay rubric hien tai cua bai vi giao vien co the sua sau khi cham.
+ */
+export function getCriterionReviews(
+  questionScore: QuestionScore,
+  grade: SubmissionGrade | null,
+): CriterionReview[] {
+  const rubric = grade?.rubricSnapshot?.find(
+    ({ questionId }) => questionId === questionScore.questionId,
+  )?.criteria;
+  return (questionScore.criteria ?? []).map((item, index) => {
+    const criterion = rubric?.find(({ id }) => id === item.criterionId);
+    return {
+      id: item.criterionId,
+      title: criterion?.title ?? `Tiêu chí ${index + 1}`,
+      score: item.score,
+      maxScore: criterion?.maxScore ?? null,
+      feedback: item.feedback === '' ? null : item.feedback,
+    };
+  });
+}
+
+/** Tep giao vien dinh kem cho hoc sinh: tep cua ca bai truoc, roi theo thu tu cau. */
+export function getAssignmentFiles(detail: Pick<AssignmentDetail, 'files'>): AssignmentFile[] {
+  const files = (detail.files ?? []).filter(({ teacherOnly }) => !teacherOnly);
+  const order = (file: AssignmentFile) => file.questionPosition ?? -1;
+  return [...files].sort((a, b) => order(a) - order(b));
+}
+
+/** Vd `Câu 2` cho tep cua mot cau, `Cả bài` cho tep chung. */
+export function getAssignmentFileScope({
+  questionPosition,
+}: Pick<AssignmentFile, 'questionPosition'>): string {
+  return questionPosition === null ? 'Cả bài' : `Câu ${questionPosition + 1}`;
+}
+
+/** Vd `850 KB`, `1,5 MB`. */
+export function formatFileSize(bytes: number): string {
+  const KB = 1024;
+  if (bytes < KB * KB) return `${Math.max(1, Math.round(bytes / KB))} KB`;
+  return `${(bytes / (KB * KB)).toFixed(1).replace('.', ',')} MB`;
+}
+
+/** Tep la anh thi xem ngay trong app; PDF mo bang trinh duyet. */
+export function isImageFile({ file }: Pick<AssignmentFile, 'file'>): boolean {
+  return file.mimeType.startsWith('image/');
 }
 
 /** Trang thai cua mot lua chon khi xem lai bai: chua co dap an thi chi danh dau lua chon cua con. */

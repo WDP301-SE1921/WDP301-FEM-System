@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, userEvent } from '@testing-library/react-native';
+import { openBrowserAsync } from 'expo-web-browser';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { ParentAssignmentDetail } from '@/features/parent-dashboard/components/parent-assignment-detail';
@@ -27,6 +28,11 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
 }));
 // Camera va thu vien anh la module native: test chon san ket qua tra ve
 jest.mock('@/lib/image-picker', () => ({ pickImage: jest.fn() }));
+// Trinh duyet trong app la module native: chi kiem link duoc mo
+jest.mock('expo-web-browser', () => ({
+  openBrowserAsync: jest.fn(async () => ({ type: 'opened' })),
+  WebBrowserPresentationStyle: { AUTOMATIC: 'automatic' },
+}));
 
 /** Bo nho may gia: ban nhap bai lam doc, ghi qua `storage`. */
 const mockSavedDrafts = new Map<string, unknown>();
@@ -629,6 +635,87 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     });
   });
 
+  it('tai lieu giao vien gui kem va diem theo tieu chi (BE PR #12)', async () => {
+    api.getAssignmentDetail.mockResolvedValue({
+      ...DETAIL,
+      status: 'CLOSED',
+      files: [
+        {
+          fileId: 'file-de',
+          teacherOnly: false,
+          questionPosition: null,
+          file: { name: 'de-bai-10.pdf', mimeType: 'application/pdf', size: 1.5 * 1024 * 1024 },
+        },
+        {
+          fileId: 'file-hinh',
+          teacherOnly: false,
+          questionPosition: 1,
+          file: { name: 'hinh-cau-2.png', mimeType: 'image/png', size: 300 * 1024 },
+        },
+      ],
+    });
+    api.getAssignmentSubmissions.mockResolvedValue([
+      {
+        ...SUBMITTED,
+        grades: [
+          {
+            id: 'grade-1',
+            scores: [
+              { questionId: 'q1', score: 4, feedback: '' },
+              {
+                questionId: 'q2',
+                score: 5,
+                feedback: '',
+                criteria: [
+                  { criterionId: 'c1', score: 3, feedback: '' },
+                  { criterionId: 'c2', score: 2, feedback: 'Thiếu kết luận.' },
+                ],
+              },
+            ],
+            rubricSnapshot: [
+              {
+                questionId: 'q2',
+                maxScore: 6,
+                criteria: [
+                  { id: 'c1', title: 'Phương pháp', description: '', maxScore: 4 },
+                  { id: 'c2', title: 'Trình bày', description: '', maxScore: 2 },
+                ],
+              },
+            ],
+            totalScore: 9,
+            feedback: '',
+            publishedAt: daysFromToday(0),
+          },
+        ],
+      },
+    ]);
+    const { user } = await renderDetail();
+
+    expect(
+      await screen.findByText('Tài liệu của bài', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+    ).toBeOnTheScreen();
+    expect(screen.getByText('Cả bài · 1,5 MB')).toBeOnTheScreen();
+    expect(screen.getByText('Câu 2 · 300 KB')).toBeOnTheScreen();
+
+    // PDF mo bang trinh duyet voi link ky moi lay tu BE
+    await user.press(screen.getByRole('button', { name: 'Mở tệp de-bai-10.pdf, Cả bài' }));
+    expect(api.getFilePreview).toHaveBeenCalledWith('file-de');
+    expect(openBrowserAsync).toHaveBeenCalledWith(
+      expect.stringContaining('/file-de.jpg'),
+      expect.anything(),
+    );
+    // Anh xem ngay trong app
+    await user.press(screen.getByRole('button', { name: 'Xem ảnh hinh-cau-2.png, Câu 2' }));
+    expect(screen.getByText('Ảnh đề bài 1/1')).toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Đóng' }));
+
+    expect(screen.getByText('Điểm theo tiêu chí')).toBeOnTheScreen();
+    expect(screen.getByText('Phương pháp')).toBeOnTheScreen();
+    expect(screen.getByText('3 / 4 điểm')).toBeOnTheScreen();
+    expect(screen.getByText('2 / 2 điểm')).toBeOnTheScreen();
+    expect(screen.getByText('Thiếu kết luận.')).toBeOnTheScreen();
+  });
+
   it('bai cu khong co CLO thi khong hien khoi muc tieu', async () => {
     api.getAssignmentSubmissions.mockResolvedValue([]);
     await renderDetail();
@@ -638,6 +725,8 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     ).toBeOnTheScreen();
     expect(screen.queryByText('Mục tiêu bài')).not.toBeOnTheScreen();
     expect(api.getOutcomeSet).not.toHaveBeenCalled();
+    // Bai khong co tep giao vien gui kem thi khong hien khoi tai lieu
+    expect(screen.queryByText('Tài liệu của bài')).not.toBeOnTheScreen();
   });
 
   it('bai khong giao cho con dang xem thi khong hien de', async () => {

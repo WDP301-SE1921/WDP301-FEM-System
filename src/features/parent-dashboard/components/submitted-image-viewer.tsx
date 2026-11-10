@@ -20,14 +20,17 @@ export type SubmittedImageViewerProps = {
   index: number | null;
   onChangeIndex: (index: number) => void;
   onClose: () => void;
+  /** Ten loai anh tren tieu de va nhan doc man hinh, vd `Ảnh đề bài`. Mac dinh la anh bai lam. */
+  label?: string;
 };
 
-/** Xem tron mot anh bai lam da nop tren ca man hinh, chuyen qua lai giua cac anh cua lan nop. */
+/** Xem tron mot anh (bai lam da nop, de bai giao vien gui) tren ca man hinh, chuyen qua lai giua cac anh. */
 export function SubmittedImageViewer({
   fileIds,
   index,
   onChangeIndex,
   onClose,
+  label = 'Ảnh bài làm',
 }: SubmittedImageViewerProps) {
   const theme = useTheme();
   const current = index ?? 0;
@@ -47,7 +50,7 @@ export function SubmittedImageViewer({
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.header}>
             <ThemedText type="heading" accessibilityRole="header" style={styles.title}>
-              Ảnh bài làm {position}/{fileIds.length}
+              {label} {position}/{fileIds.length}
             </ThemedText>
             <Pressable
               accessibilityRole="button"
@@ -69,7 +72,7 @@ export function SubmittedImageViewer({
               key={fileId}
               fileId={fileId}
               contentFit="contain"
-              accessibilityLabel={`Ảnh bài làm ${position}`}
+              accessibilityLabel={`${label} ${position}`}
               style={styles.image}
             />
           ) : null}
