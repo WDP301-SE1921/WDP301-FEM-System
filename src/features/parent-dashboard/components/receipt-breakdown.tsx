@@ -46,7 +46,7 @@ export function ReceiptBreakdown({ receipt }: ReceiptBreakdownProps) {
 
       <View style={styles.rows}>
         <TuitionDetailRow label="Lớp học" value={classroom.name} />
-        <TuitionDetailRow label="Gói học" value={formatPackageLabel(term.packageMonths)} />
+        <TuitionDetailRow label="Đóng học phí" value={formatPackageLabel(term.packageMonths)} />
         {slotLines.length > 0 ? (
           <TuitionDetailRow label="Lịch học" value={slotLines.join('\n')} />
         ) : null}

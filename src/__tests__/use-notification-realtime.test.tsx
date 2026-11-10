@@ -1,16 +1,26 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook } from '@testing-library/react-native';
+import * as Notifications from 'expo-notifications';
 import type { PropsWithChildren } from 'react';
 import { AppState, type AppStateStatus } from 'react-native';
 
 import { queryKeys } from '@/api/query-client';
 import { connectNotificationRealtime } from '@/features/parent-dashboard/api/notification-realtime';
+import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { useNotificationRealtime } from '@/features/parent-dashboard/hooks/use-notification-realtime';
 import { useAuthStore } from '@/store/auth-store';
 import type { User } from '@/types/auth';
 
+jest.mock('expo-router', () => ({
+  router: { navigate: jest.fn() },
+}));
 jest.mock('@/features/parent-dashboard/api/notification-realtime', () => ({
   connectNotificationRealtime: jest.fn(),
+}));
+jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
+  parentDashboardApi: {
+    getNotifications: jest.fn().mockResolvedValue({ items: [], page: 1, limit: 10, total: 0 }),
+  },
 }));
 jest.mock('@/lib/logger', () => ({
   logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
@@ -18,10 +28,12 @@ jest.mock('@/lib/logger', () => ({
 // Store dang nhap doc SecureStore va AsyncStorage; test dat thang trang thai store
 jest.mock('@/lib/storage', () => ({
   secureStorage: { get: jest.fn(), set: jest.fn(), remove: jest.fn() },
-  storage: { getJson: jest.fn(), setJson: jest.fn(), remove: jest.fn() },
+  storage: { getJson: jest.fn().mockResolvedValue([]), setJson: jest.fn(), remove: jest.fn() },
 }));
 
 const connect = jest.mocked(connectNotificationRealtime);
+const getNotifications = jest.mocked(parentDashboardApi.getNotifications);
+const scheduleNotification = jest.mocked(Notifications.scheduleNotificationAsync);
 const channel = { open: jest.fn(), close: jest.fn() };
 /** Lon hon thoi gian gom su kien cua hook. */
 const DEBOUNCE_WAIT_MS = 400;
@@ -133,5 +145,40 @@ describe('features/parent-dashboard/useNotificationRealtime', () => {
 
     expect(channel.close).toHaveBeenCalledTimes(1);
     expect(removeAppStateListener).toHaveBeenCalledTimes(1);
+  });
+
+  it('phat thong bao he dieu hanh (OS Push Notification) khi co thong bao chua doc moi', async () => {
+    getNotifications.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'notif-1',
+          type: 'ANNOUNCEMENT',
+          title: 'Thông báo mới',
+          body: 'Nội dung thông báo',
+          target: { kind: 'CLASS', id: 'class-1' },
+          context: { studentIds: ['student-1'] },
+          createdAt: '2026-10-01T00:00:00.000Z',
+          readAt: null,
+        },
+      ],
+      page: 1,
+      limit: 10,
+      total: 1,
+    });
+    const { handlers } = await setup(PARENT);
+
+    await fire(() => {
+      handlers?.onNotificationCreated();
+    });
+
+    expect(scheduleNotification).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identifier: 'edugrade-notif-1',
+        content: expect.objectContaining({
+          title: 'Thông báo mới',
+          body: 'Nội dung thông báo',
+        }),
+      }),
+    );
   });
 });
