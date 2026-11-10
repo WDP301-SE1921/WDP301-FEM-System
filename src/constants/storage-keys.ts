@@ -4,6 +4,7 @@ export const StorageKeys = {
   refreshToken: 'fem.auth.refresh_token',
   user: 'fem.auth.user',
   onboardingDone: 'fem.app.onboarding_done',
+  notifiedIds: 'fem.notifications.notified_ids',
 } as const;
 
 /** Bai lam dang do cua mot con cho mot bai tap, luu tren may de khong mat khi roi man hinh. */

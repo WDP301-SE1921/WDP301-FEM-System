@@ -66,6 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       secureStorage.remove(StorageKeys.accessToken),
       secureStorage.remove(StorageKeys.refreshToken),
       storage.remove(StorageKeys.user),
+      storage.remove(StorageKeys.notifiedIds),
     ]);
     queryClient.clear();
     set({ user: null, isAuthenticated: false, isSessionExpired: reason === 'EXPIRED' });
