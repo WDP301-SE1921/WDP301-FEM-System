@@ -1,6 +1,13 @@
 import { Image, type ImageContentFit } from 'expo-image';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, type ImageStyle, type StyleProp } from 'react-native';
+import {
+  ActivityIndicator,
+  Linking,
+  Pressable,
+  StyleSheet,
+  type ImageStyle,
+  type StyleProp,
+} from 'react-native';
 
 import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -24,7 +31,8 @@ export type SubmittedImageProps = {
 
 /**
  * Anh bai lam da nop, tai tu BE theo id. Link BE ky co han nen anh duoc cache theo duong dan anh, khong
- * theo ca link; link het han hoac tep khong phai anh (PDF) thi hien khung bao khong tai duoc.
+ * theo ca link; khong lay duoc link thi hien khung bao khong tai duoc. Co link ma khong ve duoc anh thi
+ * thuong la file PDF (BE chi tra id, khong tra loai tep): hien o "Mo file" de mo bang trinh xem cua may.
  */
 export function SubmittedImage({
   fileId,
@@ -50,7 +58,29 @@ export function SubmittedImage({
     );
   }
 
-  if (!url || url === failedUrl) {
+  if (url && url === failedUrl) {
+    return (
+      <Pressable
+        accessibilityRole="link"
+        accessibilityLabel={`${accessibilityLabel}, file PDF, bấm để mở`}
+        onPress={() => void Linking.openURL(url)}
+        style={({ pressed }) => [
+          style,
+          styles.center,
+          styles.fallback,
+          { borderColor: theme.border, backgroundColor: theme.background },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Icon name="document-text-outline" size={FALLBACK_ICON_SIZE} themeColor="primary" />
+        <ThemedText type="small" themeColor="primary" style={styles.fallbackText}>
+          Mở file
+        </ThemedText>
+      </Pressable>
+    );
+  }
+
+  if (!url) {
     return (
       <ThemedView
         type="background"
@@ -81,4 +111,5 @@ const styles = StyleSheet.create({
   center: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
   fallback: { gap: Spacing.half, padding: Spacing.one },
   fallbackText: { textAlign: 'center' },
+  pressed: { opacity: 0.75 },
 });

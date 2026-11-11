@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,8 @@ export type QuestionAnswerCardProps = {
   /** Ma CLO cau nay do, xem `getQuestionOutcomeCodes`. */
   outcomeCode?: string;
   onChange: (answer: string) => void;
+  /** Khu anh/file bai lam rieng cua cau tu luan, hien duoi o nhap bai lam. */
+  attachments?: ReactNode;
 };
 
 /** Mot cau khi con lam bai: cau trac nghiem chon mot lua chon, cau tu luan nhap bai lam. */
@@ -35,6 +38,7 @@ export function QuestionAnswerCard({
   isMissing,
   outcomeCode,
   onChange,
+  attachments,
 }: QuestionAnswerCardProps) {
   const label = `Câu ${position}`;
 
@@ -58,15 +62,18 @@ export function QuestionAnswerCard({
           ))}
         </View>
       ) : (
-        <Input
-          label={`Bài làm câu ${position}`}
-          placeholder="Gõ bài làm vào đây"
-          multiline
-          maxLength={ESSAY_MAX_LENGTH}
-          value={value}
-          onChangeText={onChange}
-          style={styles.essay}
-        />
+        <View style={styles.essayGroup}>
+          <Input
+            label={`Bài làm câu ${position}`}
+            placeholder="Gõ bài làm vào đây"
+            multiline
+            maxLength={ESSAY_MAX_LENGTH}
+            value={value}
+            onChangeText={onChange}
+            style={styles.essay}
+          />
+          {attachments}
+        </View>
       )}
     </QuestionFrame>
   );
@@ -74,5 +81,6 @@ export function QuestionAnswerCard({
 
 const styles = StyleSheet.create({
   choices: { gap: Spacing.two },
+  essayGroup: { gap: Spacing.three },
   essay: { minHeight: ESSAY_MIN_HEIGHT, textAlignVertical: 'top' },
 });

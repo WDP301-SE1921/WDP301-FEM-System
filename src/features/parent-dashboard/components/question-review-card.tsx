@@ -10,6 +10,7 @@ import { formatPoints, getChoiceState } from '../utils';
 
 import { ChoiceOption } from './choice-option';
 import { QuestionFrame } from './question-frame';
+import { SubmittedFiles } from './submitted-files';
 import { ToneBadge } from './tone-badge';
 
 export type QuestionReviewCardProps = {
@@ -19,8 +20,10 @@ export type QuestionReviewCardProps = {
   review: QuestionReview;
   /** false khi con chua nop bai: chi hien de (va dap an neu da cong bo). */
   hasSubmission: boolean;
-  /** Lan nop co anh bai lam: cau tu luan de trong la con tra loi bang anh. */
+  /** Cau nay co anh bai lam (rieng cau hoac anh chung cua bai nop cu): de trong la tra loi bang anh. */
   hasAttachments: boolean;
+  /** Anh/file bai lam gui kem rieng cau nay. */
+  fileIds?: readonly string[];
   /** Ma CLO cau nay do, xem `getQuestionOutcomeCodes`. */
   outcomeCode?: string;
 };
@@ -35,6 +38,7 @@ export function QuestionReviewCard({
   review,
   hasSubmission,
   hasAttachments,
+  fileIds = [],
   outcomeCode,
 }: QuestionReviewCardProps) {
   const maxPoints = formatPoints(question.maxScore);
@@ -63,6 +67,13 @@ export function QuestionReviewCard({
           background="background"
         />
       ) : null}
+      {!question.choices && fileIds.length > 0 ? (
+        <SubmittedFiles
+          fileIds={fileIds}
+          heading={`Ảnh/file bài làm câu ${position}: ${fileIds.length} tệp. Bấm vào ảnh để xem rõ.`}
+          itemLabel={`Ảnh bài làm câu ${position} số`}
+        />
+      ) : null}
       {!question.choices && review.correctAnswer ? (
         <AnswerBlock
           label="Đáp án tham khảo"
@@ -88,7 +99,7 @@ export function QuestionReviewCard({
 function getEssayAnswerText(answer: string, hasAttachments: boolean): string {
   if (answer !== '') return answer;
   return hasAttachments
-    ? 'Học sinh trả lời bằng ảnh bài làm gửi kèm.'
+    ? 'Học sinh trả lời bằng ảnh/file bài làm gửi kèm.'
     : 'Học sinh để trống câu này.';
 }
 

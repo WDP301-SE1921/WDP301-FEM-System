@@ -19,7 +19,9 @@ import {
   getOptionalOutcomeIds,
   getPublishedGrade,
   getQuestionOutcomeCodes,
+  getQuestionIdsWithFiles,
   getUnansweredPositions,
+  groupAttachmentsByQuestion,
   getQuestionReview,
   getSubmitConfirmMessage,
   getSubmitHint,
@@ -27,6 +29,7 @@ import {
   toAnswerDraft,
   toAssignmentDraft,
   toDraftAttachments,
+  splitSubmissionFiles,
   toSubmissionAnswers,
 } from '@/features/parent-dashboard/utils';
 
@@ -200,11 +203,32 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(formatQuestionPositions([2, 5])).toBe('Câu 2, Câu 5');
   });
 
-  it('co anh bai lam thi cau tu luan de trong duoc, cau trac nghiem van phai chon', () => {
-    expect(getUnansweredPositions(QUESTIONS, {}, true)).toEqual([1]);
-    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, true)).toEqual([]);
-    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9' })).toBe(true);
-    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9', q2: 'Bài làm' })).toBe(false);
+  it('cau tu luan co anh rieng thi de trong duoc, cau trac nghiem van phai chon', () => {
+    const withFiles = new Set(['q2']);
+    expect(getUnansweredPositions(QUESTIONS, {}, withFiles)).toEqual([1]);
+    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, withFiles)).toEqual([]);
+    // Anh gan cau khac khong lam cau tu luan nay duoc de trong
+    expect(getUnansweredPositions(QUESTIONS, { q1: 'x² + 9' }, new Set(['q1']))).toEqual([2]);
+    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9' }, withFiles)).toBe(true);
+    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9' }, new Set())).toBe(false);
+    expect(hasEmptyEssay(QUESTIONS, { q1: 'x² + 9', q2: 'Bài làm' }, withFiles)).toBe(false);
+  });
+
+  it('groupAttachmentsByQuestion chia anh theo cau tu luan, anh chua gan cau vao cau tu luan dau', () => {
+    const essays = [
+      { id: 'q1', kind: 'MULTIPLE_CHOICE' as const },
+      { id: 'q2', kind: 'ESSAY' as const },
+      { id: 'q3', kind: 'ESSAY' as const },
+    ];
+    const groups = groupAttachmentsByQuestion(essays, [
+      { fileId: 'a', uri: null, questionId: 'q3' },
+      { fileId: 'old', uri: null },
+      { fileId: 'gone', uri: null, questionId: 'q9' },
+    ]);
+    expect(groups.get('q2')?.map(({ fileId }) => fileId)).toEqual(['old', 'gone']);
+    expect(groups.get('q3')?.map(({ fileId }) => fileId)).toEqual(['a']);
+    expect(groups.has('q1')).toBe(false);
+    expect(getQuestionIdsWithFiles(groups)).toEqual(new Set(['q2', 'q3']));
   });
 
   it('getSubmitHint nhac cau thieu, cau tu luan cham theo anh va so lan nop con lai', () => {
@@ -212,7 +236,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       'Còn 1 câu chưa trả lời: Câu 2.',
     );
     expect(getSubmitHint({ unanswered: [], remainingAttempts: 2, hasEmptyEssay: true })).toBe(
-      'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm. Sau lần này học sinh còn 1 lần nộp lại.',
+      'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh/file của câu đó. Sau lần này học sinh còn 1 lần nộp lại.',
     );
     expect(getSubmitHint({ unanswered: [], remainingAttempts: 1, hasEmptyEssay: false })).toBe(
       'Đã trả lời đủ. Đây là lần nộp cuối, học sinh nhớ kiểm tra lại bài trước khi nộp nhé.',
@@ -224,7 +248,7 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       'Đã trả lời đủ 2 câu. Sau khi nộp, học sinh còn 1 lần nộp lại.',
     );
     expect(getSubmitConfirmMessage(2, 1, 3)).toBe(
-      'Đã trả lời đủ 2 câu, kèm 3 ảnh bài làm. Đây là lần nộp cuối, nộp xong không sửa được nữa.',
+      'Đã trả lời đủ 2 câu, kèm 3 ảnh/file bài làm. Đây là lần nộp cuối, nộp xong không sửa được nữa.',
     );
   });
 
@@ -244,6 +268,13 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
         attachments: [{ fileId: 1 }, { fileId: 'f', uri: null }],
       }),
     ).toEqual({ answers: {}, attachments: [{ fileId: 'f', uri: null }] });
+    const pdf = { fileId: 'p', uri: null, questionId: 'q2', kind: 'PDF', name: 'bai.pdf' };
+    expect(
+      toAssignmentDraft({
+        answers: {},
+        attachments: [pdf, { fileId: 'x', uri: null, kind: 'ZIP' }],
+      }),
+    ).toEqual({ answers: {}, attachments: [pdf] });
     expect(toAssignmentDraft(null)).toBeNull();
     expect(toAssignmentDraft([])).toBeNull();
   });
@@ -253,6 +284,36 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       { fileId: 'file-old', uri: null },
     ]);
     expect(toDraftAttachments(null)).toEqual([]);
+    // Bai nop moi: tep giu dung cau theo answers[].fileIds
+    expect(
+      toDraftAttachments(
+        submission({
+          files: [{ fileId: 'f2' }, { fileId: 'f-all' }],
+          answers: [
+            { questionId: 'q1', answer: 'x² + 9' },
+            { questionId: 'q2', answer: '', fileIds: ['f2'] },
+          ],
+        }),
+      ),
+    ).toEqual([
+      { fileId: 'f2', uri: null, questionId: 'q2' },
+      { fileId: 'f-all', uri: null },
+    ]);
+  });
+
+  it('splitSubmissionFiles tach anh theo cau va anh chung cua bai nop cu', () => {
+    expect(
+      splitSubmissionFiles(
+        submission({
+          files: [{ fileId: 'f2' }, { fileId: 'f-all' }],
+          answers: [
+            { questionId: 'q1', answer: 'x² + 9' },
+            { questionId: 'q2', answer: '', fileIds: ['f2'] },
+          ],
+        }),
+      ),
+    ).toEqual({ byQuestion: new Map([['q2', ['f2']]]), unassigned: ['f-all'] });
+    expect(splitSubmissionFiles(null)).toEqual({ byQuestion: new Map(), unassigned: [] });
   });
 
   it('countUnanswered bo qua cau chi co khoang trang', () => {
@@ -269,6 +330,25 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(toSubmissionAnswers(QUESTIONS, {})).toEqual([
       { questionId: 'q1', answer: '' },
       { questionId: 'q2', answer: '' },
+    ]);
+    // Cau tu luan kem id anh/file cua rieng cau do
+    expect(
+      toSubmissionAnswers(
+        QUESTIONS,
+        { q1: 'x² + 9' },
+        new Map([
+          [
+            'q2',
+            [
+              { fileId: 'f1', uri: null },
+              { fileId: 'f2', uri: null },
+            ],
+          ],
+        ]),
+      ),
+    ).toEqual([
+      { questionId: 'q1', answer: 'x² + 9' },
+      { questionId: 'q2', answer: '', fileIds: ['f1', 'f2'] },
     ]);
   });
 

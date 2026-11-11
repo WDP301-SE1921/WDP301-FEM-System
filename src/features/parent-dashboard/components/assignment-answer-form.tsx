@@ -8,21 +8,24 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 
+import { MAX_SUBMISSION_FILES } from '../constants';
 import { useAssignmentDraft } from '../hooks/use-assignment-draft';
-import { useSubmissionImage } from '../hooks/use-submission-image';
+import { useSubmissionUpload } from '../hooks/use-submission-upload';
 import { useSubmitAssignment } from '../hooks/use-submit-assignment';
 import type { AssignmentDraft, AssignmentQuestion, AssignmentRef } from '../types';
 import {
+  getQuestionIdsWithFiles,
   getSubmitConfirmMessage,
   getSubmitHint,
   getUnansweredPositions,
+  groupAttachmentsByQuestion,
   hasEmptyEssay,
   toSubmissionAnswers,
 } from '../utils';
 
-import { AssignmentAttachments } from './assignment-attachments';
 import { AssignmentDraftNote } from './assignment-draft-note';
 import { QuestionAnswerCard } from './question-answer-card';
+import { QuestionAttachments } from './question-attachments';
 
 const EMPTY_DRAFT: AssignmentDraft = { answers: {}, attachments: [] };
 
@@ -44,9 +47,10 @@ export type AssignmentAnswerFormProps = AssignmentRef & {
 /**
  * Con lam bai va nop qua phien dang nhap cua phu huynh (SRS muc 3.5). Cau tra loi la state cua man
  * hinh thay vi react-hook-form: so cau va loai cau thay doi theo tung de, quy tac duy nhat la tra loi
- * du moi cau (BE tu choi bai thieu cau: INVALID_ANSWERS); co anh bai lam thi cau tu luan de trong
- * duoc. Bai lam (ca anh) luu tren may trong luc lam; bam nop khi con thieu cau thi chi ra cau thieu,
- * du cau thi hoi lai truoc khi nop vi nop roi khong lay lai duoc.
+ * du moi cau (BE tu choi bai thieu cau: INVALID_ANSWERS). Moi cau tu luan co khu anh/file PDF rieng,
+ * gui kem dung cau qua `answers[].fileIds`; cau co anh/file thi de trong chu duoc. Bai lam (ca anh)
+ * luu tren may trong luc lam; bam nop khi con thieu cau thi chi ra cau thieu, du cau thi hoi lai truoc
+ * khi nop vi nop roi khong lay lai duoc.
  */
 export function AssignmentAnswerForm({
   studentId,
@@ -61,7 +65,7 @@ export function AssignmentAnswerForm({
 }: AssignmentAnswerFormProps) {
   const { draft, restoreStatus, updateAnswer, addAttachment, removeAttachment, discard } =
     useAssignmentDraft({ studentId, assignmentId }, initialDraft);
-  const image = useSubmissionImage(addAttachment);
+  const upload = useSubmissionUpload(addAttachment);
   const submit = useSubmitAssignment({ studentId, assignmentId });
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
   const [shouldShowMissing, setShouldShowMissing] = useState(false);
@@ -71,9 +75,12 @@ export function AssignmentAnswerForm({
 
   const { answers, attachments } = draft;
   const hasAttachments = attachments.length > 0;
-  const hasEssayQuestion = questions.some(({ kind }) => kind === 'ESSAY');
-  const isUploading = image.uploadingUri !== null;
-  const unanswered = getUnansweredPositions(questions, answers, hasAttachments);
+  const filesByQuestion = groupAttachmentsByQuestion(questions, attachments);
+  const questionIdsWithFiles = getQuestionIdsWithFiles(filesByQuestion);
+  const isUploading = upload.uploading !== null;
+  // BE nhan toi da MAX_SUBMISSION_FILES tep cho ca lan nop, tinh ca tep dang tai
+  const remainingSlots = MAX_SUBMISSION_FILES - attachments.length - (isUploading ? 1 : 0);
+  const unanswered = getUnansweredPositions(questions, answers, questionIdsWithFiles);
   const missing = new Set(shouldShowMissing ? unanswered : []);
   const isShowingMissing = shouldShowMissing && unanswered.length > 0;
 
@@ -89,7 +96,7 @@ export function AssignmentAnswerForm({
     submit.mutate(
       {
         recipientId,
-        answers: toSubmissionAnswers(questions, answers),
+        answers: toSubmissionAnswers(questions, answers, filesByQuestion),
         ...(hasAttachments ? { fileIds: attachments.map(({ fileId }) => fileId) } : {}),
       },
       {
@@ -121,20 +128,26 @@ export function AssignmentAnswerForm({
           isMissing={missing.has(index + 1)}
           outcomeCode={outcomeCodes[question.id]}
           onChange={(answer) => updateAnswer(question.id, answer)}
+          attachments={
+            question.kind === 'ESSAY' ? (
+              <QuestionAttachments
+                position={index + 1}
+                attachments={filesByQuestion.get(question.id) ?? []}
+                uploading={upload.uploading?.questionId === question.id ? upload.uploading : null}
+                isBusy={isUploading}
+                remainingSlots={remainingSlots}
+                problem={upload.problem?.questionId === question.id ? upload.problem : null}
+                uploadError={
+                  upload.uploadError?.questionId === question.id ? upload.uploadError.error : null
+                }
+                onAddImage={(source) => void upload.addImage(question.id, source)}
+                onAddPdf={() => void upload.addPdf(question.id)}
+                onRemove={removeAttachment}
+              />
+            ) : undefined
+          }
         />
       ))}
-
-      {/* BE nhan anh cho ca lan nop; de chi co trac nghiem thi khong can anh */}
-      {hasEssayQuestion ? (
-        <AssignmentAttachments
-          attachments={attachments}
-          uploadingUri={image.uploadingUri}
-          problem={image.problem}
-          uploadError={image.uploadError}
-          onAdd={(source) => void image.addImage(source)}
-          onRemove={removeAttachment}
-        />
-      ) : null}
 
       <ThemedText
         type={isShowingMissing ? 'smallBold' : 'small'}
@@ -143,11 +156,11 @@ export function AssignmentAnswerForm({
         style={styles.hint}
       >
         {isUploading
-          ? 'Đang gửi ảnh bài làm, chờ gửi xong rồi nộp bài.'
+          ? 'Đang gửi ảnh/file bài làm, chờ gửi xong rồi nộp bài.'
           : getSubmitHint({
               unanswered,
               remainingAttempts,
-              hasEmptyEssay: hasAttachments && hasEmptyEssay(questions, answers),
+              hasEmptyEssay: hasEmptyEssay(questions, answers, questionIdsWithFiles),
             })}
       </ThemedText>
       <FormError error={submit.error} />

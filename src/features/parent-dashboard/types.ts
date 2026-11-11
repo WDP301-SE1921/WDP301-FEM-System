@@ -4,6 +4,7 @@
  * `./api/parent-data-mappers.ts`.
  */
 import type { IconName } from '@/components/ui/icon';
+import type { PickPdfResult } from '@/lib/document-picker';
 import type { PickImageProblem } from '@/lib/image-picker';
 import type { Page, PageQuery, PaginatedQuery } from '@/types/api';
 
@@ -613,6 +614,8 @@ export type AssignmentDetail = {
 export type SubmissionAnswer = {
   questionId: string;
   answer: string;
+  /** Id anh/file bai lam cua rieng cau nay (tap con cua `fileIds` lan nop). Bai nop cu khong co. */
+  fileIds?: string[];
 };
 
 /** Diem mot cau trong GradeReview. */
@@ -675,13 +678,25 @@ export type SignedFileUrl = {
   expiresIn: number;
 };
 
+/** Loai tep bai lam: anh (JPEG, PNG) hoac file PDF. */
+export type AttachmentKind = 'IMAGE' | 'PDF';
+
 /**
- * Anh bai lam gui kem lan nop. `uri` la anh tren may de xem truoc; null voi anh lay lai tu lan nop
- * truoc khi con nop lai, app tai anh do tu BE theo `fileId`.
+ * Anh hoac file PDF bai lam gui kem mot cau tu luan. `uri` la anh tren may de xem truoc; null voi tep
+ * lay lai tu lan nop truoc khi con nop lai, app tai anh do tu BE theo `fileId`.
  */
 export type SubmissionAttachment = {
   fileId: string;
   uri: string | null;
+  /**
+   * Cau tu luan ma tep nay thuoc ve. Ban nhap cu (truoc khi tach theo cau) va bai nop cu khong co:
+   * app gan vao cau tu luan dau tien, xem `groupAttachmentsByQuestion`.
+   */
+  questionId?: string;
+  /** Khong co = anh (ban nhap cu chi co anh). */
+  kind?: AttachmentKind;
+  /** Ten file PDF de hien cho phu huynh. */
+  name?: string;
 };
 
 /** Response POST /academic/submissions. */
@@ -697,6 +712,13 @@ export type AnswerDraft = Partial<Record<string, string>>;
 
 /** Ly do khong co anh de gui sau khi mo camera hoac thu vien (nguoi dung tu huy thi khong bao). */
 export type ImagePickProblem = PickImageProblem;
+
+/** Ly do khong co file PDF de gui sau khi mo trinh chon file. */
+export type PdfPickProblem = Exclude<PickPdfResult['status'], 'PICKED' | 'CANCELED'>;
+
+/** Loi khi chon tep cho mot cau: chon anh va chon PDF co cach bao khac nhau. */
+export type AttachmentPickProblem =
+  { kind: 'IMAGE'; problem: ImagePickProblem } | { kind: 'PDF'; problem: PdfPickProblem };
 
 /** Bai lam dang do luu tren may: cau tra loi va anh bai lam da tai len. */
 export type AssignmentDraft = {

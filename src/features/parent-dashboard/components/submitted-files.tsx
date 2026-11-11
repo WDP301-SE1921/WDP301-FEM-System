@@ -14,10 +14,18 @@ const FILES_ICON_SIZE = 20;
 
 export type SubmittedFilesProps = {
   fileIds: readonly string[];
+  /** Dong mo ta tren cum anh; bo trong thi dung cau chung cho ca lan nop. */
+  heading?: string;
+  /** Ten tung anh cho trinh doc man hinh, vd `Ảnh bài làm câu 2`. */
+  itemLabel?: string;
 };
 
 /** Anh bai lam gui kem lan nop dang xem: anh nho, bam de xem tron anh. */
-export function SubmittedFiles({ fileIds }: SubmittedFilesProps) {
+export function SubmittedFiles({
+  fileIds,
+  heading,
+  itemLabel = 'Ảnh bài làm',
+}: SubmittedFilesProps) {
   const [viewingIndex, setViewingIndex] = useState<number | null>(null);
 
   return (
@@ -25,8 +33,8 @@ export function SubmittedFiles({ fileIds }: SubmittedFilesProps) {
       <View style={styles.header}>
         <Icon name="images-outline" size={FILES_ICON_SIZE} themeColor="primary" />
         <ThemedText type="small" style={styles.headerText}>
-          Đã gửi kèm {fileIds.length} ảnh bài làm. Giáo viên chấm câu tự luận theo ảnh và phần chữ
-          đã gõ. Bấm vào ảnh để xem rõ.
+          {heading ??
+            `Đã gửi kèm ${fileIds.length} ảnh bài làm. Giáo viên chấm câu tự luận theo ảnh và phần chữ đã gõ. Bấm vào ảnh để xem rõ.`}
         </ThemedText>
       </View>
       <View style={styles.thumbnails}>
@@ -34,13 +42,13 @@ export function SubmittedFiles({ fileIds }: SubmittedFilesProps) {
           <Pressable
             key={fileId}
             accessibilityRole="button"
-            accessibilityLabel={`Xem ảnh bài làm ${index + 1}`}
+            accessibilityLabel={`Xem ${itemLabel.toLowerCase()} ${index + 1}`}
             onPress={() => setViewingIndex(index)}
             style={({ pressed }) => [styles.thumbnail, pressed && styles.pressed]}
           >
             <SubmittedImage
               fileId={fileId}
-              accessibilityLabel={`Ảnh bài làm ${index + 1}`}
+              accessibilityLabel={`${itemLabel} ${index + 1}`}
               style={styles.image}
             />
           </Pressable>

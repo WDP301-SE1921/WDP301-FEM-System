@@ -5,7 +5,12 @@ import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 
 import type { AssignmentQuestion, SubmissionRecord } from '../types';
-import { getAssignmentMaxScore, getPublishedGrade, getQuestionReview } from '../utils';
+import {
+  getAssignmentMaxScore,
+  getPublishedGrade,
+  getQuestionReview,
+  splitSubmissionFiles,
+} from '../utils';
 
 import { GradeResultCard } from './grade-result-card';
 import { QuestionReviewCard } from './question-review-card';
@@ -36,7 +41,7 @@ export function AssignmentReview({
 }: AssignmentReviewProps) {
   const grade = getPublishedGrade(submission);
   const hasAnswerKey = questions.some(({ correctAnswer }) => Boolean(correctAnswer));
-  const fileCount = submission?.files.length ?? 0;
+  const { byQuestion, unassigned } = splitSubmissionFiles(submission);
 
   const renderStatus = () => {
     if (grade) {
@@ -72,9 +77,8 @@ export function AssignmentReview({
       <ThemedText type="default" accessibilityRole="header" style={styles.sectionTitle}>
         {submission ? 'Bài làm của học sinh' : 'Đề bài'}
       </ThemedText>
-      {submission && fileCount > 0 ? (
-        <SubmittedFiles fileIds={submission.files.map(({ fileId }) => fileId)} />
-      ) : null}
+      {/* Bai nop cu gui anh chung cho ca bai; bai nop moi gui anh theo tung cau */}
+      {submission && unassigned.length > 0 ? <SubmittedFiles fileIds={unassigned} /> : null}
       {questions.map((question, index) => (
         <QuestionReviewCard
           key={question.id}
@@ -82,7 +86,8 @@ export function AssignmentReview({
           question={question}
           review={getQuestionReview(question, submission)}
           hasSubmission={submission !== null}
-          hasAttachments={fileCount > 0}
+          hasAttachments={unassigned.length > 0 || (byQuestion.get(question.id)?.length ?? 0) > 0}
+          fileIds={byQuestion.get(question.id)}
           outcomeCode={outcomeCodes[question.id]}
         />
       ))}

@@ -15,6 +15,7 @@ import type {
   ImagePickProblem,
   LessonKind,
   LessonProgress,
+  PdfPickProblem,
   NotificationTargetKind,
   NotificationType,
   PaymentStatus,
@@ -367,6 +368,12 @@ export const IMAGE_PICK_PROBLEMS: Record<ImagePickProblem, string> = {
   UNSUPPORTED: 'Chỉ gửi được ảnh JPG hoặc PNG. Hãy bấm "Chụp ảnh" để chụp lại bài làm.',
   TOO_LARGE: 'Ảnh lớn hơn 10 MB. Hãy chụp lại hoặc chọn ảnh khác.',
   FAILED: 'Không mở được camera hoặc thư viện ảnh trên máy này.',
+};
+
+export const PDF_PICK_PROBLEMS: Record<PdfPickProblem, string> = {
+  UNSUPPORTED: 'Chỉ gửi được file PDF. Ảnh bài làm thì bấm "Chụp ảnh" hoặc "Chọn ảnh".',
+  TOO_LARGE: 'File PDF lớn hơn 10 MB. Hãy chọn file nhỏ hơn hoặc chụp ảnh từng trang.',
+  FAILED: 'Không mở được trình chọn file trên máy này.',
 };
 
 /** Bai con han nop trong chung nay ngay (ke ca hom nay) thi can nhac gap. */

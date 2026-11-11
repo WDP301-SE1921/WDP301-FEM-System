@@ -1,7 +1,7 @@
 import { apiClient } from '@/api/client';
 import { Endpoints } from '@/api/endpoints';
 import { readAllPages } from '@/api/pagination';
-import { appendImageToForm, type PickedImage } from '@/lib/image-picker';
+import { appendImageToForm, type UploadableFile } from '@/lib/image-picker';
 import { logger } from '@/lib/logger';
 import {
   AppError,
@@ -400,8 +400,8 @@ export const parentDashboardApi = {
     });
   },
 
-  /** Tai mot anh bai lam len de gui kem bai nop. */
-  async uploadSubmissionImage(image: PickedImage): Promise<UploadedFile> {
+  /** Gui mot anh (JPEG, PNG) hoac file PDF bai lam; BE kiem tra duoi file khop `mimeType`. */
+  async uploadSubmissionImage(image: UploadableFile): Promise<UploadedFile> {
     const form = new FormData();
     await appendImageToForm(form, 'file', image);
     try {

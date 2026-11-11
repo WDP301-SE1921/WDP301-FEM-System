@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 
 import { parentDashboardApi } from '@/features/parent-dashboard/api/parent-dashboard-api';
 import { ParentAssignmentDetail } from '@/features/parent-dashboard/components/parent-assignment-detail';
@@ -9,6 +9,7 @@ import type {
   SubmissionRecord,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
+import { pickPdf } from '@/lib/document-picker';
 import { pickImage } from '@/lib/image-picker';
 import { storage } from '@/lib/storage';
 import { AppError } from '@/types/api';
@@ -26,7 +27,8 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   },
 }));
 // Camera va thu vien anh la module native: test chon san ket qua tra ve
-jest.mock('@/lib/image-picker', () => ({ pickImage: jest.fn() }));
+jest.mock('@/lib/image-picker', () => ({ pickImage: jest.fn(), MAX_IMAGE_BYTES: 10_485_760 }));
+jest.mock('@/lib/document-picker', () => ({ pickPdf: jest.fn() }));
 
 /** Bo nho may gia: ban nhap bai lam doc, ghi qua `storage`. */
 const mockSavedDrafts = new Map<string, unknown>();
@@ -46,6 +48,7 @@ jest.mock('@/lib/storage', () => ({
 const api = jest.mocked(parentDashboardApi);
 const savedStorage = jest.mocked(storage);
 const mockedPickImage = jest.mocked(pickImage);
+const mockedPickPdf = jest.mocked(pickPdf);
 
 const PICKED_PHOTO = {
   uri: 'file:///cache/bai-lam.jpg',
@@ -375,26 +378,26 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     );
     expect(screen.getByText('Còn 1 câu chưa trả lời: Câu 2.')).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Chọn ảnh bài làm có sẵn' }));
+    await user.press(screen.getByRole('button', { name: 'Chọn ảnh bài làm câu 2 có sẵn' }));
 
     expect(mockedPickImage).toHaveBeenCalledWith('library');
     expect(api.uploadSubmissionImage).toHaveBeenCalledWith(PICKED_PHOTO);
-    expect(await screen.findByLabelText('Ảnh bài làm 1')).toBeOnTheScreen();
-    // Co anh thi cau tu luan duoc de trong; anh luu vao ban nhap cung cau tra loi
+    expect(await screen.findByLabelText('Ảnh bài làm câu 2 số 1')).toBeOnTheScreen();
+    // Co anh rieng thi cau tu luan duoc de trong; anh luu vao ban nhap kem cau cua no
     expect(
       screen.getByText(
-        'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh bài làm. Sau lần này học sinh còn 1 lần nộp lại.',
+        'Đã trả lời đủ. Câu tự luận để trống thì giáo viên chấm theo ảnh/file của câu đó. Sau lần này học sinh còn 1 lần nộp lại.',
       ),
     ).toBeOnTheScreen();
     expect(mockSavedDrafts.get(DRAFT_KEY)).toEqual({
       answers: { q1: WRONG_CHOICE },
-      attachments: [{ fileId: 'file-1', uri: PICKED_PHOTO.uri }],
+      attachments: [{ fileId: 'file-1', uri: PICKED_PHOTO.uri, questionId: 'q2', kind: 'IMAGE' }],
     });
 
     await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
     expect(
       screen.getByText(
-        'Đã trả lời đủ 2 câu, kèm 1 ảnh bài làm. Sau khi nộp, học sinh còn 1 lần nộp lại.',
+        'Đã trả lời đủ 2 câu, kèm 1 ảnh/file bài làm. Sau khi nộp, học sinh còn 1 lần nộp lại.',
       ),
     ).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Xác nhận nộp' }));
@@ -404,13 +407,13 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
       recipientId: RECIPIENT_ID,
       answers: [
         { questionId: 'q1', answer: WRONG_CHOICE },
-        { questionId: 'q2', answer: '' },
+        { questionId: 'q2', answer: '', fileIds: ['file-1'] },
       ],
       fileIds: ['file-1'],
     });
     // Xem lai bai da nop: bao so anh da gui, cau tu luan tra loi bang anh
     expect(screen.getByText(/^Đã gửi kèm 1 ảnh bài làm/)).toBeOnTheScreen();
-    expect(screen.getByText('Học sinh trả lời bằng ảnh bài làm gửi kèm.')).toBeOnTheScreen();
+    expect(screen.getByText('Học sinh trả lời bằng ảnh/file bài làm gửi kèm.')).toBeOnTheScreen();
   });
 
   it('xoa anh vua gui; tu choi quyen camera thi chi cach mo Cai dat', async () => {
@@ -422,22 +425,111 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     await user.press(
       await screen.findByRole(
         'button',
-        { name: 'Chụp ảnh bài làm' },
+        { name: 'Chụp ảnh bài làm câu 2' },
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     );
     expect(mockedPickImage).toHaveBeenLastCalledWith('camera');
-    expect(await screen.findByLabelText('Ảnh bài làm 1')).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Ảnh bài làm câu 2 số 1')).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Xoá ảnh bài làm 1' }));
-    expect(screen.queryByLabelText('Ảnh bài làm 1')).not.toBeOnTheScreen();
+    await user.press(screen.getByRole('button', { name: 'Xoá ảnh bài làm câu 2 số 1' }));
+    expect(screen.queryByLabelText('Ảnh bài làm câu 2 số 1')).not.toBeOnTheScreen();
     expect(mockSavedDrafts.get(DRAFT_KEY)).toEqual({ answers: {}, attachments: [] });
 
     mockedPickImage.mockResolvedValueOnce({ status: 'PERMISSION_DENIED' });
-    await user.press(screen.getByRole('button', { name: 'Chụp ảnh bài làm' }));
+    await user.press(screen.getByRole('button', { name: 'Chụp ảnh bài làm câu 2' }));
     expect(await screen.findByText(/^Ứng dụng chưa được phép dùng camera/)).toBeOnTheScreen();
     expect(screen.getByRole('button', { name: 'Mở Cài đặt' })).toBeOnTheScreen();
     expect(api.uploadSubmissionImage).toHaveBeenCalledTimes(1);
+  });
+
+  it('gui file PDF cho rieng cau tu luan, bai nop kem id file dung cau', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([]);
+    api.submitAssignment.mockResolvedValue({
+      id: SUBMITTED.id,
+      recipientId: RECIPIENT_ID,
+      attemptNo: 1,
+      submittedAt: SUBMITTED.submittedAt,
+    });
+    const pdf = {
+      uri: 'file:///cache/bai-lam.pdf',
+      name: 'bai-lam-cau-2.pdf',
+      mimeType: 'application/pdf' as const,
+      size: 300_000,
+    };
+    mockedPickPdf.mockResolvedValue({ status: 'PICKED', file: pdf });
+    api.uploadSubmissionImage.mockResolvedValue({ ...UPLOADED_PHOTO, id: 'pdf-1' });
+    const { user } = await renderDetail();
+
+    await user.press(
+      await screen.findByRole(
+        'button',
+        { name: 'Chọn file PDF bài làm câu 2' },
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    );
+
+    expect(api.uploadSubmissionImage).toHaveBeenCalledWith(pdf);
+    expect(
+      await screen.findByLabelText('File PDF bài làm câu 2 số 1: bai-lam-cau-2.pdf'),
+    ).toBeOnTheScreen();
+
+    await user.press(screen.getByRole('radio', { name: WRONG_CHOICE }));
+    await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
+    await user.press(screen.getByRole('button', { name: 'Xác nhận nộp' }));
+
+    await waitFor(() =>
+      expect(api.submitAssignment).toHaveBeenCalledWith({
+        recipientId: RECIPIENT_ID,
+        answers: [
+          { questionId: 'q1', answer: WRONG_CHOICE },
+          { questionId: 'q2', answer: '', fileIds: ['pdf-1'] },
+        ],
+        fileIds: ['pdf-1'],
+      }),
+    );
+  });
+
+  it('chon file khong phai PDF thi bao loi o dung cau', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([]);
+    mockedPickPdf.mockResolvedValue({ status: 'UNSUPPORTED' });
+    const { user } = await renderDetail();
+
+    await user.press(
+      await screen.findByRole(
+        'button',
+        { name: 'Chọn file PDF bài làm câu 2' },
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    );
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/^Chỉ gửi được file PDF/);
+    expect(api.uploadSubmissionImage).not.toHaveBeenCalled();
+  });
+
+  it('xem lai bai nop moi: anh hien duoi dung cau, khong hien cum anh chung', async () => {
+    api.getAssignmentSubmissions.mockResolvedValue([
+      {
+        ...SUBMITTED,
+        answers: [
+          { questionId: 'q1', answer: WRONG_CHOICE },
+          { questionId: 'q2', answer: '', fileIds: ['file-q2'] },
+        ],
+        files: [{ fileId: 'file-q2' }],
+      },
+    ]);
+    await renderDetail();
+
+    expect(
+      await screen.findByText(
+        'Ảnh/file bài làm câu 2: 1 tệp. Bấm vào ảnh để xem rõ.',
+        {},
+        { timeout: FIRST_RENDER_TIMEOUT_MS },
+      ),
+    ).toBeOnTheScreen();
+    expect(await screen.findByLabelText('Ảnh bài làm câu 2 số 1')).toBeOnTheScreen();
+    expect(screen.queryByText(/^Đã gửi kèm/)).not.toBeOnTheScreen();
+    expect(screen.getByText('Học sinh trả lời bằng ảnh/file bài làm gửi kèm.')).toBeOnTheScreen();
   });
 
   it('gui anh loi thi bao loi, khong them anh vao bai', async () => {
@@ -451,13 +543,13 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     await user.press(
       await screen.findByRole(
         'button',
-        { name: 'Chọn ảnh bài làm có sẵn' },
+        { name: 'Chọn ảnh bài làm câu 2 có sẵn' },
         { timeout: FIRST_RENDER_TIMEOUT_MS },
       ),
     );
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Chỉ gửi được ảnh JPG hoặc PNG.');
-    expect(screen.queryByLabelText('Ảnh bài làm 1')).not.toBeOnTheScreen();
+    expect(screen.queryByLabelText('Ảnh bài làm câu 2 số 1')).not.toBeOnTheScreen();
   });
 
   it('nop lai giu anh cua lan truoc', async () => {
@@ -476,7 +568,9 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     await user.press(screen.getByRole('button', { name: 'Làm lại và nộp lại' }));
 
     // Anh khong con tren may: tai lai tu BE theo id
-    expect(await screen.findByLabelText('Ảnh bài làm 1, đã gửi ở lần nộp trước')).toBeOnTheScreen();
+    expect(
+      await screen.findByLabelText('Ảnh bài làm câu 2 số 1, đã gửi ở lần nộp trước'),
+    ).toBeOnTheScreen();
     expect(api.getFilePreview).toHaveBeenCalledWith('file-old');
   });
 

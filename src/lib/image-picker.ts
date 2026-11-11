@@ -147,14 +147,17 @@ export async function pickImage(
   }
 }
 
+/** Tep tren may gui multipart duoc: anh da chon hoac file PDF (`@/lib/document-picker`). */
+export type UploadableFile = Pick<PickedImage, 'uri' | 'name'> & { mimeType: string };
+
 /**
- * Them anh vao FormData de gui multipart. Native nhan doi tuong `{ uri, name, type }` va tu doc file;
- * web khong hieu doi tuong do nen phai doi `uri` (blob:, data:) thanh Blob.
+ * Them anh (hoac file PDF) vao FormData de gui multipart. Native nhan doi tuong `{ uri, name, type }`
+ * va tu doc file; web khong hieu doi tuong do nen phai doi `uri` (blob:, data:) thanh Blob.
  */
 export async function appendImageToForm(
   form: FormData,
   field: string,
-  image: PickedImage,
+  image: UploadableFile,
 ): Promise<void> {
   if (Platform.OS === 'web') {
     const blob = await (await fetch(image.uri)).blob();
