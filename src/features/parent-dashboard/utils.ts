@@ -136,8 +136,11 @@ const MINUTE_MS = 60 * 1000;
 const PERCENT = 100;
 /** Thang diem cua `SCORE_LEVELS`. */
 const SCORE_SCALE = 10;
-/** Bang diem hien mot chu so thap phan. */
-const SCORE_FRACTION_DIGITS = 1;
+/**
+ * Giao vien nhap diem toi da 2 chu so thap phan (web `step=0.01`), nen hien du 2 chu so de 8.98
+ * khong thanh 9.0. Chi diem trung binh moi co the dai hon va bi cat ve 2 chu so.
+ */
+const SCORE_FRACTION_DIGITS = 2;
 const DAYS_PER_WEEK = 7;
 const NOON_HOUR = 12;
 const EVENING_HOUR = 18;
@@ -246,12 +249,14 @@ export function getScoreLevel(score: number): ScoreLevel {
   return SCORE_LEVELS.find((level) => score >= level.minScore) ?? FAILING_SCORE_LEVEL;
 }
 
-/** Vd `8.2`. */
+/** Diem dung nhu giao vien cham, bo so 0 thua o cuoi: `8.98`, `8.5`, `9`. */
 export function formatScore(score: number): string {
-  return score.toFixed(SCORE_FRACTION_DIGITS);
+  // `Number()` bo so 0 thua cua `toFixed` va doi `-0` thanh `0`; `toFixed` chi de chan sai so
+  // cong so thuc (vd 0.1 + 0.2), diem giao vien nhap khong bao gio qua 2 chu so thap phan
+  return String(Number(score.toFixed(SCORE_FRACTION_DIGITS)));
 }
 
-/** Xu huong tinh tren gia tri da lam tron, de `+0.0` khong bi coi la tang. */
+/** Xu huong tinh tren gia tri da hien, de `+0` khong bi coi la tang. */
 export function getScoreTrend(change: number): ScoreTrend {
   const rounded = Number(formatScore(change));
   if (rounded > 0) return 'UP';
@@ -259,7 +264,7 @@ export function getScoreTrend(change: number): ScoreTrend {
   return 'FLAT';
 }
 
-/** Vd `+0.4`, `-0.3`, `0.0`. */
+/** Vd `+0.4`, `-0.35`, `0`. */
 export function formatScoreChange(change: number): string {
   const trend = getScoreTrend(change);
   if (trend === 'FLAT') return formatScore(0);
@@ -305,13 +310,28 @@ export function buildWeekDays(weekStart: Date, sessions: readonly ScheduleSessio
   });
 }
 
-/** Ngay khong co buoi hoc dau tien sau ngay dang chon, trong cung tuan. */
+/**
+ * Giai thich ngay lop co hoc theo lich co dinh ma trung tam chua xep buoi, dung chung cho lich tuan
+ * va the "Buổi học hôm nay" o trang chu.
+ */
+export function formatUnscheduledNote(classNames: readonly string[], isToday: boolean): string {
+  const when = isToday ? 'hôm nay' : 'vào ngày này';
+  return `Theo lịch cố định, lớp ${classNames.join(', ')} có học ${when} nhưng trung tâm chưa xếp buổi học. Buổi học sẽ hiện ở đây khi trung tâm xếp lịch xong.`;
+}
+
+/**
+ * Ngay khong co buoi hoc dau tien sau ngay dang chon, trong cung tuan. Ngay lop co hoc theo lich co
+ * dinh ma trung tam chua xep buoi (`isUnscheduled`) khong phai ngay nghi nen bi bo qua.
+ */
 export function findNextFreeDay(
   days: readonly WeekDay[],
   selectedKey: string,
+  isUnscheduled: (date: Date) => boolean = () => false,
 ): WeekDay | undefined {
   const selectedIndex = days.findIndex((day) => day.key === selectedKey);
-  return days.slice(selectedIndex + 1).find((day) => day.sessions.length === 0);
+  return days
+    .slice(selectedIndex + 1)
+    .find((day) => day.sessions.length === 0 && !isUnscheduled(day.date));
 }
 
 /** Ngay mo san khi chuyen sang tuan `weekStart`: hom nay neu thuoc tuan do, neu khong la Thu Hai. */
@@ -879,6 +899,57 @@ export function canSubmitAssignment(
   now: Date = new Date(),
 ): boolean {
   return status === 'PUBLISHED' && !isPastDue(dueAt, now) && attemptsUsed < maxAttempts;
+}
+
+/** Bon buoc cua mot bai tap voi con (Luong 4, PLAN_GUIDED_WORKFLOWS.md), theo thu tu. */
+export type AssignmentProgressKey = 'RECEIVE' | 'WORK' | 'SUBMIT' | 'RESULT';
+
+type ProgressState = 'done' | 'current' | 'todo';
+
+export type AssignmentProgress = {
+  steps: { key: AssignmentProgressKey; state: ProgressState }[];
+  /** Mot cau noi con dang o dau va lam gi tiep. */
+  caption: string;
+};
+
+const PROGRESS_KEYS: AssignmentProgressKey[] = ['RECEIVE', 'WORK', 'SUBMIT', 'RESULT'];
+
+/** `states` theo thu tu buoc; buoc khong ghi la chua toi. */
+function toProgress(states: ProgressState[], caption: string): AssignmentProgress {
+  return {
+    steps: PROGRESS_KEYS.map((key, index) => ({ key, state: states[index] ?? 'todo' })),
+    caption,
+  };
+}
+
+/**
+ * Bai dang o buoc nao: nhan bai (luon xong) -> lam bai -> nop bai -> co diem. Da nop ma chua co diem
+ * cong bo thi buoc cuoi la "dang cho giao vien cham"; het han ma chua nop thi dung o buoc lam bai.
+ */
+export function getAssignmentProgress(
+  detail: Pick<AssignmentDetail, 'status' | 'dueAt' | 'maxAttempts'>,
+  latest: SubmissionRecord | null,
+  now: Date = new Date(),
+): AssignmentProgress {
+  if (getPublishedGrade(latest)) {
+    return toProgress(
+      ['done', 'done', 'done', 'done'],
+      'Giáo viên đã gửi điểm. Xem điểm và nhận xét ở phần bài đã nộp.',
+    );
+  }
+  if (latest) {
+    return toProgress(
+      ['done', 'done', 'done', 'current'],
+      'Đã nộp bài. Giáo viên đang chấm, điểm hiện ở đây khi giáo viên gửi.',
+    );
+  }
+  if (canSubmitAssignment(detail, 0, now)) {
+    return toProgress(
+      ['done', 'current'],
+      'Làm bài bên dưới rồi bấm “Nộp bài” trước hạn. Bài làm tự lưu trên máy.',
+    );
+  }
+  return toProgress(['done'], 'Bài đã hết hạn nộp. Liên hệ giáo viên nếu con cần nộp bù.');
 }
 
 /** Nhan trang thai tren man chi tiet bai: da co diem, dang cham, het han, hoac con bao nhieu ngay. */
@@ -1533,6 +1604,11 @@ export function getParentHref(destination: ParentDestination): Href {
         pathname: '/bills/[registrationId]',
         params: { registrationId: destination.registrationId },
       };
+    case 'RECEIPT':
+      return {
+        pathname: '/receipts/[registrationId]',
+        params: { registrationId: destination.registrationId },
+      };
   }
 }
 
@@ -1544,7 +1620,8 @@ export function formatBillParent({ displayName, email, phone }: BillParent): str
     .join(' · ');
 }
 
-function toIsoWeekday(date: Date): number {
+/** Thu ISO cua ngay theo gio may (Thu Hai 1 ... Chu nhat 7), cung cach dem voi `weekday` cua lop. */
+export function toIsoWeekday(date: Date): number {
   const day = date.getDay();
   return day === SUNDAY ? ISO_SUNDAY : day;
 }

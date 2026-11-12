@@ -13,6 +13,7 @@ import {
 import { AssignmentAnswerForm } from './assignment-answer-form';
 import { AssignmentFiles } from './assignment-files';
 import { AssignmentLearningTargets } from './assignment-learning-targets';
+import { AssignmentProgress } from './assignment-progress';
 import { AssignmentReview } from './assignment-review';
 import { AssignmentSummaryCard } from './assignment-summary-card';
 
@@ -52,6 +53,7 @@ export function AssignmentWorkspace({
   return (
     <>
       <AssignmentSummaryCard detail={detail} className={className} latest={latest} />
+      <AssignmentProgress detail={detail} latest={latest} />
       {detail.outcomeSetId && measuredTargets.length > 0 ? (
         <AssignmentLearningTargets outcomeSetId={detail.outcomeSetId} targets={measuredTargets} />
       ) : null}

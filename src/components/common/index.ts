@@ -9,5 +9,6 @@ export * from './loading-state';
 export * from './password-visibility-toggle';
 export * from './screen';
 export * from './state-icon';
+export * from './step-list';
 export * from './tab-header';
 export * from './tab-bar';

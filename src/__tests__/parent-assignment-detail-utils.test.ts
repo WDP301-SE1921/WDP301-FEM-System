@@ -17,6 +17,7 @@ import {
   getAssignmentFiles,
   getAssignmentFileScope,
   getAssignmentMaxScore,
+  getAssignmentProgress,
   getChoiceState,
   getMeasuredTargets,
   getOptionalOutcomeIds,
@@ -170,6 +171,21 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(
       canSubmitAssignment({ ...OPEN, dueAt: new Date(2026, 9, 16, 9, 59).toISOString() }, 0, NOW),
     ).toBe(false);
+  });
+
+  it('getAssignmentProgress: bon buoc nhan, lam, nop, co diem theo trang thai bai', () => {
+    const states = (latest: SubmissionRecord | null, detail = OPEN) =>
+      getAssignmentProgress(detail, latest, NOW).steps.map(({ state }) => state);
+    expect(states(null)).toEqual(['done', 'current', 'todo', 'todo']);
+    expect(states(submission())).toEqual(['done', 'done', 'done', 'current']);
+    expect(states(submission({ grades: [GRADE] }))).toEqual(['done', 'done', 'done', 'done']);
+    expect(states(null, { ...OPEN, status: 'CLOSED' })).toEqual(['done', 'todo', 'todo', 'todo']);
+    expect(getAssignmentProgress(OPEN, submission(), NOW).caption).toMatch(
+      /^Đã nộp bài\. Giáo viên đang chấm/,
+    );
+    expect(getAssignmentProgress({ ...OPEN, status: 'CLOSED' }, null, NOW).caption).toMatch(
+      /hết hạn/,
+    );
   });
 
   it('getAssignmentDetailStatus: co diem, dang cham, het han, hoac con bao nhieu ngay', () => {

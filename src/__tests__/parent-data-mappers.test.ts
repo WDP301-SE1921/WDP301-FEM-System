@@ -1,7 +1,9 @@
 import {
   findRoomName,
   getCurrentClass,
+  getEnrollmentJourney,
   getTermRange,
+  getUnscheduledClassNames,
   isEnrollmentSession,
   toAttendanceRecords,
   toEnrollmentLessons,
@@ -22,6 +24,7 @@ import type {
   ScheduledSession,
   ScheduledSessionDetail,
   SessionParticipation,
+  TuitionBill,
   TuitionClass,
   TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
@@ -332,6 +335,154 @@ describe('features/parent-dashboard/api/parent-data-mappers', () => {
       expect(getCurrentClass(transferred, new Date(at(10, 20)))).toBe(MATH_CLASS);
       expect(getCurrentClass(transferred, new Date(at(11, 20)))).toBe(MATH_CLASS_B);
       expect(getCurrentClass(transferred, new Date(at(9, 1)))).toBe(MATH_CLASS_B);
+    });
+  });
+
+  describe('getUnscheduledClassNames', () => {
+    // MATH_CLASS hoc Thu Ba va Thu Sau; ky hoc 05/10/2026 toi truoc 05/01/2027
+    const TUESDAY = new Date(2026, 10, 17);
+    const WEDNESDAY = new Date(2026, 10, 18);
+    const FRIDAY = new Date(2026, 10, 20);
+    const withUntil = (scheduledUntil: string | null | undefined) =>
+      enrollment({ class: { ...MATH_CLASS, scheduledUntil } });
+
+    it('lop chua co buoi nao: ngay co hoc theo lich co dinh la ngay chua xep lich', () => {
+      const enrollments = [withUntil(null)];
+      expect(getUnscheduledClassNames(enrollments, TUESDAY)).toEqual([MATH_CLASS.name]);
+      expect(getUnscheduledClassNames(enrollments, WEDNESDAY)).toEqual([]);
+    });
+
+    it('chi tinh ngay sau buoi cuoi da xep; ngay trong khoang da xep la ngay nghi that', () => {
+      const enrollments = [withUntil('2026-11-17')];
+      expect(getUnscheduledClassNames(enrollments, TUESDAY)).toEqual([]);
+      expect(getUnscheduledClassNames(enrollments, FRIDAY)).toEqual([MATH_CLASS.name]);
+    });
+
+    it('BE cu khong tra scheduledUntil thi khong biet, khong bao gi', () => {
+      expect(getUnscheduledClassNames([withUntil(undefined)], TUESDAY)).toEqual([]);
+    });
+
+    it('ngoai ky hoc hoac ghi danh da ket thuc thi khong tinh', () => {
+      expect(getUnscheduledClassNames([withUntil(null)], new Date(2026, 8, 29))).toEqual([]);
+      // 05/01/2027 la Thu Ba nhung la ngay het han, khong thuoc ky hoc
+      expect(getUnscheduledClassNames([withUntil(null)], new Date(2027, 0, 5))).toEqual([]);
+      const ended = enrollment({ status: 'ENDED', class: { ...MATH_CLASS, scheduledUntil: null } });
+      expect(getUnscheduledClassNames([ended], TUESDAY)).toEqual([]);
+    });
+
+    it('dung lop con dang hoc vao ngay do khi da chuyen lop, moi lop mot lan', () => {
+      const transferred = enrollment({
+        placements: [
+          {
+            classId: MATH_CLASS.id,
+            effectiveFrom: at(10, 5, 0),
+            effectiveTo: at(11, 2, 0),
+            class: { ...MATH_CLASS, scheduledUntil: '2026-12-31' },
+          },
+          {
+            classId: MATH_CLASS_B.id,
+            effectiveFrom: at(11, 2, 0),
+            effectiveTo: null,
+            class: { ...MATH_CLASS_B, scheduledUntil: null },
+          },
+        ],
+      });
+      expect(getUnscheduledClassNames([transferred, transferred], TUESDAY)).toEqual([
+        MATH_CLASS_B.name,
+      ]);
+    });
+  });
+
+  describe('getEnrollmentJourney', () => {
+    const NOW = new Date(2026, 10, 12, 9);
+    const unpaidBill: TuitionBill = {
+      registrationId: 'order-physics',
+      status: 'UNPAID',
+      issuedAt: at(11, 12, 8),
+      student: { id: 'student-1', fullName: 'Nguyễn Minh Anh', grade: 7 },
+      class: { id: 'class-physics', name: 'Vật lý 7A', subject: 'Vật lý', grade: 7, schedules: [] },
+      term: { packageMonths: 3, startDate: '2026-11-16', endDate: '2027-02-16' },
+      pricing: { monthlyFee: '800000.00', packageMonths: 3, total: '2400000.00', currency: 'VND' },
+      payment: null,
+    };
+    const paid = (confirmedAt: string, scheduledUntil: string | null | undefined) =>
+      enrollment({
+        class: { ...MATH_CLASS, scheduledUntil },
+        registrationOrder: {
+          payment: {
+            id: 'payment-1',
+            amount: '2400000',
+            currency: 'VND',
+            status: 'CONFIRMED',
+            confirmedAt,
+            receiptNumber: 'BL-001',
+          },
+        },
+      });
+
+    it('con chua co mon nao: buoc dang ky tai trung tam', () => {
+      expect(
+        getEnrollmentJourney({ bills: [], enrollments: [], hasActiveSubjects: false, now: NOW }),
+      ).toEqual({
+        className: null,
+        current: 'REGISTER',
+        billRegistrationId: null,
+        receiptRegistrationId: null,
+      });
+    });
+
+    it('co don chua thu tien: buoc dong hoc phi, mo bill', () => {
+      const journey = getEnrollmentJourney({
+        bills: [unpaidBill],
+        enrollments: [],
+        hasActiveSubjects: false,
+        now: NOW,
+      });
+      expect(journey?.current).toBe('PAYMENT');
+      expect(journey?.className).toBe('Vật lý 7A');
+      expect(journey?.billRegistrationId).toBe('order-physics');
+    });
+
+    it('da dong tien ma lop chua co buoi: cho xep lich, mo duoc bien lai', () => {
+      const journey = getEnrollmentJourney({
+        bills: [],
+        enrollments: [paid(at(11, 11, 10), null)],
+        hasActiveSubjects: true,
+        now: NOW,
+      });
+      expect(journey).toEqual({
+        className: MATH_CLASS.name,
+        current: 'SCHEDULE',
+        billRegistrationId: null,
+        receiptRegistrationId: 'order-math',
+      });
+    });
+
+    it('vua dong tien va lop da co lich: xong ca bon buoc trong 7 ngay, sau do an', () => {
+      const recent = paid(at(11, 10, 10), '2026-12-30');
+      expect(
+        getEnrollmentJourney({
+          bills: [],
+          enrollments: [recent],
+          hasActiveSubjects: true,
+          now: NOW,
+        })?.current,
+      ).toBeNull();
+      const old = paid(at(10, 2, 10), '2026-12-30');
+      expect(
+        getEnrollmentJourney({ bills: [], enrollments: [old], hasActiveSubjects: true, now: NOW }),
+      ).toBeNull();
+    });
+
+    it('con da co mon dang hoc: bill chua dong de o khoi Can chu y, khong hien lai', () => {
+      expect(
+        getEnrollmentJourney({
+          bills: [unpaidBill],
+          enrollments: [paid(at(10, 2, 10), undefined)],
+          hasActiveSubjects: true,
+          now: NOW,
+        }),
+      ).toBeNull();
     });
   });
 

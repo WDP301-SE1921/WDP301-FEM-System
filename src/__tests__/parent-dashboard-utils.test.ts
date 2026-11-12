@@ -29,6 +29,7 @@ import {
   formatQuestionCount,
   formatScore,
   formatScoreChange,
+  formatUnscheduledNote,
   formatWeekRange,
   formatWeeklySlots,
   getAdjacentWeek,
@@ -192,20 +193,27 @@ describe('features/parent-dashboard/utils', () => {
   });
 
   describe('formatScore', () => {
-    it('giu mot chu so thap phan', () => {
-      expect(formatScore(9)).toBe('9.0');
-      expect(formatScore(8.25)).toBe('8.3');
+    it('hien dung diem giao vien cham, khong lam tron len', () => {
+      expect(formatScore(8.98)).toBe('8.98');
+      expect(formatScore(8.25)).toBe('8.25');
+      expect(formatScore(8.5)).toBe('8.5');
+      expect(formatScore(9)).toBe('9');
+    });
+
+    it('chan sai so cong so thuc va cat diem trung binh ve 2 chu so', () => {
+      expect(formatScore(0.1 + 0.2)).toBe('0.3');
+      expect(formatScore(25 / 3)).toBe('8.33');
     });
   });
 
   describe('getScoreTrend / formatScoreChange', () => {
     it.each([
       [0.4, 'UP', '+0.4'],
-      [-0.3, 'DOWN', '-0.3'],
-      [0, 'FLAT', '0.0'],
-      // Lam tron ve 0 thi coi nhu khong doi, khong hien +0.0 hay -0.0
-      [0.04, 'FLAT', '0.0'],
-      [-0.04, 'FLAT', '0.0'],
+      [-0.35, 'DOWN', '-0.35'],
+      [0, 'FLAT', '0'],
+      // Hien ra 0 thi coi nhu khong doi, khong hien +0 hay -0
+      [0.004, 'FLAT', '0'],
+      [-0.004, 'FLAT', '0'],
     ])('%d -> %s, %s', (change, trend, label) => {
       expect(getScoreTrend(change)).toBe(trend);
       expect(formatScoreChange(change)).toBe(label);
@@ -287,6 +295,20 @@ describe('features/parent-dashboard/utils', () => {
 
       expect(findNextFreeDay(days, '2026-10-12')?.key).toBe('2026-10-13');
       expect(findNextFreeDay(days, '2026-10-14')).toBeUndefined();
+    });
+
+    it('findNextFreeDay bo qua ngay lop co hoc ma trung tam chua xep buoi', () => {
+      const days = buildWeekDays(WEEK_START, [session('mon', new Date(2026, 9, 12, 18, 0))]);
+      const unscheduledTuesday = (date: Date) => date.getDate() === 13;
+
+      expect(findNextFreeDay(days, '2026-10-12', unscheduledTuesday)?.key).toBe('2026-10-14');
+    });
+
+    it('formatUnscheduledNote ghi ten lop va noi ro trung tam chua xep buoi', () => {
+      expect(formatUnscheduledNote(['Toán 9A', 'Lý 9B'], true)).toBe(
+        'Theo lịch cố định, lớp Toán 9A, Lý 9B có học hôm nay nhưng trung tâm chưa xếp buổi học. Buổi học sẽ hiện ở đây khi trung tâm xếp lịch xong.',
+      );
+      expect(formatUnscheduledNote(['Toán 9A'], false)).toContain('có học vào ngày này');
     });
 
     it('getDefaultDayOfWeek mo hom nay o tuan hien tai, Thu Hai o tuan khac', () => {
@@ -592,7 +614,7 @@ describe('features/parent-dashboard/utils', () => {
         'SUBMITTED',
       );
       expect(formatAssignmentDue(dueAt)).toBe('Hạn nộp: 23:59, 18/10');
-      expect(formatLessonScore('LESSON', 9)).toBe('Điểm bài tập: 9.0');
+      expect(formatLessonScore('LESSON', 9)).toBe('Điểm bài tập: 9');
       expect(formatLessonScore('ASSESSMENT', 8.5)).toBe('Điểm kiểm tra: 8.5');
     });
   });

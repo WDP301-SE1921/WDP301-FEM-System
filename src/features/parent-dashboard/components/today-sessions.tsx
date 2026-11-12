@@ -8,7 +8,7 @@ import { formatTime, getInitials } from '@/utils/format';
 
 import { SESSION_STATUSES, SESSION_TYPES, type StatusAppearance } from '../constants';
 import type { ScheduleSession } from '../types';
-import { getSessionStatus } from '../utils';
+import { formatUnscheduledNote, getSessionStatus } from '../utils';
 
 import { ActionChip } from './action-chip';
 import { SectionCard } from './section-card';
@@ -22,6 +22,8 @@ const TEACHER_INFO_MIN_WIDTH = 120;
 
 export type TodaySessionsProps = {
   sessions: ScheduleSession[];
+  /** Lop con hoc hom nay theo lich co dinh ma trung tam chua xep buoi. */
+  unscheduledClassNames: readonly string[];
   /** Bam vao the: mo chi tiet buoi hoc. */
   onOpenSession: (sessionId: string) => void;
   /** Mo bai tap cua con de chuan bi truoc buoi hoc sap dien ra. */
@@ -29,12 +31,19 @@ export type TodaySessionsProps = {
 };
 
 /** Moi buoi hoc hom nay mot the. Khong co buoi nao thi van giu the de phu huynh biet. */
-export function TodaySessions({ sessions, onOpenSession, onPrepare }: TodaySessionsProps) {
+export function TodaySessions({
+  sessions,
+  unscheduledClassNames,
+  onOpenSession,
+  onPrepare,
+}: TodaySessionsProps) {
   if (sessions.length === 0) {
     return (
       <SectionCard title={TITLE} icon="calendar-outline">
         <ThemedText type="small" themeColor="textSecondary">
-          Hôm nay học sinh không có buổi học nào.
+          {unscheduledClassNames.length > 0
+            ? formatUnscheduledNote(unscheduledClassNames, true)
+            : 'Hôm nay học sinh không có buổi học nào.'}
         </ThemedText>
       </SectionCard>
     );

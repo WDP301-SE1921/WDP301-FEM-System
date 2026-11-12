@@ -120,6 +120,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | Nut hien / an mat khau (dat o `trailing`)                | `PasswordVisibilityToggle`                                                                    | `components/common`   |
 | Sheet truot tu duoi len (chon con, chon tuan)            | `BottomSheet`                                                                                 | `components/common`   |
 | Hoi lai truoc thao tac kho lam lai (nop bai, dang xuat)  | `ConfirmSheet` (sheet, khong dung `Alert` de chay ca tren web)                                | `components/common`   |
+| Cac buoc co trang thai (dang ky hoc, lam bai)            | `StepList` (`layout`: `vertical` kem giai thich, `horizontal` mot hang)                       | `components/common`   |
 | Thanh tab duoi man hinh (`tabBar` cua `Tabs`)            | `TabBar` (nhan danh sach tab va `onPress`, layout `(tabs)` noi voi navigation)                | `components/common`   |
 | Nut, o nhap, chu, khung theo theme                       | `Button`, `Input`, `ThemedText`, `ThemedView`                                                 | `components/ui`       |
 | Icon theo theme (boc Ionicons)                           | `Icon`, kieu `IconName`                                                                       | `components/ui`       |

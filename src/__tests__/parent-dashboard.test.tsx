@@ -12,10 +12,11 @@ import type {
   StudentAssignment,
   StudentGrades,
   TuitionBill,
+  TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
 import { useStudentSelectionStore } from '@/store/student-selection-store';
 import { AppError } from '@/types/api';
-import { toDateKey } from '@/utils/date';
+import { addDays, toDateKey } from '@/utils/date';
 
 jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
@@ -28,6 +29,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
     getRecentNotifications: jest.fn(),
     getUnreadNotificationCount: jest.fn(),
     markNotificationRead: jest.fn(),
+    getTuitionEnrollments: jest.fn(),
   },
 }));
 
@@ -207,7 +209,46 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     api.getStudents.mockResolvedValue([MINH_ANH, HOANG_LONG]);
     api.getUnreadNotificationCount.mockResolvedValue({ unreadCount: 0 });
     api.markNotificationRead.mockResolvedValue({ ...GRADE_NOTIFICATION, readAt: hoursFromNow(0) });
+    api.getTuitionEnrollments.mockResolvedValue([]);
     mockStudentData();
+  });
+
+  it('hom nay lop co hoc ma trung tam chua xep buoi: the buoi hom nay noi chua xep lich', async () => {
+    const today = new Date();
+    const englishToday: TuitionEnrollment = {
+      id: 'enrollment-english',
+      registrationOrderId: 'order-english',
+      packageMonths: 3,
+      status: 'ACTIVE',
+      startDate: `${toDateKey(addDays(today, -7))}T00:00:00.000Z`,
+      endDate: `${toDateKey(addDays(today, 60))}T00:00:00.000Z`,
+      activatedAt: null,
+      class: {
+        id: 'class-english',
+        name: 'Tiếng Anh 6A1',
+        programId: 'program-english',
+        roomId: null,
+        program: { name: 'Tiếng Anh 6', subject: 'Tiếng Anh', grade: 6 },
+        weeklySchedules: [{ weekday: today.getDay() || 7, startTime: '17:45', endTime: '19:15' }],
+        teacher: null,
+        scheduledUntil: null,
+      },
+      placements: [],
+      registrationOrder: { payment: null },
+    };
+    api.getTuitionEnrollments.mockImplementation(async (studentId) =>
+      studentId === HOANG_LONG.id ? [englishToday] : [],
+    );
+    const { user } = await renderDashboard();
+    await waitForMinhAnhDashboard();
+
+    await switchStudent(user, MINH_ANH, HOANG_LONG);
+
+    expect(
+      await screen.findByText(/lớp Tiếng Anh 6A1 có học hôm nay nhưng trung tâm chưa xếp buổi học/),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText('Hôm nay học sinh không có buổi học nào.')).not.toBeOnTheScreen();
+    await waitForSecondarySections();
   });
 
   it('xem con dau tien, doi con thi tai tong quan cua con do', async () => {
@@ -424,13 +465,16 @@ describe('features/parent-dashboard/ParentDashboard', () => {
     api.getStudents.mockResolvedValue([MINH_ANH, { ...HOANG_LONG, subjectNames: [] }]);
     const { user } = await renderDashboard();
     await waitForMinhAnhDashboard();
-    expect(screen.queryByText('Chưa có môn đang học')).not.toBeOnTheScreen();
+    // Minh Anh dang hoc va bill chua dong da o khoi "Cần chú ý": khong hien the dang ky
+    expect(screen.queryByText(/^Đăng ký học cho/)).not.toBeOnTheScreen();
 
     await switchStudent(user, MINH_ANH, HOANG_LONG);
 
-    expect(await screen.findByText('Chưa có môn đang học')).toBeOnTheScreen();
-    expect(screen.getByText(/^Để đăng ký môn cho Hoàng Long, đến trung tâm/)).toBeOnTheScreen();
-    expect(screen.getByText('phuhuynh@example.com')).toBeOnTheScreen();
+    expect(await screen.findByText('Đăng ký học cho Hoàng Long')).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Bước 2: Đăng ký môn tại trung tâm, đang ở bước này'),
+    ).toBeOnTheScreen();
+    expect(screen.getByText(/đọc email phuhuynh@example\.com cho nhân viên/)).toBeOnTheScreen();
     await waitForSecondarySections();
   });
 

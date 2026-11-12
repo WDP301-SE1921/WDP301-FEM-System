@@ -220,11 +220,11 @@ describe('features/parent-dashboard/ParentAssignments', () => {
     await user.press(screen.getByRole('tab', { name: 'Đã có điểm, 2 bài' }));
     // Moi cong bo diem truoc
     expect(cardTitles()).toEqual([PHYSICS_GRADED.title, MATH_GRADED.title]);
-    expect(screen.getByLabelText('Điểm 8.5 trên 10.0')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Điểm 8.5 trên 10')).toBeOnTheScreen();
     expect(screen.getByText('Tốt')).toBeOnTheScreen();
     expect(screen.getByText('“Trình bày chi tiết, tính toán chính xác.”')).toBeOnTheScreen();
     expect(screen.getByText('Giáo viên: Đặng Hải Yến')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Điểm 6.0 trên 10.0')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Điểm 6 trên 10')).toBeOnTheScreen();
     expect(screen.getByText('Đạt')).toBeOnTheScreen();
     // Bai khong co nhan xet va lop chua co giao vien thi khong hien dong rong
     expect(screen.getAllByText(/^Giáo viên:/)).toHaveLength(1);

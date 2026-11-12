@@ -856,6 +856,12 @@ export type TuitionClass = {
   weeklySchedules: WeeklySlot[];
   /** Giao vien hien tai cua lop, null khi lop chua co giao vien. */
   teacher: TeacherRef | null;
+  /**
+   * Ngay (gio Viet Nam, `YYYY-MM-DD`) cua buoi cuoi chua huy cua lop, null khi lop chua co buoi nao
+   * (Quan ly chua bam "Tao lich hoc"). BE tra tu ngay 12/11; BE cu khong co field nay thi app khong
+   * biet lop da xep lich toi dau.
+   */
+  scheduledUntil?: string | null;
 };
 
 /** `Payment` cua don dang ky. */
@@ -1212,6 +1218,7 @@ export type ParentDestination =
   | { kind: 'ASSIGNMENT'; studentId: string; assignmentId: string }
   | { kind: 'SESSION'; studentId: string; sessionId: string }
   | { kind: 'BILL'; registrationId: string }
+  | { kind: 'RECEIPT'; registrationId: string }
   | { kind: 'SCHEDULE'; studentId: string; view: ScheduleView }
   | { kind: 'ASSIGNMENTS'; studentId: string; tab: AssignmentTab };
 

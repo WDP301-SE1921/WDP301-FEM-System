@@ -11,7 +11,7 @@ import { useSelectedStudent } from '../hooks/use-selected-student';
 import type { ParentDestination } from '../types';
 
 import { ChildPickerSheet } from './child-picker-sheet';
-import { EnrollmentGuideCard } from './enrollment-guide-card';
+import { EnrollmentJourneyCard } from './enrollment-journey-card';
 import { StudentOverview } from './student-overview';
 import { StudentSwitcherBar } from './student-switcher-bar';
 
@@ -66,12 +66,13 @@ export function ParentDashboard({
     return (
       <>
         {/* `subjectNames` la mon cua cac ghi danh dang hoc: rong thi con chua dang ky hoac da hoc xong */}
-        {selected.subjectNames.length === 0 ? (
-          <EnrollmentGuideCard
-            childName={getShortName(selected.fullName)}
-            parentEmail={parentEmail}
-          />
-        ) : null}
+        <EnrollmentJourneyCard
+          studentId={selected.id}
+          childName={getShortName(selected.fullName)}
+          parentEmail={parentEmail}
+          hasActiveSubjects={selected.subjectNames.length > 0}
+          onOpenDestination={onOpenDestination}
+        />
         <StudentOverview
           studentId={selected.id}
           onOpenNotifications={onOpenNotifications}

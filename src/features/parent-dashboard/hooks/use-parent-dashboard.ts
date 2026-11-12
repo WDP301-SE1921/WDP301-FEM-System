@@ -4,6 +4,7 @@ import { queryKeys } from '@/api/query-client';
 import { Config } from '@/constants/config';
 
 import { parentDashboardApi } from '../api/parent-dashboard-api';
+import { getUnscheduledClassNames } from '../api/parent-data-mappers';
 import { CENTER_INFO_STALE_MS, CENTER_NAME, FILE_PREVIEW_STALE_MS } from '../constants';
 import type { ScheduleRange, SessionRef } from '../types';
 
@@ -133,6 +134,18 @@ export function useTuitionEnrollments(studentId: string) {
     queryKey: queryKeys.me.studentEnrollments(studentId),
     queryFn: () => parentDashboardApi.getTuitionEnrollments(studentId),
   });
+}
+
+/**
+ * Ten lop con hoc vao mot ngay theo lich co dinh ma trung tam chua xep buoi (xem
+ * `getUnscheduledClassNames`). undefined khi ghi danh chua tai xong; tai loi thi coi nhu khong co lop
+ * nao, man hinh giu thong bao ngay nghi nhu truoc thay vi chan ca lich.
+ */
+export function useUnscheduledClasses(studentId: string): ((date: Date) => string[]) | undefined {
+  const enrollments = useTuitionEnrollments(studentId);
+  if (enrollments.isError) return () => [];
+  const { data } = enrollments;
+  return data ? (date) => getUnscheduledClassNames(data, date) : undefined;
 }
 
 export function useStudentBills(studentId: string) {

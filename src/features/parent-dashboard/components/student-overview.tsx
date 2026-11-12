@@ -5,7 +5,11 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Spacing } from '@/constants/theme';
 import { toDateKey } from '@/utils/date';
 
-import { useAttendanceSummary, useStudentSchedule } from '../hooks/use-parent-dashboard';
+import {
+  useAttendanceSummary,
+  useStudentSchedule,
+  useUnscheduledClasses,
+} from '../hooks/use-parent-dashboard';
 import type { ParentDestination } from '../types';
 
 import { AttendanceStatCard } from './attendance-stat-card';
@@ -32,11 +36,13 @@ export function StudentOverview({
   onOpenNotifications,
   onOpenDestination,
 }: StudentOverviewProps) {
-  const today = toDateKey(new Date());
+  const now = new Date();
+  const today = toDateKey(now);
   const todaySessions = useStudentSchedule(studentId, { from: today, to: today });
   const attendance = useAttendanceSummary(studentId);
+  const unscheduledOn = useUnscheduledClasses(studentId);
 
-  if (todaySessions.isPending || attendance.isPending) return <LoadingState />;
+  if (todaySessions.isPending || attendance.isPending || !unscheduledOn) return <LoadingState />;
   if (todaySessions.isError) {
     return <ErrorState error={todaySessions.error} onRetry={() => void todaySessions.refetch()} />;
   }
@@ -48,6 +54,7 @@ export function StudentOverview({
     <View style={styles.sections}>
       <TodaySessions
         sessions={todaySessions.data}
+        unscheduledClassNames={unscheduledOn(now)}
         onOpenSession={(sessionId) => onOpenDestination({ kind: 'SESSION', studentId, sessionId })}
         onPrepare={() => onOpenDestination({ kind: 'ASSIGNMENTS', studentId, tab: 'TODO' })}
       />

@@ -7,7 +7,7 @@ import { Spacing } from '@/constants/theme';
 import { toDateKey } from '@/utils/date';
 import { formatWeekdayDate, getShortName } from '@/utils/format';
 
-import { useStudentSchedule } from '../hooks/use-parent-dashboard';
+import { useStudentSchedule, useUnscheduledClasses } from '../hooks/use-parent-dashboard';
 import type { LinkedStudent, SessionRef, WeekDay } from '../types';
 import { buildWeekDays, findNextFreeDay, getWeekRange } from '../utils';
 
@@ -15,6 +15,7 @@ import { FreeDayCard } from './free-day-card';
 import { NextFreeDayCard } from './next-free-day-card';
 import { ScheduleSessionCard } from './schedule-session-card';
 import { ToneBadge } from './tone-badge';
+import { UnscheduledDayCard } from './unscheduled-day-card';
 import { WeekStrip } from './week-strip';
 
 export type StudentWeekScheduleProps = {
@@ -39,6 +40,7 @@ export function StudentWeekSchedule({
   onOpenSession,
 }: StudentWeekScheduleProps) {
   const schedule = useStudentSchedule(student.id, getWeekRange(weekStart));
+  const unscheduledOn = useUnscheduledClasses(student.id);
   const days = buildWeekDays(weekStart, schedule.data ?? []);
   const selectedKey = toDateKey(selectedDate);
   const todayKey = toDateKey(today);
@@ -53,6 +55,12 @@ export function StudentWeekSchedule({
 
     const isToday = selectedKey === todayKey;
     if (selectedDay.sessions.length === 0) {
+      // Doi ghi danh de khong bao "khong co buoi hoc" roi doi sang "chua xep lich".
+      if (!unscheduledOn) return <LoadingState />;
+      const unscheduled = unscheduledOn(selectedDay.date);
+      if (unscheduled.length > 0) {
+        return <UnscheduledDayCard classNames={unscheduled} isToday={isToday} />;
+      }
       return (
         <FreeDayCard
           studentName={getShortName(student.fullName)}
@@ -62,7 +70,11 @@ export function StudentWeekSchedule({
       );
     }
 
-    const nextFreeDay = findNextFreeDay(days, selectedKey);
+    const nextFreeDay = findNextFreeDay(
+      days,
+      selectedKey,
+      (date) => (unscheduledOn?.(date).length ?? 0) > 0,
+    );
     return (
       <>
         {selectedDay.sessions.map((session) => (

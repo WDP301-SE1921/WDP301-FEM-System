@@ -11,6 +11,7 @@ import type {
   ScheduleView,
   LinkedStudent,
   ScheduleSession,
+  TuitionEnrollment,
 } from '@/features/parent-dashboard/types';
 import { formatWeekRange, getWeekRange } from '@/features/parent-dashboard/utils';
 import { useStudentSelectionStore } from '@/store/student-selection-store';
@@ -22,6 +23,7 @@ jest.mock('@/features/parent-dashboard/api/parent-dashboard-api', () => ({
   parentDashboardApi: {
     getStudents: jest.fn(),
     getStudentSchedule: jest.fn(),
+    getTuitionEnrollments: jest.fn(),
   },
 }));
 
@@ -130,8 +132,68 @@ async function waitForTodaySession() {
   ).toBeOnTheScreen();
 }
 
+/** Ghi danh Toan cua Minh Anh dang trong ky, lop hoc ca vao thu cua `FREE_DAY`. */
+function mathEnrollmentOnFreeDay(scheduledUntil: string | null): TuitionEnrollment {
+  if (!FREE_DAY) throw new Error('Tuan phai con ngay nghi');
+  return {
+    id: 'enrollment-math',
+    registrationOrderId: 'order-math',
+    packageMonths: 3,
+    status: 'ACTIVE',
+    startDate: `${toDateKey(addDays(TODAY, -30))}T00:00:00.000Z`,
+    endDate: `${toDateKey(addDays(TODAY, 60))}T00:00:00.000Z`,
+    activatedAt: null,
+    class: {
+      id: 'class-math',
+      name: 'Toán nâng cao 8A2',
+      programId: 'program-math',
+      roomId: null,
+      program: { name: 'Toán 8', subject: 'Toán', grade: 8 },
+      weeklySchedules: [
+        { weekday: FREE_DAY.getDay() || DAYS_PER_WEEK, startTime: '18:00', endTime: '19:30' },
+      ],
+      teacher: null,
+      scheduledUntil,
+    },
+    placements: [],
+    registrationOrder: { payment: null },
+  };
+}
+
 describe('features/parent-dashboard/ParentSchedule', () => {
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    api.getTuitionEnrollments.mockResolvedValue([]);
+  });
+
+  it('ngay lop co hoc ma trung tam chua xep buoi: bao chua co lich, khong bao con nghi', async () => {
+    mockTwoChildren();
+    api.getTuitionEnrollments.mockResolvedValue([mathEnrollmentOnFreeDay(null)]);
+    const { user } = await renderSchedule();
+    await waitForTodaySession();
+
+    if (!FREE_DAY) throw new Error('Tuan phai con ngay nghi');
+    await user.press(dayButton(FREE_DAY));
+
+    expect(await screen.findByText('Ngày này chưa có lịch buổi học')).toBeOnTheScreen();
+    expect(screen.getByText(/lớp Toán nâng cao 8A2 có học vào ngày này/)).toBeOnTheScreen();
+    expect(screen.queryByText('Ngày này học sinh không có buổi học')).not.toBeOnTheScreen();
+    expect(api.getTuitionEnrollments).toHaveBeenCalledWith(MINH_ANH.id);
+  });
+
+  it('ngay trong khoang da xep lich ma khong co buoi van la ngay nghi', async () => {
+    mockTwoChildren();
+    api.getTuitionEnrollments.mockResolvedValue([
+      mathEnrollmentOnFreeDay(toDateKey(addDays(TODAY, 30))),
+    ]);
+    const { user } = await renderSchedule();
+    await waitForTodaySession();
+
+    if (!FREE_DAY) throw new Error('Tuan phai con ngay nghi');
+    await user.press(dayButton(FREE_DAY));
+
+    expect(await screen.findByText('Ngày này học sinh không có buổi học')).toBeOnTheScreen();
+  });
 
   it('mo tuan hien tai cua con dau tien, chon san hom nay', async () => {
     mockTwoChildren();

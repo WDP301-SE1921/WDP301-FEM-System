@@ -309,7 +309,7 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
       await screen.findByText('Kết quả', {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
     ).toBeOnTheScreen();
     expect(screen.getByText('Đã có điểm')).toBeOnTheScreen();
-    expect(screen.getByLabelText('Điểm 5.5 trên 10.0')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Điểm 5.5 trên 10')).toBeOnTheScreen();
     expect(screen.getByText('“Cần cẩn thận hơn ở phần trắc nghiệm.”')).toBeOnTheScreen();
 
     expect(screen.getByLabelText(`${CORRECT_CHOICE}, đáp án đúng`)).toBeOnTheScreen();

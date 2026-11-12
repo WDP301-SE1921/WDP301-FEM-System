@@ -86,9 +86,12 @@ describe('features/children/AddChildFlow', () => {
     expect(screen.getByText('Bước tiếp theo: đăng ký môn học')).toBeOnTheScreen();
     expect(screen.getByText('phuhuynh@example.com')).toBeOnTheScreen();
     expect(
-      screen.getByText(
-        'Nhân viên chọn hồ sơ của Nguyễn Gia Huy, rồi chọn môn và lớp dành cho khối 7.',
-      ),
+      screen.getByText(/Nhân viên chọn hồ sơ của Nguyễn Gia Huy và lớp dành cho khối 7\./),
+    ).toBeOnTheScreen();
+    // Cung bon buoc voi the "Dang ky hoc" o trang chu: buoc tao ho so vua xong
+    expect(screen.getByLabelText('Bước 1: Tạo hồ sơ học sinh, đã xong')).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Bước 2: Đăng ký môn tại trung tâm, đang ở bước này'),
     ).toBeOnTheScreen();
 
     await user.press(screen.getByRole('button', { name: DONE_BUTTON_NAME }));

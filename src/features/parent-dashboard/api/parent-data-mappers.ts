@@ -4,7 +4,7 @@
  * cua con (GET /me/students/:id/enrollments) va danh sach phong. Cac field BE chua co (gio vao lop, tai
  * lieu cua buoi) de null hoac rong.
  */
-import { addDays, toDateKey } from '@/utils/date';
+import { addDays, diffInCalendarDays, toDateKey } from '@/utils/date';
 
 import type {
   AssignmentListItem,
@@ -30,10 +30,11 @@ import type {
   StudentAssignment,
   StudentEnrollment,
   SubjectGradeAverage,
+  TuitionBill,
   TuitionClass,
   TuitionEnrollment,
 } from '../types';
-import { countTermSessions, getTermStatus, parseApiDate } from '../utils';
+import { countTermSessions, getTermStatus, parseApiDate, toIsoWeekday } from '../utils';
 
 const LESSON_KINDS: Record<CurriculumItemKind, LessonKind> = {
   LESSON: 'LESSON',
@@ -185,6 +186,111 @@ export function getCurrentClass(
       toTime(effectiveFrom) <= at && (effectiveTo === null || toTime(effectiveTo) > at),
   );
   return (current ?? placements[placements.length - 1])?.class ?? enrollment.class;
+}
+
+/**
+ * Ten cac lop con hoc vao ngay `date` theo lich co dinh nhung trung tam chua tao buoi cho ngay do:
+ * lop chua co buoi nao, hoac `date` nam sau buoi cuoi da xep (`scheduledUntil`). Ngay nam trong
+ * khoang da xep ma khong co buoi la ngay con nghi that (nghi le, buoi bi bo), khong tinh. Chi xet
+ * ghi danh dang trong ky vao ngay do; BE cu khong tra `scheduledUntil` thi bo qua.
+ */
+export function getUnscheduledClassNames(
+  enrollments: readonly TuitionEnrollment[],
+  date: Date,
+): string[] {
+  const dateKey = toDateKey(date);
+  const weekday = toIsoWeekday(date);
+  const names = enrollments.flatMap((enrollment) => {
+    if (getTermStatus(enrollment, date) !== 'CURRENT') return [];
+    const classroom = getCurrentClass(enrollment, date);
+    const { scheduledUntil } = classroom;
+    if (scheduledUntil === undefined) return [];
+    if (!classroom.weeklySchedules.some((slot) => slot.weekday === weekday)) return [];
+    return scheduledUntil === null || scheduledUntil < dateKey ? [classroom.name] : [];
+  });
+  return [...new Set(names)];
+}
+
+/** So ngay sau khi thu tien van hien the "Dang ky hoc" de phu huynh mo bien lai va lich. */
+export const JOURNEY_RECENT_DAYS = 7;
+
+/** Bon buoc dang ky hoc cua con (Luong 3, PLAN_GUIDED_WORKFLOWS.md), theo thu tu. */
+export type EnrollmentJourneyStep = 'PROFILE' | 'REGISTER' | 'PAYMENT' | 'SCHEDULE';
+
+export type EnrollmentJourney = {
+  /** Lop cua don dang theo doi; null khi con chua co don nao dang hieu luc. */
+  className: string | null;
+  /** Buoc dang cho; null khi da xong ca bon buoc (vua dong tien, lop da co lich). */
+  current: EnrollmentJourneyStep | null;
+  /** Don chua thu tien: mo bill. */
+  billRegistrationId: string | null;
+  /** Don da thu tien: mo bien lai. */
+  receiptRegistrationId: string | null;
+};
+
+/**
+ * Hanh trinh dang ky hoc cua mot con o trang chu: tao ho so (luon xong) -> dang ky tai trung tam ->
+ * dong hoc phi (co bien lai) -> lich hoc. Thu tu uu tien: don chua thu tien, roi mon da dong tien
+ * ma lop chua co buoi nao, roi mon vua dong tien trong `JOURNEY_RECENT_DAYS` ngay (da xong, de mo bien
+ * lai va lich), roi con chua co mon nao. null khi khong co gi can hien. BE cu khong tra
+ * `scheduledUntil` thi coi nhu lop da co lich.
+ *
+ * Con da co mon dang hoc (`hasActiveSubjects`) thi chi hien mon dang cho xep lich hoac vua xong: bill
+ * chua dong da nam o khoi "Can chu y" cua trang chu.
+ */
+export function getEnrollmentJourney({
+  bills,
+  enrollments,
+  hasActiveSubjects,
+  now = new Date(),
+}: {
+  bills: readonly TuitionBill[];
+  enrollments: readonly TuitionEnrollment[];
+  hasActiveSubjects: boolean;
+  now?: Date;
+}): EnrollmentJourney | null {
+  const unpaid = hasActiveSubjects ? undefined : bills.find(({ status }) => status === 'UNPAID');
+  if (unpaid) {
+    return {
+      className: unpaid.class.name,
+      current: 'PAYMENT',
+      billRegistrationId: unpaid.registrationId,
+      receiptRegistrationId: null,
+    };
+  }
+  const active = enrollments.filter((enrollment) => getTermStatus(enrollment, now) !== 'EXPIRED');
+  const waiting = active.find(
+    (enrollment) => getCurrentClass(enrollment, now).scheduledUntil === null,
+  );
+  if (waiting) {
+    return {
+      className: getCurrentClass(waiting, now).name,
+      current: 'SCHEDULE',
+      billRegistrationId: null,
+      receiptRegistrationId: waiting.registrationOrderId,
+    };
+  }
+  const recent = active.find(({ registrationOrder }) => {
+    const confirmedAt = registrationOrder.payment?.confirmedAt;
+    return !!confirmedAt && diffInCalendarDays(new Date(confirmedAt), now) < JOURNEY_RECENT_DAYS;
+  });
+  if (recent) {
+    return {
+      className: getCurrentClass(recent, now).name,
+      current: null,
+      billRegistrationId: null,
+      receiptRegistrationId: recent.registrationOrderId,
+    };
+  }
+  if (!hasActiveSubjects && active.length === 0) {
+    return {
+      className: null,
+      current: 'REGISTER',
+      billRegistrationId: null,
+      receiptRegistrationId: null,
+    };
+  }
+  return null;
 }
 
 /** Ngay cua ky hoc `[startDate, endDate)` de hoi lich. null khi ghi danh chua co ngay. */
