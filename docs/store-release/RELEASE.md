@@ -15,14 +15,14 @@ Dung ngay 2026-11-12, lam theo cach du an VanGo dang phat hanh (`VanGo/fe-system
 
 Cac tep:
 
-| Tep                                         | Dung cho                                                                              |
-| ------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `eas.json`                                  | Profile build `production` (AAB cho Android) va profile nop `internal`, `production`  |
-| `store.config.json`                         | Chu tren trang App Store, day bang `npm run metadata:push`                            |
-| `docs/store-release/privacy.html`           | Chinh sach quyen rieng tu (da dien thong tin), can dang len URL cong khai             |
-| `docs/store-release/delete-account.html`    | Trang xoa tai khoan (Google Play bat buoc co URL), dang cung thu muc voi privacy.html |
-| `docs/store-release/assets/`                | Icon 512x512 va anh bia 1024x500 cho Google Play                                      |
-| `assets/expo.icon/Assets/edugrade-mark.svg` | Logo goc (mu tot nghiep + sach mo). Icon, splash, anh store deu ve tu logo nay        |
+| Tep                                           | Dung cho                                                                                                |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `eas.json`                                    | Profile build `production` (AAB cho Android) va profile nop `internal`, `production`                    |
+| `store.config.json`                           | Chu tren trang App Store, day bang `npm run metadata:push`                                              |
+| `WDP301-FE-System/public/privacy.html`        | Chinh sach quyen rieng tu, ban duy nhat. Web EduGrade phuc vu o `/privacy.html`, chan trang chu co link |
+| `WDP301-FE-System/public/delete-account.html` | Trang xoa tai khoan (Google Play bat buoc co URL). Web phuc vu o `/delete-account.html`                 |
+| `docs/store-release/assets/`                  | Icon 512x512 va anh bia 1024x500 cho Google Play                                                        |
+| `assets/expo.icon/Assets/edugrade-mark.svg`   | Logo goc (mu tot nghiep + sach mo). Icon, splash, anh store deu ve tu logo nay                          |
 
 ---
 
@@ -79,17 +79,10 @@ Phai co `EXPO_PUBLIC_API_URL=https://.../api/v1` tro dung BE production. Doi thi
 ### 1.5 Dang trang chinh sach
 
 1. Noi dung da dien (Nadius, `support@vangon.vn`, `0559 294 401`, xu ly yeu cau xoa trong 7 ngay lam viec, xoa trong 30 ngay, giong VanGo). Trang xoa tai khoan mo ta dung `DELETE /auth/me` cua BE: xoa thong tin ca nhan cua phu huynh, giu ho so hoc tap cua con va chung tu hoc phi. BE doi cach xoa thi sua trang nay.
-2. Dang hai tep cung mot thu muc (lien ket tuong doi) len URL cong khai. Cach nhanh nhat la site `vangon.vn` cua VanGo (cung phap nhan, da co hosting tinh): dat vao `VanGo/fe-system/apps/desktop/public/edugrade/` -> `https://vangon.vn/edugrade/privacy.html`. Kiem test phap ly cua VanGo truoc khi deploy. Cach khac: web EduGrade khi da deploy, hoac GitHub Pages.
+2. Hai trang nam trong web EduGrade (`WDP301-FE-System/public/`, nguoi dung chot 2026-11-12, chuyen tu `docs/store-release/` sang de chi con mot ban). Web chay tren Vercel (khong co ten mien rieng, nguoi dung bao 2026-11-12). Deploy web la co: `https://wdp301-fe-system-se1921.vercel.app/privacy.html` va `https://wdp301-fe-system-se1921.vercel.app/delete-account.html`. `proxy.ts` cua web chi chan `/login`, `/manager`, `/staff`, `/teacher` nen hai trang khong can dang nhap. Sua noi dung thi sua thang hai tep do.
 3. Mo thu ca hai URL bang tab an danh.
-4. Them URL vao `store.config.json`, khoi `apple.info.vi`:
-
-   ```json
-   "privacyPolicyUrl": "https://.../privacy.html",
-   "supportUrl": "https://..."
-   ```
-
-   `supportUrl` bat buoc voi App Store. Chua co trang ho tro rieng thi dung trang co thong tin lien he.
-   Chua them `privacyPolicyUrl` thi `npm run metadata:lint` bao loi `missing the required field 'privacyPolicyUrl'` (kiem ngay 2026-11-12): dung, khong dien URL gia de cho qua.
+4. Da dien vao `store.config.json` (2026-11-12): `privacyPolicyUrl` va `supportUrl` deu la `https://wdp301-fe-system-se1921.vercel.app/privacy.html`. Support URL chua tro trang chu vi muc "Lien he trung tam" cua trang chu web dang la so lieu mau (0913 345 678, `lienhe@edugrade.vn`, So 1 Dai Co Viet), lech thong tin Nadius. Sua muc do thanh thong tin that thi doi `supportUrl` ve trang chu duoc.
+5. Truoc khi nop: mo `https://wdp301-fe-system-se1921.vercel.app/privacy.html` va `/delete-account.html` bang tab an danh, phai ra trang chu khong phai 404. Ngay 2026-11-12 ca hai con 404 vi chua commit va deploy.
 
 ### 1.6 Tai khoan demo
 
@@ -194,7 +187,7 @@ Lam het muc **Policy -> App content** truoc khi gui duyet:
 - **Ads**: No.
 - **Content rating**: bang hoi IARC, danh muc Education/Reference, tra loi khong cho moi noi dung nhay cam.
 - **Target audience and content**: **can nguoi dung chot**. Tai khoan la cua phu huynh (18+), nhung hoc sinh lop 6-9 (11-15 tuoi) dung app qua phien cua phu huynh. Chon them nhom duoi 13 tuoi thi app phai theo **Families Policy** cua Google (app khong co quang cao, khong SDK theo doi nen kha thi, nhung duyet ky hon). Chi chon 18+ thi phai the hien dung la app cho phu huynh, va van co rui ro Google danh gia khac.
-- **Data safety**: thu thap **Yes**, chia se **No** (nha cung cap ha tang khong tinh la chia se), ma hoa khi truyen **Yes**, cho yeu cau xoa **Yes** (URL `delete-account.html`).
+- **Data safety**: thu thap **Yes**, chia se **No** (nha cung cap ha tang khong tinh la chia se), ma hoa khi truyen **Yes**, cho yeu cau xoa **Yes** (URL `https://wdp301-fe-system-se1921.vercel.app/delete-account.html`).
 
   | Loai du lieu                                                       | Bat buoc | Muc dich                              |
   | ------------------------------------------------------------------ | -------- | ------------------------------------- |

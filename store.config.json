@@ -11,6 +11,8 @@
       "vi": {
         "title": "EduGrade - Phụ huynh",
         "subtitle": "Theo dõi việc học của con",
+        "privacyPolicyUrl": "https://wdp301-fe-system-se1921.vercel.app/privacy.html",
+        "supportUrl": "https://wdp301-fe-system-se1921.vercel.app/privacy.html",
         "keywords": [
           "trung tâm",
           "dạy thêm",
