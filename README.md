@@ -134,11 +134,11 @@ eas build --profile preview --platform android   # APK cai thu, link tai nam tre
 eas build:list                                   # xem cac ban da build
 ```
 
-| Profile       | Ra gi                                                          | Environment tren EAS |
-| ------------- | -------------------------------------------------------------- | -------------------- |
-| `development` | Dev client thay Expo Go. Can cai `expo-dev-client` (chua cai)  | `development`        |
-| `preview`     | APK cai noi bo, ten app "FEM Staging", cai song song ban chinh | `preview`            |
-| `production`  | Ban phat hanh (AAB cho Google Play), tu tang `versionCode`     | `production`         |
+| Profile       | Ra gi                                                                               | Environment tren EAS |
+| ------------- | ----------------------------------------------------------------------------------- | -------------------- |
+| `development` | Dev client thay Expo Go. Can cai `expo-dev-client` (chua cai)                       | `development`        |
+| `preview`     | APK cai noi bo, ten app "FEM Staging", cai song song ban chinh                      | `preview`            |
+| `production`  | Ban phat hanh len store (AAB cho Google Play), ten app "EduGrade", tu tang so build | `production`         |
 
 Ban build tren EAS **khong doc `.env`** (file bi gitignore nen khong duoc upload). `EXPO_PUBLIC_API_URL` cua ban build dat tren EAS theo environment cua profile, hien tro toi BE tren Render cho `preview` va `production`:
 
@@ -148,6 +148,8 @@ eas env:update preview --variable-name EXPO_PUBLIC_API_URL --value https://<be>/
 ```
 
 Bien `EXPO_PUBLIC_*` duoc inline vao bundle luc build: doi bien thi phai build lai. Ban release cua Android chan `http://`, nen BE cua ban build phai la `https://`.
+
+Nop len App Store va Google Play: lam theo [docs/store-release/RELEASE.md](docs/store-release/RELEASE.md).
 
 ## Xu ly su co
 

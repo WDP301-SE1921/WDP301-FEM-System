@@ -10,16 +10,17 @@ const ILLUSTRATION_SIZE = 80;
 const ICON_SIZE = 40;
 const TEXT_MAX_WIDTH = 320;
 
-type IntroTone = 'primary' | 'success';
+type IntroTone = 'primary' | 'success' | 'danger';
 
 const TONES: Record<IntroTone, { background: ThemeColor; color: ThemeColor }> = {
   primary: { background: 'primarySoft', color: 'primary' },
   success: { background: 'successSoft', color: 'success' },
+  danger: { background: 'dangerSoft', color: 'danger' },
 };
 
 export type AccountIntroProps = {
   icon: IconName;
-  /** `success` khi thao tac da xong. */
+  /** `success` khi thao tac da xong, `danger` truoc thao tac khong lam lai duoc. */
   tone: IntroTone;
   title: string;
   /** Loi giai thich duoi tieu de; dat `ThemedText` `smallBold` ben trong de nhan manh. */

@@ -25,6 +25,7 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'post', url: Endpoints.auth.logout },
   { method: 'get', url: Endpoints.auth.me },
   { method: 'patch', url: Endpoints.auth.me },
+  { method: 'delete', url: Endpoints.auth.me },
   { method: 'post', url: Endpoints.auth.verifyEmail },
   { method: 'post', url: Endpoints.auth.resendVerification },
   { method: 'post', url: Endpoints.auth.changePassword },

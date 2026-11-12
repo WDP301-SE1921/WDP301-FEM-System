@@ -21,6 +21,7 @@ export default function ProfileScreen() {
       <AccountActions
         onEditProfile={() => router.push('/edit-account')}
         onChangePassword={() => router.push('/change-password')}
+        onDeleteAccount={() => router.push('/delete-account')}
       />
       <ChildrenSection
         onAddChild={() => router.push('/add-child')}

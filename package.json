@@ -23,6 +23,12 @@
     "test:ci": "jest --ci --coverage --passWithNoTests",
     "doctor": "npx --yes expo-doctor@latest",
     "validate": "npm run typecheck && npm run lint && npm run test:ci",
+    "build:prod:android": "eas build -p android --profile production",
+    "build:prod:ios": "eas build -p ios --profile production",
+    "submit:android": "eas submit -p android --profile internal",
+    "submit:ios": "eas submit -p ios --profile production",
+    "metadata:lint": "eas metadata:lint --profile production",
+    "metadata:push": "eas metadata:push --profile production",
     "prepare": "husky"
   },
   "dependencies": {

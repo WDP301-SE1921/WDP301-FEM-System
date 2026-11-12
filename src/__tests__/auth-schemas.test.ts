@@ -1,6 +1,7 @@
 import {
   accountProfileSchema,
   changePasswordSchema,
+  deleteAccountSchema,
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
@@ -178,6 +179,19 @@ describe('features/auth/schemas', () => {
       expect(
         firstError(accountProfileSchema.safeParse({ displayName: ' ', phone: '' }), 'displayName'),
       ).toBe('Vui lòng nhập họ tên');
+    });
+  });
+
+  describe('deleteAccountSchema', () => {
+    it('chi gui mat khau de xac nhan', () => {
+      expect(deleteAccountSchema.parse({ password: 'MatKhau123' })).toEqual({
+        password: 'MatKhau123',
+      });
+    });
+
+    it('bao loi khi bo trong mat khau', () => {
+      const result = deleteAccountSchema.safeParse({ password: '' });
+      expect(firstError(result, 'password')).toBe('Mật khẩu tối thiểu 8 ký tự');
     });
   });
 });

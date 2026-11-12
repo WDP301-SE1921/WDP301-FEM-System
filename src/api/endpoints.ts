@@ -10,7 +10,10 @@ export const Endpoints = {
     register: '/auth/register',
     refresh: '/auth/refresh',
     logout: '/auth/logout',
-    /** GET: tai khoan dang dang nhap. PATCH: sua ten hien thi va so dien thoai cua phu huynh. */
+    /**
+     * GET: tai khoan dang dang nhap. PATCH: sua ten hien thi va so dien thoai cua phu huynh. DELETE (body
+     * `{ password }`): phu huynh tu xoa tai khoan, BE thu hoi moi phien.
+     */
     me: '/auth/me',
     /** POST: xac minh email bang ma BE gui qua email sau khi dang ky. */
     verifyEmail: '/auth/verify-email',

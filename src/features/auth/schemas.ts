@@ -98,6 +98,11 @@ export const changePasswordSchema = z
     path: ['newPassword'],
   });
 
+/** Form xoa tai khoan: nhap lai mat khau de xac nhan (DeleteAccountDto). */
+export const deleteAccountSchema = z.object({
+  password: passwordSchema,
+});
+
 /**
  * Form sua thong tin tai khoan (UpdateProfileDto). BE khong tra so dien thoai dang luu, nen o so dien
  * thoai de trong va chi gui khi phu huynh nhap so moi.
@@ -113,3 +118,4 @@ export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
 export type AccountProfileInput = z.infer<typeof accountProfileSchema>;
+export type DeleteAccountInput = z.infer<typeof deleteAccountSchema>;

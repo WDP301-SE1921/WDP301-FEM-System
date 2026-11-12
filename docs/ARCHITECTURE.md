@@ -17,6 +17,7 @@ src/
 │   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
 │   ├── edit-account.tsx      # Phu huynh sua ho ten va so dien thoai lien he
 │   ├── change-password.tsx   # Doi mat khau tai khoan dang dang nhap
+│   ├── delete-account.tsx    # Phu huynh xoa tai khoan (nhap mat khau, hoi lai), xong thi ve man chao
 │   ├── children/
 │   │   └── [studentId].tsx   # Phu huynh sua ho so mot con (ho ten, lop, ngay sinh)
 │   ├── assignments/
@@ -41,7 +42,7 @@ src/
 │       ├── grades.tsx        # Diem & bai tap (phu huynh: bai can lam, da nop, da co diem cua con); `?tab=` mo thang tab
 │       ├── tuition.tsx       # Hoc phi (phu huynh: don cho xac nhan, goi hoc, lich su dong hoc phi cua con)
 │       ├── notifications.tsx # Hop thu thong bao cua phu huynh. Khong co nut tren thanh tab, mo tu nut chuong; co nut quay lai
-│       └── profile.tsx       # Tai khoan (phu huynh: anh dai dien, email dang nhap, sua thong tin, doi mat khau, ho so con)
+│       └── profile.tsx       # Tai khoan (phu huynh: anh dai dien, email dang nhap, sua thong tin, doi mat khau, xoa tai khoan, ho so con)
 │
 ├── api/                      # Tang giao tiep HTTP
 │   ├── client.ts             # Axios instance, interceptor, tu dong refresh token
@@ -240,6 +241,6 @@ Endpoint da wire goi BE that, endpoint chua wire chay bang mock. Tu ngay 2026-10
 | ------------- | ----------- | ------------------------ |
 | `development` | FEM Dev     | `com.wdp301.fem.dev`     |
 | `preview`     | FEM Staging | `com.wdp301.fem.preview` |
-| `production`  | FEM System  | `com.wdp301.fem`         |
+| `production`  | EduGrade    | `com.wdp301.fem`         |
 
 Nho bundle id khac nhau nen ca ba ban co the cai song song tren cung mot may.

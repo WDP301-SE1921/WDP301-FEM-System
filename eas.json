@@ -25,6 +25,7 @@
     "production": {
       "autoIncrement": true,
       "environment": "production",
+      "android": { "buildType": "app-bundle" },
       "env": {
         "APP_VARIANT": "production",
         "EXPO_PUBLIC_ENV": "production"
@@ -32,6 +33,24 @@
     }
   },
   "submit": {
-    "production": {}
+    "internal": {
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "internal"
+      }
+    },
+    "production": {
+      "ios": {
+        "appleTeamId": "445T78T533",
+        "ascApiKeyPath": "$EXPO_ASC_API_KEY_PATH",
+        "ascApiKeyIssuerId": "$EXPO_ASC_ISSUER_ID",
+        "ascApiKeyId": "$EXPO_ASC_KEY_ID"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-service-account.json",
+        "track": "production",
+        "releaseStatus": "draft"
+      }
+    }
   }
 }

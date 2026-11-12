@@ -20,7 +20,9 @@ const variants: Record<Variant, { name: string; bundleId: string; scheme: string
     scheme: 'fempreview',
   },
   production: {
-    name: 'FEM System',
+    // Ten duoi icon tren may. Ten tren store ("EduGrade - Phu huynh") nam o store.config.json.
+    // Bundle id com.wdp301.fem giu nguyen (nguoi dung chot 2026-11-12): nop store roi la khong doi duoc.
+    name: 'EduGrade',
     bundleId: 'com.wdp301.fem',
     scheme: 'fem',
   },
@@ -40,14 +42,30 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   // Khoa che do sang (nguoi dung chot ngay 2026-11-03): may bat che do toi van hien giao dien sang
   userInterfaceStyle: 'light',
   ios: {
-    supportsTablet: true,
+    // Chua thu tren iPad; bat lai thi App Store bat chup them bo anh iPad va duyet tren iPad
+    supportsTablet: false,
     bundleIdentifier: current.bundleId,
     icon: './assets/expo.icon',
+    infoPlist: {
+      // Chi dung HTTPS/TLS chuan cua he dieu hanh -> mien khai bao ma hoa, ASC khong hoi lai moi build
+      ITSAppUsesNonExemptEncryption: false,
+      // Trang App Store hien ngon ngu "Tieng Viet" (doc tu binary), khong phai "English"
+      CFBundleDevelopmentRegion: 'vi',
+      CFBundleLocalizations: ['vi'],
+    },
   },
   android: {
     package: current.bundleId,
+    // Thu vien tu gop cac quyen nay vao manifest du app khong dung; de lai thi Play hoi giai trinh
+    blockedPermissions: [
+      'android.permission.RECORD_AUDIO',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+    ],
     adaptiveIcon: {
-      backgroundColor: '#E6F4FE',
+      // Mau primary cua app (#2563EB), trung nen icon (assets/images/android-icon-background.png)
+      backgroundColor: '#2563EB',
       foregroundImage: './assets/images/android-icon-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
@@ -73,9 +91,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#208AEF',
+        // Logo EduGrade tren nen primary (#2563EB), cung mau voi icon
+        backgroundColor: '#2563EB',
         image: './assets/images/splash-icon.png',
-        imageWidth: 76,
+        imageWidth: 140,
       },
     ],
   ],

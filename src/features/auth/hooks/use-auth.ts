@@ -17,7 +17,8 @@ export function useAuth() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isHydrated = useAuthStore((s) => s.isHydrated);
   const isSessionExpired = useAuthStore((s) => s.isSessionExpired);
-  return { user, isAuthenticated, isHydrated, isSessionExpired };
+  const isAccountDeleted = useAuthStore((s) => s.isAccountDeleted);
+  return { user, isAuthenticated, isHydrated, isSessionExpired, isAccountDeleted };
 }
 
 /**

@@ -23,6 +23,8 @@ jest.mock('@/store/auth-store', () => ({
   useAuthStore: (selector: (state: { setUser: jest.Mock }) => unknown) =>
     selector({ setUser: mockSetUser }),
 }));
+// use-account dieu huong sau khi xoa tai khoan; expo-router khong import duoc trong Jest
+jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
 jest.mock('@/lib/logger', () => ({
   logger: { debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn() },
 }));

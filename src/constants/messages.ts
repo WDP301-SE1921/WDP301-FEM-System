@@ -37,6 +37,8 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   AUTH_VERIFICATION_RATE_LIMITED:
     'Bạn đã yêu cầu gửi mã nhiều lần. Vui lòng kiểm tra hộp thư, hoặc thử lại sau 1 giờ.',
   AUTH_CURRENT_PASSWORD_INVALID: 'Mật khẩu hiện tại không đúng.',
+  /** Chi tai khoan phu huynh tu xoa duoc; app khong cho role khac vao nen hiem khi gap. */
+  AUTH_ACCOUNT_DELETE_NOT_ALLOWED: 'Tài khoản này không tự xóa được. Vui lòng liên hệ trung tâm.',
   /** Module `registration-flow` cua BE. */
   PARENT_EMAIL_UNVERIFIED: 'Cần xác minh email trước khi tạo hoặc sửa hồ sơ học sinh.',
   STUDENT_NOT_FOUND: 'Không tìm thấy hồ sơ học sinh.',

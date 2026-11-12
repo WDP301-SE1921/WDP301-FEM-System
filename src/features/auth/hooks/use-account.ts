@@ -1,10 +1,16 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { router } from 'expo-router';
 
 import { queryKeys } from '@/api/query-client';
 import { useAuthStore } from '@/store/auth-store';
 
 import { authApi } from '../api/auth-api';
-import type { AccountProfileInput, ChangePasswordInput, ForgotPasswordInput } from '../schemas';
+import type {
+  AccountProfileInput,
+  ChangePasswordInput,
+  DeleteAccountInput,
+  ForgotPasswordInput,
+} from '../schemas';
 
 /**
  * Sua ten hien thi va so dien thoai (de trong thi BE xoa so dang luu), xong thi ghi tai khoan moi vao
@@ -35,5 +41,21 @@ export function useChangePassword() {
 export function useForgotPassword() {
   return useMutation({
     mutationFn: ({ email }: ForgotPasswordInput) => authApi.forgotPassword(email),
+  });
+}
+
+/**
+ * Xoa tai khoan phu huynh. BE da thu hoi moi phien nen xoa phien tren may ngay, roi ve man chao (man do
+ * bao da xoa xong).
+ */
+export function useDeleteAccount() {
+  const signOut = useAuthStore((s) => s.signOut);
+
+  return useMutation({
+    mutationFn: ({ password }: DeleteAccountInput) => authApi.deleteAccount(password),
+    onSuccess: async () => {
+      await signOut('ACCOUNT_DELETED');
+      router.replace('/(auth)/welcome');
+    },
   });
 }

@@ -20,6 +20,10 @@ expo-env.d.ts
 google-services.json
 GoogleService-Info.plist
 
+# Khoa dich vu Google Play (eas submit) va keystore cuc bo: KHONG commit
+google-service-account.json
+credentials.json
+
 # Metro
 .metro-health-check*
 

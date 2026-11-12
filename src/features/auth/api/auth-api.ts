@@ -112,6 +112,14 @@ export const authApi = {
     await apiClient.delete(Endpoints.auth.avatar);
   },
 
+  /**
+   * Phu huynh tu xoa tai khoan, xac nhan bang mat khau hien tai. BE xoa thong tin ca nhan, giai phong
+   * email va thu hoi moi phien; sai mat khau thi tra 400 `AUTH_CURRENT_PASSWORD_INVALID`.
+   */
+  async deleteAccount(password: string): Promise<void> {
+    await apiClient.delete(Endpoints.auth.me, { data: { password } });
+  },
+
   async logout(): Promise<void> {
     await apiClient.post(Endpoints.auth.logout);
   },

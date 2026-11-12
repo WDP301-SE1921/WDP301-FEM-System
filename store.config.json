@@ -1,0 +1,35 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.0.0",
+    "copyright": "2026 EduGrade",
+    "categories": ["EDUCATION"],
+    "release": {
+      "automaticRelease": false
+    },
+    "info": {
+      "vi": {
+        "title": "EduGrade - Phụ huynh",
+        "subtitle": "Theo dõi việc học của con",
+        "keywords": [
+          "trung tâm",
+          "dạy thêm",
+          "lịch",
+          "điểm danh",
+          "bài tập",
+          "điểm số",
+          "học phí",
+          "toán",
+          "lý",
+          "hóa",
+          "sinh",
+          "thcs",
+          "lớp 6",
+          "lớp 9"
+        ],
+        "promoText": "Lịch học, điểm danh, bài tập và học phí của con tại trung tâm, gom vào một ứng dụng. Một tài khoản phụ huynh theo dõi được nhiều con.",
+        "description": "EduGrade là ứng dụng dành cho phụ huynh có con học tại trung tâm dạy thêm dùng hệ thống EduGrade (Toán, Lý, Hóa, Sinh, khối 6–9). Ứng dụng giúp phụ huynh nắm việc học của con mỗi ngày mà không phải gọi điện hỏi trung tâm.\n\nMỘT TÀI KHOẢN, NHIỀU CON\n• Phụ huynh tự tạo tài khoản bằng email và tự thêm hồ sơ từng con.\n• Chuyển qua lại giữa các con ngay trên màn hình chính.\n• Sau khi trung tâm ghi danh, môn và lớp mới tự hiện trong ứng dụng.\n\nLỊCH HỌC VÀ ĐIỂM DANH\n• Lịch học theo tuần: giờ học, giáo viên, phòng học.\n• Buổi học bù và buổi bị huỷ được ghi rõ kèm lý do.\n• Lịch sử điểm danh từng buổi: có mặt, vắng, học bù, nghỉ có phép.\n• Tỷ lệ đi học của từng môn.\n\nBÀI TẬP VÀ KẾT QUẢ\n• Con làm và nộp bài tập về nhà ngay trên điện thoại của phụ huynh.\n• Chụp ảnh bài làm hoặc gửi tệp PDF cho giáo viên.\n• Bài làm dở được lưu lại trên máy, mở lại làm tiếp.\n• Xem điểm và đáp án đúng sau khi giáo viên công bố.\n• Lộ trình bài học và mục tiêu của từng khóa.\n\nHỌC PHÍ\n• Xem các gói học phí, phiếu thu và biên lai đã đóng.\n• Học phí đóng trực tiếp tại trung tâm, ứng dụng không thu tiền.\n\nTHÔNG BÁO\n• Hộp thư thông báo trong ứng dụng: bài tập mới, điểm mới, thay đổi lịch học.\n\nLưu ý: EduGrade dành cho phụ huynh. Giáo viên và nhân viên trung tâm dùng EduGrade trên web."
+      }
+    }
+  }
+}

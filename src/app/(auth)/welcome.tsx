@@ -5,6 +5,7 @@ import { Screen } from '@/components/common/screen';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
+import { AccountDeletedNotice } from '@/features/auth';
 import { BrandHeader, ValueProposition, WelcomeHero } from '@/features/onboarding';
 
 /** Man hinh chao cho nguoi chua dang nhap: tao tai khoan hoac dang nhap. */
@@ -12,6 +13,7 @@ export default function WelcomeScreen() {
   return (
     <Screen contentStyle={styles.content}>
       <BrandHeader />
+      <AccountDeletedNotice />
       <WelcomeHero />
       <ValueProposition />
 

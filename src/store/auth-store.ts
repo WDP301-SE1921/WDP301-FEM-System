@@ -7,8 +7,11 @@ import { logger } from '@/lib/logger';
 import { secureStorage, storage } from '@/lib/storage';
 import type { AuthSession, User } from '@/types/auth';
 
-/** `EXPIRED`: app tu dang xuat vi khong lam moi duoc phien (het han hoac bi thu hoi). */
-export type SignOutReason = 'USER' | 'EXPIRED';
+/**
+ * `EXPIRED`: app tu dang xuat vi khong lam moi duoc phien (het han hoac bi thu hoi).
+ * `ACCOUNT_DELETED`: phu huynh vua xoa tai khoan, BE da thu hoi moi phien.
+ */
+export type SignOutReason = 'USER' | 'EXPIRED' | 'ACCOUNT_DELETED';
 
 type AuthState = {
   user: User | null;
@@ -17,6 +20,8 @@ type AuthState = {
   isHydrated: boolean;
   /** true sau khi app tu dang xuat vi het phien: man dang nhap bao ly do thay vi im lang. */
   isSessionExpired: boolean;
+  /** true sau khi phu huynh xoa tai khoan: man chao bao da xoa xong. */
+  isAccountDeleted: boolean;
   hydrate: () => Promise<void>;
   /** Luu phien BE tra ve sau login, register. */
   signIn: (session: AuthSession) => Promise<void>;
@@ -30,6 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isHydrated: false,
   isSessionExpired: false,
+  isAccountDeleted: false,
 
   hydrate: async () => {
     try {
@@ -51,7 +57,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       secureStorage.set(StorageKeys.refreshToken, tokens.refreshToken),
       storage.setJson(StorageKeys.user, user),
     ]);
-    set({ user, isAuthenticated: true, isSessionExpired: false });
+    set({ user, isAuthenticated: true, isSessionExpired: false, isAccountDeleted: false });
   },
 
   setUser: async (user) => {
@@ -69,7 +75,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       storage.remove(StorageKeys.notifiedIds),
     ]);
     queryClient.clear();
-    set({ user: null, isAuthenticated: false, isSessionExpired: reason === 'EXPIRED' });
+    set({
+      user: null,
+      isAuthenticated: false,
+      isSessionExpired: reason === 'EXPIRED',
+      isAccountDeleted: reason === 'ACCOUNT_DELETED',
+    });
   },
 }));
 
