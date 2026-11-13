@@ -28,12 +28,14 @@ import {
   getAttachmentLabels,
   getBlankCoveredPositions,
   getFileKind,
+  getQuestionAttachments,
   getQuestionFileLabels,
   getSubmitConfirmMessage,
   getSubmitHint,
   formatAttachmentCount,
   formatAttachmentScope,
   isCoveredByAttachments,
+  isSameQuestionScope,
   toAnswerDraft,
   toAssignmentDraft,
   toDraftAttachments,
@@ -615,5 +617,25 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
     expect(formatPoints(1)).toBe('1 điểm');
     expect(formatPoints(2.5)).toBe('2.5 điểm');
     expect(formatAttempt(1, 2)).toBe('Lần nộp 1/2');
+  });
+});
+
+describe('khu tep rieng cua cau tu luan', () => {
+  const forQ2 = { fileId: 'f-q2', questionIds: ['q2'] };
+  const forQ3 = { fileId: 'f-q3', questionIds: ['q3'] };
+  const wholeAssignment = { fileId: 'f-all', questionIds: [] };
+  const files = [forQ2, wholeAssignment, forQ3];
+
+  it('getQuestionAttachments: tep gan voi cau, cau tu luan dau tien hien them tep cua ca bai', () => {
+    expect(getQuestionAttachments('q2', files, true)).toEqual([forQ2, wholeAssignment]);
+    expect(getQuestionAttachments('q3', files, false)).toEqual([forQ3]);
+    expect(getQuestionAttachments('q4', files, false)).toEqual([]);
+  });
+
+  it('isSameQuestionScope: so khop dung danh sach cau, ke ca danh sach rong', () => {
+    expect(isSameQuestionScope(['q2'], ['q2'])).toBe(true);
+    expect(isSameQuestionScope([], [])).toBe(true);
+    expect(isSameQuestionScope(['q2'], ['q3'])).toBe(false);
+    expect(isSameQuestionScope(['q2'], [])).toBe(false);
   });
 });

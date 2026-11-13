@@ -8,22 +8,26 @@ import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Radius, Spacing } from '@/constants/theme';
 
+import { MAX_SUBMISSION_FILES } from '../constants';
 import { useAssignmentDraft } from '../hooks/use-assignment-draft';
 import { useSubmissionUpload } from '../hooks/use-submission-upload';
 import { useSubmitAssignment } from '../hooks/use-submit-assignment';
 import type { AssignmentDraft, AssignmentQuestion, AssignmentRef } from '../types';
 import {
   getBlankCoveredPositions,
+  getQuestionAttachments,
   getQuestionFileLabels,
   getSubmitConfirmMessage,
   getSubmitHint,
   getUnansweredPositions,
+  isSameQuestionScope,
   toSubmitAssignmentPayload,
 } from '../utils';
 
 import { AssignmentAttachments } from './assignment-attachments';
 import { AssignmentDraftNote } from './assignment-draft-note';
 import { QuestionAnswerCard } from './question-answer-card';
+import { QuestionAttachments } from './question-attachments';
 
 const EMPTY_DRAFT: AssignmentDraft = { answers: {}, attachments: [] };
 
@@ -43,8 +47,9 @@ export type AssignmentAnswerFormProps = AssignmentRef & {
 /**
  * Con lam bai va nop qua phien dang nhap cua phu huynh (SRS muc 3.5). Cau tra loi la state cua man
  * hinh thay vi react-hook-form: so cau va loai cau thay doi theo tung de, quy tac duy nhat la tra loi
- * du moi cau (BE tu choi bai thieu cau: INVALID_ANSWERS); cau co anh hoac PDF bai lam (tep cua ca bai
- * hoac tep da gan voi cau) thi de trong duoc, ke ca cau trac nghiem. Bai lam (ca tep) luu tren may
+ * du moi cau (BE tu choi bai thieu cau: INVALID_ANSWERS). Moi cau tu luan co khu anh/PDF rieng ngay
+ * duoi cau, tep gui kem dung cau qua `answers[].fileIds`; de khong co cau tu luan thi dung khu tep chung
+ * va gan cau cho tung tep. Cau co anh hoac PDF bai lam thi de trong duoc. Bai lam (ca tep) luu tren may
  * trong luc lam; bam nop khi con thieu cau thi chi ra cau thieu, du cau thi hoi lai truoc khi nop (ke
  * ca cau de trong) vi nop roi khong lay lai duoc.
  */
@@ -77,6 +82,9 @@ export function AssignmentAnswerForm({
 
   const { answers, attachments } = draft;
   const isUploading = upload.pending !== null;
+  // BE nhan toi da MAX_SUBMISSION_FILES tep cho ca lan nop, tinh ca tep dang tai
+  const remainingSlots = MAX_SUBMISSION_FILES - attachments.length - (isUploading ? 1 : 0);
+  const firstEssayId = questions.find(({ kind }) => kind === 'ESSAY')?.id;
   const unanswered = getUnansweredPositions(questions, answers, attachments);
   const blankPositions = getBlankCoveredPositions(questions, answers, attachments);
   const missing = new Set(shouldShowMissing ? unanswered : []);
@@ -110,30 +118,61 @@ export function AssignmentAnswerForm({
     <View style={styles.form}>
       <AssignmentDraftNote isRestored={restoreStatus === 'RESTORED'} />
 
-      {questions.map((question, index) => (
-        <QuestionAnswerCard
-          key={question.id}
-          position={index + 1}
-          question={question}
-          value={answers[question.id] ?? ''}
-          isMissing={missing.has(index + 1)}
-          fileLabels={getQuestionFileLabels(question.id, attachments)}
-          onChange={(answer) => updateAnswer(question.id, answer)}
-        />
-      ))}
+      {questions.map((question, index) => {
+        const position = index + 1;
+        const isEssay = question.kind === 'ESSAY';
+        // Cau tu luan: chup hoac gui tep ngay duoi cau, tep tu gan voi cau nay
+        const scope = [question.id];
+        const isScope = (questionIds: readonly string[] | null | undefined) =>
+          questionIds ? isSameQuestionScope(questionIds, scope) : false;
+        const essayAttachments = isEssay ? (
+          <QuestionAttachments
+            position={position}
+            attachments={getQuestionAttachments(
+              question.id,
+              attachments,
+              question.id === firstEssayId,
+            )}
+            uploading={isScope(upload.pending?.questionIds) ? upload.pending : null}
+            isBusy={isUploading}
+            remainingSlots={remainingSlots}
+            problem={isScope(upload.problem?.questionIds) ? upload.problem : null}
+            uploadError={isScope(upload.uploadScope) ? upload.uploadError : null}
+            onAddImage={(source) => void upload.addImage(source, scope)}
+            onAddPdf={() => void upload.addPdf(scope)}
+            onRemove={removeAttachment}
+          />
+        ) : undefined;
 
-      {/* Ca de chi co trac nghiem cung gui duoc tep: con lam bai kiem tra tren giay roi chup lai */}
-      <AssignmentAttachments
-        questions={questions}
-        attachments={attachments}
-        pending={upload.pending}
-        problem={upload.problem}
-        uploadError={upload.uploadError}
-        onAddImage={(source) => void upload.addImage(source)}
-        onAddPdf={() => void upload.addPdf()}
-        onRemove={removeAttachment}
-        onChangeQuestions={setAttachmentQuestions}
-      />
+        return (
+          <QuestionAnswerCard
+            key={question.id}
+            position={position}
+            question={question}
+            value={answers[question.id] ?? ''}
+            isMissing={missing.has(position)}
+            // Cau tu luan da hien tep ngay duoi cau; cau trac nghiem ghi "Ảnh 1" cua khu tep chung
+            fileLabels={isEssay ? [] : getQuestionFileLabels(question.id, attachments)}
+            onChange={(answer) => updateAnswer(question.id, answer)}
+            attachments={essayAttachments}
+          />
+        );
+      })}
+
+      {/* De chi co trac nghiem van gui duoc tep: con lam bai kiem tra tren giay roi chup lai */}
+      {firstEssayId ? null : (
+        <AssignmentAttachments
+          questions={questions}
+          attachments={attachments}
+          pending={upload.pending}
+          problem={upload.problem}
+          uploadError={upload.uploadError}
+          onAddImage={(source) => void upload.addImage(source)}
+          onAddPdf={() => void upload.addPdf()}
+          onRemove={removeAttachment}
+          onChangeQuestions={setAttachmentQuestions}
+        />
+      )}
 
       <ThemedText
         type={isShowingMissing ? 'smallBold' : 'small'}
