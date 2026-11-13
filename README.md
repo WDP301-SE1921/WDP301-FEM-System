@@ -140,7 +140,7 @@ eas build:list                                   # xem cac ban da build
 | `preview`     | APK cai noi bo, ten app "FEM Staging", cai song song ban chinh                      | `preview`            |
 | `production`  | Ban phat hanh len store (AAB cho Google Play), ten app "EduGrade", tu tang so build | `production`         |
 
-Ban build tren EAS **khong doc `.env`** (file bi gitignore nen khong duoc upload). `EXPO_PUBLIC_API_URL` cua ban build dat tren EAS theo environment cua profile, hien tro toi BE tren Render cho `preview` va `production`:
+Ban build tren EAS **khong doc `.env`** (file bi gitignore nen khong duoc upload). `EXPO_PUBLIC_API_URL` cua ban build dat tren EAS theo environment cua profile, hien tro toi BE production tren VPS (`https://api.edugrade.45.77.168.110.sslip.io/api/v1`, tu 2026-11-13) cho `preview` va `production`:
 
 ```bash
 eas env:list preview

@@ -2,16 +2,16 @@
 
 Dung ngay 2026-11-12, lam theo cach du an VanGo dang phat hanh (`VanGo/fe-system/apps/mobile/RELEASE.md`). Ban dau tien: `1.0.0`.
 
-| Muc                             | Gia tri                                                                                 |
-| ------------------------------- | --------------------------------------------------------------------------------------- |
-| Ten duoi icon                   | `EduGrade` (`app.config.ts`, variant `production`)                                      |
-| Ten tren store                  | `EduGrade - Phụ huynh` (`store.config.json`)                                            |
-| Bundle ID / package             | `com.wdp301.fem` (nguoi dung chot 2026-11-12, nop roi KHONG doi duoc)                   |
-| EAS project                     | `@nhanle6/wdp301-fem-system`                                                            |
-| Tai khoan Apple                 | Dung chung team cua VanGo: Team ID `445T78T533`, cung App Store Connect API key         |
-| Phap nhan tren trang chinh sach | Cong ty TNHH Cong nghe Nadius, MST 0319699551, giong VanGo (nguoi dung chot 2026-11-12) |
-| Tai khoan Google Play           | Dung chung Play Console va service account cua VanGo                                    |
-| BE production                   | `EXPO_PUBLIC_API_URL` trong environment `production` cua EAS (hien la BE tren Render)   |
+| Muc                             | Gia tri                                                                                                                                                              |
+| ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ten duoi icon                   | `EduGrade` (`app.config.ts`, variant `production`)                                                                                                                   |
+| Ten tren store                  | `EduGrade - Phụ huynh` (`store.config.json`)                                                                                                                         |
+| Bundle ID / package             | `com.wdp301.fem` (nguoi dung chot 2026-11-12, nop roi KHONG doi duoc)                                                                                                |
+| EAS project                     | `@nhanle6/wdp301-fem-system`                                                                                                                                         |
+| Tai khoan Apple                 | Dung chung team cua VanGo: Team ID `445T78T533`, cung App Store Connect API key                                                                                      |
+| Phap nhan tren trang chinh sach | Cong ty TNHH Cong nghe Nadius, MST 0319699551, giong VanGo (nguoi dung chot 2026-11-12)                                                                              |
+| Tai khoan Google Play           | Dung chung Play Console va service account cua VanGo                                                                                                                 |
+| BE production                   | `EXPO_PUBLIC_API_URL` trong environment `production` cua EAS (tu 2026-11-13: `https://api.edugrade.45.77.168.110.sslip.io/api/v1`, BE tren VPS, HTTPS Let's Encrypt) |
 
 Cac tep:
 
@@ -28,14 +28,14 @@ Cac tep:
 
 ## 0. Viec CHAN, phai xong truoc khi gui duyet
 
-| #   | Viec                                         | Vi sao                                                                                                                                                          | Trang thai 2026-11-12                                                                                                                                                                           |
-| --- | -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **Xoa tai khoan trong app**                  | Apple Guideline 5.1.1(v): app cho tu tao tai khoan thi phai cho xoa tai khoan ngay trong app. Google Play cung bat co duong xoa trong app va mot URL tren web   | Dang lam o phien khac (2026-11-12, chua commit): BE `DELETE /auth/me`, mobile man `delete-account` o tab Tai khoan. Phai commit, deploy BE len Render va co trong ban build truoc khi gui duyet |
-| 2   | **Icon va splash that**                      | Icon mau cua Expo de bi tu choi (2.3.8, 4.1)                                                                                                                    | XONG 2026-11-12: icon iOS (`assets/expo.icon`), `icon.png`, adaptive icon Android (nen, logo, ban don sac), splash nen `#2563EB`, favicon. Chua xem tren may that                               |
-| 3   | **Chinh sach quyen rieng tu dang cong khai** | Ca hai store bat buoc co URL mo duoc khong can dang nhap                                                                                                        | Noi dung xong (thong tin Nadius nhu VanGo). Con: dang len URL cong khai (muc 1.5)                                                                                                               |
-| 4   | **BE production on dinh**                    | BE tren Render goi mien phi ngu sau 15 phut khong dung, lan goi dau co the qua 15 giay timeout cua app. Nguoi duyet gap loi ngay man dang nhap la tu choi (2.1) | Nen nang Render len goi tra phi (it nhat trong thoi gian duyet)                                                                                                                                 |
-| 5   | **Email gui duoc tu BE production**          | Nguoi duyet Apple hay thu dang ky tai khoan moi. Dang ky xong phai nhap ma xac minh gui qua email, chua xac minh thi khong them con duoc                        | Chua kiem `SMTP_URL`, `MAIL_FROM` tren Render                                                                                                                                                   |
-| 6   | **Tai khoan demo tren BE production**        | App bat dang nhap, nguoi duyet can tai khoan co san du lieu                                                                                                     | Chua tao. Xem muc 1.6                                                                                                                                                                           |
+| #   | Viec                                         | Vi sao                                                                                                                                                        | Trang thai 2026-11-12                                                                                                                                                      |
+| --- | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Xoa tai khoan trong app**                  | Apple Guideline 5.1.1(v): app cho tu tao tai khoan thi phai cho xoa tai khoan ngay trong app. Google Play cung bat co duong xoa trong app va mot URL tren web | XONG 2026-11-13: BE `DELETE /auth/me` da co tren BE VPS (goi khong token tra 401), mobile man `delete-account` o tab Tai khoan da commit. Can co trong ban build gui duyet |
+| 2   | **Icon va splash that**                      | Icon mau cua Expo de bi tu choi (2.3.8, 4.1)                                                                                                                  | XONG 2026-11-12: icon iOS (`assets/expo.icon`), `icon.png`, adaptive icon Android (nen, logo, ban don sac), splash nen `#2563EB`, favicon. Chua xem tren may that          |
+| 3   | **Chinh sach quyen rieng tu dang cong khai** | Ca hai store bat buoc co URL mo duoc khong can dang nhap                                                                                                      | Noi dung xong (thong tin Nadius nhu VanGo). Con: dang len URL cong khai (muc 1.5)                                                                                          |
+| 4   | **BE production on dinh**                    | Nguoi duyet gap loi ngay man dang nhap la tu choi (2.1). Ban build chan `http://` nen BE phai co HTTPS                                                        | 2026-11-13: BE chuyen sang VPS, HTTPS chung chi Let's Encrypt het han 2027-02-11 (certbot tu gia han, kiem `certbot renew --dry-run` tren VPS). Realtime qua nginx tra 101 |     |
+| 5   | **Email gui duoc tu BE production**          | Nguoi duyet Apple hay thu dang ky tai khoan moi. Dang ky xong phai nhap ma xac minh gui qua email, chua xac minh thi khong them con duoc                      | Chua kiem `SMTP_URL`, `MAIL_FROM` tren BE VPS                                                                                                                              |
+| 6   | **Tai khoan demo tren BE production**        | App bat dang nhap, nguoi duyet can tai khoan co san du lieu                                                                                                   | Chua tao. Xem muc 1.6                                                                                                                                                      |
 
 ---
 
@@ -79,10 +79,10 @@ Phai co `EXPO_PUBLIC_API_URL=https://.../api/v1` tro dung BE production. Doi thi
 ### 1.5 Dang trang chinh sach
 
 1. Noi dung da dien (Nadius, `support@vangon.vn`, `0559 294 401`, xu ly yeu cau xoa trong 7 ngay lam viec, xoa trong 30 ngay, giong VanGo). Trang xoa tai khoan mo ta dung `DELETE /auth/me` cua BE: xoa thong tin ca nhan cua phu huynh, giu ho so hoc tap cua con va chung tu hoc phi. BE doi cach xoa thi sua trang nay.
-2. Hai trang nam trong web EduGrade (`WDP301-FE-System/public/`, nguoi dung chot 2026-11-12, chuyen tu `docs/store-release/` sang de chi con mot ban). Web chay tren Vercel (khong co ten mien rieng, nguoi dung bao 2026-11-12). Deploy web la co: `https://wdp301-fe-system-se1921.vercel.app/privacy.html` va `https://wdp301-fe-system-se1921.vercel.app/delete-account.html`. `proxy.ts` cua web chi chan `/login`, `/manager`, `/staff`, `/teacher` nen hai trang khong can dang nhap. Sua noi dung thi sua thang hai tep do.
+2. Hai trang nam trong web EduGrade (`WDP301-FE-System/public/`, nguoi dung chot 2026-11-12, chuyen tu `docs/store-release/` sang de chi con mot ban). Tu 2026-11-13 web chay tren VPS (`https://edugrade.45.77.168.110.sslip.io`, truoc do la Vercel), deploy bang workflow `.github/workflows/deploy.yml` cua repo web. Deploy web la co: `https://edugrade.45.77.168.110.sslip.io/privacy.html` va `https://edugrade.45.77.168.110.sslip.io/delete-account.html`. `proxy.ts` cua web chi chan `/login`, `/manager`, `/staff`, `/teacher` nen hai trang khong can dang nhap. Sua noi dung thi sua thang hai tep do.
 3. Mo thu ca hai URL bang tab an danh.
-4. Da dien vao `store.config.json` (2026-11-12): `privacyPolicyUrl` va `supportUrl` deu la `https://wdp301-fe-system-se1921.vercel.app/privacy.html`. Support URL chua tro trang chu vi muc "Lien he trung tam" cua trang chu web dang la so lieu mau (0913 345 678, `lienhe@edugrade.vn`, So 1 Dai Co Viet), lech thong tin Nadius. Sua muc do thanh thong tin that thi doi `supportUrl` ve trang chu duoc.
-5. Truoc khi nop: mo `https://wdp301-fe-system-se1921.vercel.app/privacy.html` va `/delete-account.html` bang tab an danh, phai ra trang chu khong phai 404. Ngay 2026-11-12 ca hai con 404 vi chua commit va deploy.
+4. Da dien vao `store.config.json` (2026-11-13): `privacyPolicyUrl` va `supportUrl` deu la `https://edugrade.45.77.168.110.sslip.io/privacy.html`. Support URL chua tro trang chu vi muc "Lien he trung tam" cua trang chu web dang la so lieu mau (0913 345 678, `lienhe@edugrade.vn`, So 1 Dai Co Viet), lech thong tin Nadius. Sua muc do thanh thong tin that thi doi `supportUrl` ve trang chu duoc.
+5. Truoc khi nop: mo `https://edugrade.45.77.168.110.sslip.io/privacy.html` va `/delete-account.html` bang tab an danh, phai ra trang chu khong phai 404. Ngay 2026-11-13 ca hai con 404: hai tep da co tren `main` cua web nhung workflow deploy web loi `Error: missing server host` (thieu secret dia chi VPS cho buoc SSH), VPS dang chay ban web cu.
 
 ### 1.6 Tai khoan demo
 
@@ -187,7 +187,7 @@ Lam het muc **Policy -> App content** truoc khi gui duyet:
 - **Ads**: No.
 - **Content rating**: bang hoi IARC, danh muc Education/Reference, tra loi khong cho moi noi dung nhay cam.
 - **Target audience and content**: **can nguoi dung chot**. Tai khoan la cua phu huynh (18+), nhung hoc sinh lop 6-9 (11-15 tuoi) dung app qua phien cua phu huynh. Chon them nhom duoi 13 tuoi thi app phai theo **Families Policy** cua Google (app khong co quang cao, khong SDK theo doi nen kha thi, nhung duyet ky hon). Chi chon 18+ thi phai the hien dung la app cho phu huynh, va van co rui ro Google danh gia khac.
-- **Data safety**: thu thap **Yes**, chia se **No** (nha cung cap ha tang khong tinh la chia se), ma hoa khi truyen **Yes**, cho yeu cau xoa **Yes** (URL `https://wdp301-fe-system-se1921.vercel.app/delete-account.html`).
+- **Data safety**: thu thap **Yes**, chia se **No** (nha cung cap ha tang khong tinh la chia se), ma hoa khi truyen **Yes**, cho yeu cau xoa **Yes** (URL `https://edugrade.45.77.168.110.sslip.io/delete-account.html`).
 
   | Loai du lieu                                                       | Bat buoc | Muc dich                              |
   | ------------------------------------------------------------------ | -------- | ------------------------------------- |
@@ -227,6 +227,6 @@ Sau do: Internal testing chay on -> (neu bi ap luat 12 nguoi) Closed testing 14 
 | `metadata:push` bao thieu `versionString`                                                    | Thieu `apple.version` hoac lech `version` trong `app.config.ts` | Dong bo hai cho                                                                       |
 | Build khong chon duoc o muc Build cua ASC                                                    | Apple chua xu ly xong, hoac version lech                        | Doi 30 phut, kiem version                                                             |
 | `eas submit` Android bao app chua co ban nao                                                 | Lan dau phai tai tay                                            | Muc 4                                                                                 |
-| Nguoi duyet bao app khong tai duoc du lieu                                                   | BE Render dang ngu, hoac tai khoan demo het du lieu             | Muc 0.4, 1.6                                                                          |
+| Nguoi duyet bao app khong tai duoc du lieu                                                   | BE VPS dang tat hoac loi, hoac tai khoan demo het du lieu       | Muc 0.4, 1.6                                                                          |
 
 Tai lieu Expo: [EAS Submit](https://docs.expo.dev/submit/introduction/), [iOS](https://docs.expo.dev/submit/ios/), [Android](https://docs.expo.dev/submit/android/), [EAS Metadata](https://docs.expo.dev/eas/metadata/).
