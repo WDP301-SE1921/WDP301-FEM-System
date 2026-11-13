@@ -42,6 +42,7 @@
     "production": {
       "ios": {
         "appleTeamId": "445T78T533",
+        "ascAppId": "6834450551",
         "ascApiKeyPath": "$EXPO_ASC_API_KEY_PATH",
         "ascApiKeyIssuerId": "$EXPO_ASC_ISSUER_ID",
         "ascApiKeyId": "$EXPO_ASC_KEY_ID"
