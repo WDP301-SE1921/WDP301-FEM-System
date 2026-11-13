@@ -1,5 +1,11 @@
 import type { ReactNode, Ref } from 'react';
-import { StyleSheet, TextInput, View, type TextInputProps } from 'react-native';
+import {
+  StyleSheet,
+  TextInput,
+  View,
+  type TextInputInstance,
+  type TextInputProps,
+} from 'react-native';
 
 import { FontFamily, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -18,7 +24,7 @@ export type InputProps = TextInputProps & {
   leadingIcon?: IconName;
   /** Phan tu o cuoi o nhap (nut hien mat khau, dau tich...), can giua trong `ADORNMENT_WIDTH`. */
   trailing?: ReactNode;
-  ref?: Ref<TextInput>;
+  ref?: Ref<TextInputInstance>;
 };
 
 export function Input({ label, error, leadingIcon, trailing, style, ref, ...rest }: InputProps) {

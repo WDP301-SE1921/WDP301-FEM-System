@@ -37,7 +37,8 @@ const FAMILY_BY_WEIGHT: Record<LoadedWeight, string> = {
 export function ThemedText({ style, type = 'default', themeColor, ...rest }: ThemedTextProps) {
   const theme = useTheme();
   const color = theme[themeColor ?? VARIANT_COLORS[type] ?? 'text'];
-  const textStyle = StyleSheet.flatten([{ color }, styles[type], style]);
+  // RN 0.88 khai bao `flatten` co the tra `undefined`; mang luon co `{ color }` nen thuc te khong rong
+  const textStyle: TextStyle = StyleSheet.flatten([{ color }, styles[type], style]) ?? {};
 
   return <Text style={[textStyle, getFontFace(textStyle)]} {...rest} />;
 }

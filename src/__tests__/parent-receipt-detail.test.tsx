@@ -75,7 +75,7 @@ describe('features/parent-dashboard/ParentReceiptDetail', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     api.getCenterInfo.mockResolvedValue(NO_CENTER_INFO);
-    shareSpy.mockResolvedValue({ action: 'sharedAction' });
+    shareSpy.mockResolvedValue({ action: 'sharedAction', activityType: undefined });
   });
 
   it('hien bien lai: ma, thoi gian thu, hoc sinh, goi hoc, so tien bang so va bang chu', async () => {

@@ -1,4 +1,6 @@
 import * as Notifications from 'expo-notifications';
+// Import ten rieng: luat import/namespace khong doc ra enum nay trong ban build expo-notifications 58
+import { AndroidImportance } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { logger } from './logger';
@@ -45,7 +47,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
       try {
         await Notifications.setNotificationChannelAsync(ANDROID_CHANNEL_ID, {
           name: 'Thông báo học tập EduGrade',
-          importance: Notifications.AndroidImportance.MAX,
+          importance: AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
           lightColor: PRIMARY_NOTIFICATION_COLOR,
           sound: 'default',

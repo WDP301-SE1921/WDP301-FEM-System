@@ -39,16 +39,11 @@ export function AppProviders({ children }: PropsWithChildren) {
         <QueryClientProvider client={queryClient}>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             {/*
-              StatusBar cua React Native mac dinh `translucent: false` va nen den tren Android. Ban
-              build ve tran vien nen bo qua hai gia tri nay, nhung Expo Go tren Android thi khong: thanh
-              trang thai bi to den, icon gio va pin mau toi chim mat, noi dung bi day xuong. Dat ro
-              trong suot de Android giong iOS, safe area tu chua cho thanh trang thai.
+              Tu RN 0.88 (Expo SDK 58) Android luon ve tran vien: thanh trang thai trong suot san va
+              StatusBar bo `translucent`, `backgroundColor`. Chi con chon mau icon; safe area tu chua
+              cho thanh trang thai.
             */}
-            <StatusBar
-              barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'}
-              translucent
-              backgroundColor="transparent"
-            />
+            <StatusBar barStyle={colorScheme === 'dark' ? 'light-content' : 'dark-content'} />
             {children}
           </ThemeProvider>
         </QueryClientProvider>

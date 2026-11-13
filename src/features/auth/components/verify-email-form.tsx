@@ -22,7 +22,8 @@ export function VerifyEmailForm({ onSubmit, isPending, error }: VerifyEmailFormP
     resolver: zodResolver(verifyEmailSchema),
     defaultValues: { code: '' },
   });
-  const submit = handleSubmit(onSubmit);
+  // Goi khong kem su kien: su kien bam cua RN 0.88 khong con khop kieu su kien DOM ma react-hook-form nhan
+  const submit = () => handleSubmit(onSubmit)();
 
   return (
     <View style={styles.form}>

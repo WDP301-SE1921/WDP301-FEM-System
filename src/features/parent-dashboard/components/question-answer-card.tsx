@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { Input } from '@/components/ui/input';
@@ -26,6 +27,8 @@ export type QuestionAnswerCardProps = {
   /** Nhan cac tep bai lam phu huynh da gan voi cau nay, vd `["Ảnh 1"]`. */
   fileLabels: readonly string[];
   onChange: (answer: string) => void;
+  /** Khu anh/file bai lam rieng cua cau tu luan, hien duoi o nhap bai lam. */
+  attachments?: ReactNode;
 };
 
 /**
@@ -39,6 +42,7 @@ export function QuestionAnswerCard({
   isMissing,
   fileLabels,
   onChange,
+  attachments,
 }: QuestionAnswerCardProps) {
   const label = `Câu ${position}`;
 
@@ -61,15 +65,18 @@ export function QuestionAnswerCard({
           ))}
         </View>
       ) : (
-        <Input
-          label={`Bài làm câu ${position}`}
-          placeholder="Gõ bài làm vào đây"
-          multiline
-          maxLength={ESSAY_MAX_LENGTH}
-          value={value}
-          onChangeText={onChange}
-          style={styles.essay}
-        />
+        <View style={styles.essayGroup}>
+          <Input
+            label={`Bài làm câu ${position}`}
+            placeholder="Gõ bài làm vào đây"
+            multiline
+            maxLength={ESSAY_MAX_LENGTH}
+            value={value}
+            onChangeText={onChange}
+            style={styles.essay}
+          />
+          {attachments}
+        </View>
       )}
       {fileLabels.length > 0 ? <QuestionFileNote labels={fileLabels} /> : null}
     </QuestionFrame>
@@ -78,5 +85,6 @@ export function QuestionAnswerCard({
 
 const styles = StyleSheet.create({
   choices: { gap: Spacing.two },
+  essayGroup: { gap: Spacing.three },
   essay: { minHeight: ESSAY_MIN_HEIGHT, textAlignVertical: 'top' },
 });

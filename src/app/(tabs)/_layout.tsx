@@ -37,7 +37,7 @@ const TABS: readonly TabConfig[] = [
   },
 ];
 
-function renderTabBar({ state, navigation, insets }: BottomTabBarProps) {
+function renderTabBar({ state, emitter, navigateToTab, insets }: BottomTabBarProps) {
   const focusedKey = state.routes[state.index]?.key;
   const items: TabBarItem[] = state.routes.flatMap((route) => {
     const tab = TABS.find(({ name }) => name === route.name);
@@ -51,9 +51,9 @@ function renderTabBar({ state, navigation, insets }: BottomTabBarProps) {
   const handlePress = (routeKey: string) => {
     const route = state.routes.find(({ key }) => key === routeKey);
     if (!route) return;
-    const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+    const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
     if (route.key !== focusedKey && !event.defaultPrevented) {
-      navigation.navigate(route.name, route.params);
+      navigateToTab(route.key);
     }
   };
 
@@ -62,7 +62,7 @@ function renderTabBar({ state, navigation, insets }: BottomTabBarProps) {
       items={items}
       bottomInset={insets.bottom}
       onPress={handlePress}
-      onLongPress={(routeKey) => navigation.emit({ type: 'tabLongPress', target: routeKey })}
+      onLongPress={(routeKey) => emitter.emit({ type: 'tabLongPress', target: routeKey })}
     />
   );
 }

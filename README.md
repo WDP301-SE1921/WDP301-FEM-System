@@ -30,7 +30,7 @@ Du an gom ba repo:
 
 | Thanh phan   | Cong nghe                            |
 | ------------ | ------------------------------------ |
-| Framework    | Expo SDK 57 / React Native 0.86      |
+| Framework    | Expo SDK 58 / React Native 0.88      |
 | Ngon ngu     | TypeScript (strict)                  |
 | Dieu huong   | expo-router (file-based routing)     |
 | Server state | TanStack React Query                 |

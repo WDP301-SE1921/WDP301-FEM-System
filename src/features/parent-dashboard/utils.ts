@@ -1128,6 +1128,27 @@ export function getQuestionFileLabels(
   );
 }
 
+/** Hai danh sach cau giong nhau, de biet tep dang tai hay loi chon tep thuoc khu tep nao. */
+export function isSameQuestionScope(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((id, index) => id === b[index]);
+}
+
+/**
+ * Tep hien o khu tep rieng cua mot cau tu luan: tep da gan voi cau nay. Cau tu luan dau tien con hien
+ * them tep dung cho ca bai (ban nhap hoac lan nop truoc khi chua co khu tep theo cau), de tep do van
+ * thay va xoa duoc.
+ */
+export function getQuestionAttachments<T extends Pick<SubmissionAttachment, 'questionIds'>>(
+  questionId: string,
+  attachments: readonly T[],
+  isFirstEssay: boolean,
+): T[] {
+  return attachments.filter(
+    ({ questionIds }) =>
+      questionIds.includes(questionId) || (isFirstEssay && questionIds.length === 0),
+  );
+}
+
 /** Cac cau cua mot tep, vd `Câu 1, Câu 3`; `Cả bài` khi tep chua gan cau nao. */
 export function formatAttachmentScope(
   questionIds: readonly string[],
