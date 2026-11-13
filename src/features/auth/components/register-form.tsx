@@ -20,7 +20,8 @@ export function RegisterForm() {
     defaultValues: { displayName: '', email: '', phone: '', password: '', confirmPassword: '' },
   });
 
-  const onSubmit = handleSubmit((values) => register.mutate(values));
+  // Goi khong kem su kien: su kien bam cua RN 0.88 khong con khop kieu su kien DOM ma react-hook-form nhan
+  const onSubmit = () => handleSubmit((values) => register.mutate(values))();
 
   return (
     <View style={styles.form}>

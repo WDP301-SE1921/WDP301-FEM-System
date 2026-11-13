@@ -18,7 +18,7 @@ function TestForm({ onValid }: { onValid: (values: Values) => void }) {
   return (
     <>
       <FormInput control={control} name="email" label="Email" />
-      <Button title="Gửi" onPress={handleSubmit(onValid)} />
+      <Button title="Gửi" onPress={() => handleSubmit(onValid)()} />
     </>
   );
 }
