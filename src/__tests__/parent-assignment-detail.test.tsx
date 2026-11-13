@@ -195,66 +195,71 @@ describe('features/parent-dashboard/ParentAssignmentDetail', () => {
     }));
   });
 
-  it('bai chua nop: chi ra cau con thieu, hoi lai truoc khi nop, nop xong chuyen sang bai da nop', async () => {
-    api.getAssignmentSubmissions.mockResolvedValueOnce([]).mockResolvedValue([SUBMITTED]);
-    api.submitAssignment.mockResolvedValue({
-      id: SUBMITTED.id,
-      recipientId: RECIPIENT_ID,
-      attemptNo: 1,
-      submittedAt: SUBMITTED.submittedAt,
-    });
-    const { user } = await renderDetail();
+  it(
+    'bai chua nop: chi ra cau con thieu, hoi lai truoc khi nop, nop xong chuyen sang bai da nop',
+    async () => {
+      api.getAssignmentSubmissions.mockResolvedValueOnce([]).mockResolvedValue([SUBMITTED]);
+      api.submitAssignment.mockResolvedValue({
+        id: SUBMITTED.id,
+        recipientId: RECIPIENT_ID,
+        attemptNo: 1,
+        submittedAt: SUBMITTED.submittedAt,
+      });
+      const { user } = await renderDetail();
 
-    expect(
-      await screen.findByText(DETAIL.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
-    ).toBeOnTheScreen();
-    expect(api.getTuitionEnrollments).toHaveBeenCalledWith(STUDENT_ID);
-    expect(screen.getByText('Toán nâng cao 8A2')).toBeOnTheScreen();
-    expect(screen.getByText('Trắc nghiệm & tự luận')).toBeOnTheScreen();
-    expect(screen.getByText('Còn 3 ngày')).toBeOnTheScreen();
-    expect(screen.getByText('Còn 2 câu chưa trả lời: Câu 1, Câu 2.')).toBeOnTheScreen();
+      expect(
+        await screen.findByText(DETAIL.title, {}, { timeout: FIRST_RENDER_TIMEOUT_MS }),
+      ).toBeOnTheScreen();
+      expect(api.getTuitionEnrollments).toHaveBeenCalledWith(STUDENT_ID);
+      expect(screen.getByText('Toán nâng cao 8A2')).toBeOnTheScreen();
+      expect(screen.getByText('Trắc nghiệm & tự luận')).toBeOnTheScreen();
+      expect(screen.getByText('Còn 3 ngày')).toBeOnTheScreen();
+      expect(screen.getByText('Còn 2 câu chưa trả lời: Câu 1, Câu 2.')).toBeOnTheScreen();
 
-    // Bam nop khi con thieu cau: danh dau cau thieu, khong hoi lai va khong goi BE
-    await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
-    expect(screen.getAllByText('Chưa trả lời')).toHaveLength(2);
-    expect(screen.queryByText('Nộp bài?')).not.toBeOnTheScreen();
+      // Bam nop khi con thieu cau: danh dau cau thieu, khong hoi lai va khong goi BE
+      await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
+      expect(screen.getAllByText('Chưa trả lời')).toHaveLength(2);
+      expect(screen.queryByText('Nộp bài?')).not.toBeOnTheScreen();
 
-    await user.press(screen.getByRole('radio', { name: WRONG_CHOICE }));
-    expect(screen.getByRole('radio', { name: WRONG_CHOICE })).toBeChecked();
-    expect(screen.getByText('Còn 1 câu chưa trả lời: Câu 2.')).toBeOnTheScreen();
-    expect(screen.getAllByText('Chưa trả lời')).toHaveLength(1);
-    // Bai lam luu tren may sau moi lan sua
-    expect(savedStorage.setJson).toHaveBeenLastCalledWith(DRAFT_KEY, {
-      answers: { q1: WRONG_CHOICE },
-      attachments: [],
-    });
-    await user.type(screen.getByLabelText('Bài làm câu 2'), '(x − 2)(x − 3)');
-    expect(
-      screen.getByText(/^Đã trả lời đủ\. Sau lần này học sinh còn 1 lần nộp lại/),
-    ).toBeOnTheScreen();
+      await user.press(screen.getByRole('radio', { name: WRONG_CHOICE }));
+      expect(screen.getByRole('radio', { name: WRONG_CHOICE })).toBeChecked();
+      expect(screen.getByText('Còn 1 câu chưa trả lời: Câu 2.')).toBeOnTheScreen();
+      expect(screen.getAllByText('Chưa trả lời')).toHaveLength(1);
+      // Bai lam luu tren may sau moi lan sua
+      expect(savedStorage.setJson).toHaveBeenLastCalledWith(DRAFT_KEY, {
+        answers: { q1: WRONG_CHOICE },
+        attachments: [],
+      });
+      await user.type(screen.getByLabelText('Bài làm câu 2'), '(x − 2)(x − 3)');
+      expect(
+        screen.getByText(/^Đã trả lời đủ\. Sau lần này học sinh còn 1 lần nộp lại/),
+      ).toBeOnTheScreen();
 
-    await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
-    expect(screen.getByText('Nộp bài?')).toBeOnTheScreen();
-    expect(
-      screen.getByText('Đã trả lời đủ 2 câu. Sau khi nộp, học sinh còn 1 lần nộp lại.'),
-    ).toBeOnTheScreen();
-    expect(api.submitAssignment).not.toHaveBeenCalled();
-    await user.press(screen.getByRole('button', { name: 'Xác nhận nộp' }));
+      await user.press(screen.getByRole('button', { name: 'Nộp bài' }));
+      expect(screen.getByText('Nộp bài?')).toBeOnTheScreen();
+      expect(
+        screen.getByText('Đã trả lời đủ 2 câu. Sau khi nộp, học sinh còn 1 lần nộp lại.'),
+      ).toBeOnTheScreen();
+      expect(api.submitAssignment).not.toHaveBeenCalled();
+      await user.press(screen.getByRole('button', { name: 'Xác nhận nộp' }));
 
-    expect(await screen.findByText('Đã nộp bài')).toBeOnTheScreen();
-    // Nop xong thi xoa ban nhap tren may
-    expect(savedStorage.remove).toHaveBeenCalledWith(DRAFT_KEY);
-    expect(mockSavedDrafts.has(DRAFT_KEY)).toBe(false);
-    expect(api.submitAssignment).toHaveBeenCalledWith({
-      recipientId: RECIPIENT_ID,
-      answers: SUBMITTED.answers,
-    });
-    expect(screen.getByText('Đang chấm bài')).toBeOnTheScreen();
-    expect(screen.getByText('Lần nộp 1/2')).toBeOnTheScreen();
-    // Chua cong bo dap an: chi danh dau lua chon cua con, khong bao dung sai
-    expect(screen.getByLabelText(`${WRONG_CHOICE}, học sinh đã chọn`)).toBeOnTheScreen();
-    expect(screen.queryByText(/^Học sinh trả lời/)).not.toBeOnTheScreen();
-  });
+      expect(await screen.findByText('Đã nộp bài')).toBeOnTheScreen();
+      // Nop xong thi xoa ban nhap tren may
+      expect(savedStorage.remove).toHaveBeenCalledWith(DRAFT_KEY);
+      expect(mockSavedDrafts.has(DRAFT_KEY)).toBe(false);
+      expect(api.submitAssignment).toHaveBeenCalledWith({
+        recipientId: RECIPIENT_ID,
+        answers: SUBMITTED.answers,
+      });
+      expect(screen.getByText('Đang chấm bài')).toBeOnTheScreen();
+      expect(screen.getByText('Lần nộp 1/2')).toBeOnTheScreen();
+      // Chua cong bo dap an: chi danh dau lua chon cua con, khong bao dung sai
+      expect(screen.getByLabelText(`${WRONG_CHOICE}, học sinh đã chọn`)).toBeOnTheScreen();
+      expect(screen.queryByText(/^Học sinh trả lời/)).not.toBeOnTheScreen();
+      // Cold React Native render may use the full first-render budget before the user flow starts.
+    },
+    FIRST_RENDER_TIMEOUT_MS + 10_000,
+  );
 
   it('bai da nop con luot: lam lai tu bai cu, bo nop lai thi quay ve bai da nop', async () => {
     api.getAssignmentSubmissions.mockResolvedValue([SUBMITTED]);
