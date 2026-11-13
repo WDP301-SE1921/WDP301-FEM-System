@@ -63,7 +63,7 @@ May nay da chay phat hanh VanGo nen thuong co san:
 ### 1.3 Tao app tren Google Play Console
 
 1. Play Console cua VanGo -> **Create app**: ten `EduGrade - Phụ huynh`, ngon ngu mac dinh Tieng Viet, App, Free.
-2. **Kiem ngay**: tai khoan Play **ca nhan** tao sau thang 11/2023 phai chay **closed testing voi it nhat 12 nguoi thu trong 14 ngay lien tuc** truoc khi duoc mo Production. Tai khoan to chuc thi khong. Day la moc dai nhat, khong rut ngan duoc: neu bi ap dung thi bat dau closed test som.
+2. Nguoi dung xac nhan 2026-11-13: tai khoan Play la **to chuc**, khong bi luat duoi day, va chon phat hanh thang Production (bo qua internal/closed testing). Luat cu de tham khao: tai khoan Play **ca nhan** tao sau thang 11/2023 phai chay **closed testing voi it nhat 12 nguoi thu trong 14 ngay lien tuc** truoc khi duoc mo Production. Tai khoan to chuc thi khong. Day la moc dai nhat, khong rut ngan duoc: neu bi ap dung thi bat dau closed test som.
 3. Service account cho `eas submit`: dung chung khoa cua VanGo. Da chep `VanGo/fe-system/apps/mobile/vangon-750bceec7af5.json` thanh `google-service-account.json` o goc repo mobile (gitignore, ngay 2026-11-12; may khac thi chep lai). Play Console -> **Users and permissions** -> service account do: neu chi duoc cap quyen theo tung app thi them app EduGrade (Release apps to testing tracks, Release to production, Manage store presence); neu co quyen cap tai khoan thi khong can lam gi.
 
 ### 1.4 Bien tren EAS
@@ -88,7 +88,7 @@ Phai co `EXPO_PUBLIC_API_URL=https://.../api/v1` tro dung BE production. Doi thi
 
 Tao tren BE production, **khong commit vao dau** (chi go tay vao form cua store):
 
-- Mot tai khoan `PARENT` cho Apple, mot tai khoan KHAC cho Google (BE xoay vong refresh token, hai ben dung chung de bi da phien).
+- Mot tai khoan `PARENT` cho Apple, mot tai khoan KHAC cho Google (dang nhap moi khong thu hoi phien cu, chi doi mat khau moi thu hoi; nhung nguoi duyet mot ben doi mat khau hoac xoa tai khoan thi ben kia mat tai khoan demo). Khong dung tai khoan dang bi test E2E chay tren production: 2026-11-13 tai khoan PARENT seed lien tuc nhan them con, lop, thong bao `E2E-PROD`.
 - Email da xac minh, co it nhat 2 con, moi con da ghi danh it nhat mot lop co lich hoc trong tuan, co bai tap dang mo, bai da cham va da cong bo diem, co bill hoc phi.
 - Du lieu la du lieu mau, khong dung ten that cua hoc sinh.
 - Khong dung tai khoan PARENT cua seed: do la email ca nhan that, chua co du lieu, va mat khau la `SEED_DEFAULT_PASSWORD` dung chung voi moi tai khoan seed.
@@ -217,7 +217,7 @@ Lam het muc **Policy -> App content** truoc khi gui duyet:
   - Email lien he cong khai: email ho tro o muc 1.5.
   - Category: Education.
 
-Sau do: Internal testing chay on -> (neu bi ap luat 12 nguoi) Closed testing 14 ngay -> **Promote release -> Production**, ty le phat hanh 20% roi tang dan -> **Publishing overview -> Send for review**.
+Ban 1.0.0 (2026-11-13): nguoi dung phat hanh thang **Production** (tai khoan to chuc): Production -> Countries/regions them Viet Nam -> Create new release -> tai AAB -> Publishing overview -> Send for review. Cach cham hon: Internal testing chay on -> (neu bi ap luat 12 nguoi) Closed testing 14 ngay -> **Promote release -> Production**, ty le phat hanh 20% roi tang dan -> **Publishing overview -> Send for review**.
 
 ## 7. Cac ban sau
 
