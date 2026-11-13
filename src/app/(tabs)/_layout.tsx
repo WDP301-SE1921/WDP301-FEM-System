@@ -91,6 +91,11 @@ export default function TabsLayout() {
       {TABS.map((tab) => (
         <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.title }} />
       ))}
+      {/*
+        Tu expo-router 58, man khong khai bao o day bi chuyen ve tab dau khi mo (bam chuong ma khong
+        vao duoc hop thu). Khai bao de mo duoc; `renderTabBar` chi ve nut cho `TABS` nen khong co nut.
+      */}
+      <Tabs.Screen name="notifications" options={{ title: 'Thông báo' }} />
     </Tabs>
   );
 }
