@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { BottomSheet } from '@/components/common/bottom-sheet';
 import { EmptyState } from '@/components/common/empty-state';
 import { ErrorState } from '@/components/common/error-state';
 import { FormError } from '@/components/common/form-error';
@@ -7,6 +9,7 @@ import { LoadingState } from '@/components/common/loading-state';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { Spacing } from '@/constants/theme';
+import { formatRelativeTime } from '@/utils/format';
 
 import {
   useMarkAllNotificationsRead,
@@ -15,7 +18,7 @@ import {
   useUnreadNotificationCount,
 } from '../hooks/use-notifications';
 import { useLinkedStudents } from '../hooks/use-parent-dashboard';
-import type { ParentDestination } from '../types';
+import type { AppNotification, ParentDestination } from '../types';
 import {
   getNotificationDestination,
   getNotificationStudentLabel,
@@ -42,10 +45,18 @@ export function ParentNotifications({ onBack, onOpenNotification }: ParentNotifi
   const markAll = useMarkAllNotificationsRead();
   const openNotification = useOpenNotification(onOpenNotification);
   const students = useLinkedStudents();
+  const [selectedMessage, setSelectedMessage] = useState<AppNotification | null>(null);
 
   const unreadCount = unread.data?.unreadCount ?? 0;
   // Ten con chi giup phan biet khi phu huynh co nhieu con
   const labelStudents = (students.data?.length ?? 0) > 1 ? (students.data ?? []) : [];
+
+  const handlePressNotification = (notification: AppNotification) => {
+    openNotification(notification);
+    if (!getNotificationDestination(notification)) {
+      setSelectedMessage(notification);
+    }
+  };
 
   const renderBody = () => {
     if (inbox.isPending) return <LoadingState />;
@@ -72,7 +83,7 @@ export function ParentNotifications({ onBack, onOpenNotification }: ParentNotifi
             notification={notification}
             studentLabel={getNotificationStudentLabel(notification, labelStudents)}
             canOpen={getNotificationDestination(notification) !== null}
-            onPress={() => openNotification(notification)}
+            onPress={() => handlePressNotification(notification)}
           />
         ))}
         {inbox.hasNextPage ? (
@@ -107,6 +118,16 @@ export function ParentNotifications({ onBack, onOpenNotification }: ParentNotifi
       </View>
       <FormError error={markAll.error} />
       {renderBody()}
+      <BottomSheet
+        isVisible={selectedMessage !== null}
+        title={selectedMessage?.title ?? 'Chi tiết thông báo'}
+        subtitle={selectedMessage ? formatRelativeTime(selectedMessage.createdAt) : undefined}
+        onClose={() => setSelectedMessage(null)}
+      >
+        <View style={styles.messageBody}>
+          <ThemedText type="default">{selectedMessage?.body}</ThemedText>
+        </View>
+      </BottomSheet>
     </View>
   );
 }
@@ -116,4 +137,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   heading: { flex: 1 },
   list: { gap: Spacing.two },
+  messageBody: { paddingVertical: Spacing.three },
 });

@@ -1,11 +1,12 @@
 import { Redirect, Tabs } from 'expo-router';
 import type { BottomTabBarProps } from 'expo-router/tabs';
+import { StyleSheet, View } from 'react-native';
 
 import { Screen } from '@/components/common/screen';
 import { TabBar, type TabBarItem } from '@/components/common/tab-bar';
 import type { IconName } from '@/components/ui/icon';
 import { canUseMobileApp, getSignedOutHref, MobileAccessDenied, useAuth } from '@/features/auth';
-import { useNotificationRealtime } from '@/features/parent-dashboard';
+import { NotificationPopupBanner, useNotificationRealtime } from '@/features/parent-dashboard';
 
 type TabConfig = {
   /** Ten file route trong `(tabs)/`. */
@@ -71,7 +72,7 @@ export default function TabsLayout() {
   const { isAuthenticated, isSessionExpired, user } = useAuth();
   // Layout nay song suot phien dang nhap (cac man mo tu tab nam chong len tren), nen giu ket noi
   // thong bao realtime o day
-  useNotificationRealtime();
+  const realtime = useNotificationRealtime();
 
   // Chan truy cap khi chua dang nhap
   if (!isAuthenticated || !user) return <Redirect href={getSignedOutHref(isSessionExpired)} />;
@@ -86,16 +87,28 @@ export default function TabsLayout() {
   }
 
   return (
-    // `history`: nut quay lai cua Android va cua man Thong bao ve dung tab vua mo, khong nhay ve trang chu
-    <Tabs screenOptions={{ headerShown: false }} tabBar={renderTabBar} backBehavior="history">
-      {TABS.map((tab) => (
-        <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.title }} />
-      ))}
-      {/*
-        Tu expo-router 58, man khong khai bao o day bi chuyen ve tab dau khi mo (bam chuong ma khong
-        vao duoc hop thu). Khai bao de mo duoc; `renderTabBar` chi ve nut cho `TABS` nen khong co nut.
-      */}
-      <Tabs.Screen name="notifications" options={{ title: 'Thông báo' }} />
-    </Tabs>
+    <View style={styles.root}>
+      {/* `history`: nut quay lai cua Android va cua man Thong bao ve dung tab vua mo, khong nhay ve trang chu */}
+      <Tabs screenOptions={{ headerShown: false }} tabBar={renderTabBar} backBehavior="history">
+        {TABS.map((tab) => (
+          <Tabs.Screen key={tab.name} name={tab.name} options={{ title: tab.title }} />
+        ))}
+        {/*
+          Tu expo-router 58, man khong khai bao o day bi chuyen ve tab dau khi mo (bam chuong ma khong
+          vao duoc hop thu). Khai bao de mo duoc; `renderTabBar` chi ve nut cho `TABS` nen khong co nut.
+        */}
+        <Tabs.Screen name="notifications" options={{ title: 'Thông báo' }} />
+      </Tabs>
+      {realtime?.activePopup ? (
+        <NotificationPopupBanner
+          notification={realtime.activePopup}
+          onDismiss={realtime.dismissPopup}
+        />
+      ) : null}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
