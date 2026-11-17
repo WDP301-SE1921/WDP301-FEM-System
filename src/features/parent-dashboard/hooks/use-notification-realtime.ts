@@ -181,6 +181,8 @@ export function useNotificationRealtime(): NotificationRealtimeResult {
       stopped = true;
       clearTimeout(refreshTimer);
       clearTimeout(popupTimerRef.current);
+      // Hook nam o layout goc, khong unmount khi dang xuat: xoa popup cu de phien sau khong thay lai
+      setActivePopup(null);
       subscription.remove();
       unsubscribeTap();
       channel.close();

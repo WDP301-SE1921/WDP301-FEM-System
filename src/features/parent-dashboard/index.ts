@@ -1,5 +1,5 @@
 export * from './components/notification-bell';
-export * from './components/notification-popup-banner';
+export * from './components/notification-realtime-host';
 export * from './components/parent-assignment-detail';
 export * from './components/parent-assignments';
 export * from './components/parent-bill-detail';

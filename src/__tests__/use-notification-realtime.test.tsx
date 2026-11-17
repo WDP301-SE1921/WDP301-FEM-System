@@ -193,4 +193,38 @@ describe('features/parent-dashboard/useNotificationRealtime', () => {
     });
     expect(result.current.activePopup).toBeNull();
   });
+
+  it('dang xuat thi xoa popup, dang nhap lai khong hien lai popup cua phien truoc', async () => {
+    getNotifications.mockResolvedValueOnce({
+      items: [
+        {
+          id: 'notif-2',
+          type: 'ANNOUNCEMENT',
+          title: 'Thông báo cũ',
+          body: 'Nội dung',
+          target: { kind: 'CLASS', id: 'class-1' },
+          context: { studentIds: ['student-1'] },
+          createdAt: '2026-10-01T00:00:00.000Z',
+          readAt: null,
+        },
+      ],
+      page: 1,
+      limit: 10,
+      total: 1,
+    });
+    const { handlers, result } = await setup(PARENT);
+    await fire(() => {
+      handlers?.onNotificationCreated();
+    });
+    expect(result.current.activePopup).not.toBeNull();
+
+    await act(async () => {
+      useAuthStore.setState({ user: null, isAuthenticated: false });
+    });
+    await act(async () => {
+      useAuthStore.setState({ user: PARENT, isAuthenticated: true });
+    });
+
+    expect(result.current.activePopup).toBeNull();
+  });
 });

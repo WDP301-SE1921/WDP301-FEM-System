@@ -11,7 +11,7 @@
 ```
 src/
 ├── app/                      # Route cua expo-router (file = URL)
-│   ├── _layout.tsx           # Layout goc: provider + splash + Stack
+│   ├── _layout.tsx           # Layout goc: provider + splash + Stack + thong bao realtime va popup
 │   ├── index.tsx             # Cong vao, dieu huong theo trang thai dang nhap
 │   ├── verify-email.tsx      # Phu huynh dan ma BE gui qua email de xac minh tai khoan
 │   ├── add-child.tsx         # Phu huynh da dang nhap dien form tao ho so con
@@ -187,9 +187,10 @@ Gap 401
 Token nam trong SecureStore (Keychain tren iOS, Keystore tren Android), khong nam trong AsyncStorage. Tren web SecureStore khong ton tai nen `src/lib/storage.ts` tu dong fallback ve AsyncStorage.
 
 ```
-Thong bao realtime (phu huynh da dang nhap, giu o (tabs)/_layout.tsx)
+Thong bao realtime (phu huynh da dang nhap, giu o _layout.tsx goc qua NotificationRealtimeHost)
   └─ Socket.IO toi <goc server>/notifications, gui access token qua `auth`
        ├─ notification.created       -> tai lai thong bao + du lieu hoc tap dang hien
+       │                                + popup trong app (app dang mo, tru man hop thu) hoac banner OS (app o nen)
        ├─ notifications.read-changed -> tai lai thong bao
        ├─ ket noi lai / app tro lai  -> tai lai thong bao
        └─ BE tu choi token / dong socket khi token het han

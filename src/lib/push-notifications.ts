@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 // Import ten rieng: luat import/namespace khong doc ra enum nay trong ban build expo-notifications 58
 import { AndroidImportance, AndroidNotificationPriority } from 'expo-notifications';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
 import { logger } from './logger';
 
@@ -28,7 +28,8 @@ export function configureNotificationHandler(): void {
 
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
-      shouldShowBanner: true,
+      // App dang mo thi popup trong app da hien noi dung: OS chi ghi vao khay, khong hien banner thu hai
+      shouldShowBanner: AppState.currentState !== 'active',
       shouldShowList: true,
       shouldPlaySound: true,
       shouldSetBadge: true,
@@ -82,7 +83,6 @@ export async function presentLocalPushNotification(payload: LocalPushPayload): P
       identifier: `edugrade-${payload.id}`,
       content: {
         title: payload.title,
-        subtitle: 'EduGrade',
         body: payload.body,
         data: {
           notificationId: payload.id,

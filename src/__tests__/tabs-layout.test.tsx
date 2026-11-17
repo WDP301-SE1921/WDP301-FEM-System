@@ -15,7 +15,6 @@ jest.mock('@/features/auth', () => ({
     user: { id: 'parent-1', role: 'PARENT' },
   }),
 }));
-jest.mock('@/features/parent-dashboard', () => ({ useNotificationRealtime: jest.fn() }));
 
 function screenOf(title: string) {
   return function MockScreen() {

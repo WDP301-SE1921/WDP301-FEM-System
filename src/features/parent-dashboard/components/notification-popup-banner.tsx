@@ -17,6 +17,8 @@ import { ToneBadge } from './tone-badge';
 import { ToneIcon } from './tone-icon';
 
 const CLOSE_BUTTON_SIZE = 32;
+// Nut dong 32px, noi vung cham them 6px moi phia cho du 44px
+const CLOSE_HIT_SLOP = 6;
 const CLOSE_ICON_SIZE = 18;
 const BODY_LINES = 3;
 const BANNER_Z_INDEX = 1000;
@@ -26,7 +28,7 @@ const SHADOW_OFFSET_Y = 4;
 const ANDROID_ELEVATION = 6;
 
 export type NotificationPopupBannerProps = {
-  notification: AppNotification | null;
+  notification: AppNotification;
   onDismiss: () => void;
 };
 
@@ -38,9 +40,6 @@ export function NotificationPopupBanner({ notification, onDismiss }: Notificatio
   const theme = useTheme();
   const openDestination = useOpenParentDestination();
   const openNotification = useOpenNotification(openDestination);
-
-  if (!notification) return null;
-
   const { icon, tone } = getNotificationAppearance(notification);
 
   const handlePress = () => {
@@ -85,6 +84,7 @@ export function NotificationPopupBanner({ notification, onDismiss }: Notificatio
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Đóng thông báo nổi"
+          hitSlop={CLOSE_HIT_SLOP}
           onPress={onDismiss}
           style={({ pressed }) => [
             styles.closeButton,
