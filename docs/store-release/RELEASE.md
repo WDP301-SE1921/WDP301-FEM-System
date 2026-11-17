@@ -1,6 +1,6 @@
 # Phat hanh EduGrade len App Store va Google Play
 
-Dung ngay 2026-11-12, lam theo cach du an VanGo dang phat hanh (`VanGo/fe-system/apps/mobile/RELEASE.md`). Ban dau tien: `1.0.0`.
+Dung ngay 2026-11-12, lam theo cach du an VanGo dang phat hanh (`VanGo/fe-system/apps/mobile/RELEASE.md`). Ban dau tien: `1.0.0`. Ban dang chuan bi: `1.1.0` (xem muc 7 va muc 9).
 
 | Muc                             | Gia tri                                                                                                                                                              |
 | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -167,9 +167,13 @@ npm run build:prod:android
    open homework, graded homework and tuition bills.
 
    PAYMENTS
-   Tuition is paid in person at the centre for in-person classes. The app
-   only shows bills and receipts created by the centre's staff. There is no
-   purchase flow in the app.
+   Tuition for in-person classes is paid to the centre in cash or by bank
+   transfer, outside the app. The app only shows bills and receipts created
+   by the centre's staff. There is no purchase flow in the app.
+
+   LEAVE REQUESTS
+   Open a class session -> "Xin nghỉ buổi này" sends a leave request for
+   that session. Centre staff approve or reject it on the EduGrade web app.
 
    STAFF ACCOUNTS
    Teachers and centre staff use the EduGrade web app. If a staff account
@@ -221,6 +225,16 @@ Ban 1.0.0 (2026-11-13): nguoi dung phat hanh thang **Production** (tai khoan to 
 
 ## 7. Cac ban sau
 
+Moi ban moi lam theo thu tu:
+
+1. Nang `version` trong `app.config.ts` va `apple.version` trong `store.config.json` (phai trung nhau). Phien ban da `READY_FOR_SALE` tren ASC thi Apple khong nhan them build cung so version: build iOS 8 (`1.0.0`, `e8f68ad`, 2026-11-17) bo phi vi ly do nay.
+2. Viet `releaseNotes` (muc "Co gi moi") trong `store.config.json`, giu duoi 500 ky tu de dan nguyen van sang Google Play. Ban moi them tinh nang thi sua ca `description` va `promoText`. `promoText` doi luc nao cung duoc, khong can duyet.
+3. `npm run metadata:lint`, roi build ca hai nen tang tu commit da push (muc 3, 4). Build cu mang version cu thi khong dung lai duoc.
+4. App Store Connect: `metadata:push` nhu muc 5.1. Lenh nay tao phien ban moi tren ASC (hoac doi so cua phien ban dang soan) va ghi "Co gi moi". Mo ASC kiem lai: chon build moi o muc Build, xem lai App Review Information (ghi chu o muc 5.6), **Add for Review** -> **Submit to App Review**. Duyet xong bam **Release This Version** (phat hanh tay).
+5. Google Play: `npx eas-cli submit -p android --profile production --id <ANDROID_BUILD_ID>` tai AAB len track Production o dang nhap (`releaseStatus: draft`). Play Console -> Production -> mo ban nhap -> o **Release notes** dan khoi `<vi-VN>` o muc 9 -> Next -> **Publishing overview -> Send for review**. Neu `description` doi thi dan ban moi vao **Main store listing -> Full description** truoc khi gui duyet.
+
+Luu y khac:
+
 - Doi native (them thu vien co ma native, doi quyen, icon, splash, `app.config.ts`): nang `version` trong `app.config.ts` va `apple.version` trong `store.config.json`, build va nop lai ca hai store.
 - Chi sua JS van phai build va nop lai: app chua co OTA (`expo-updates` chua cai). Muon va loi khong qua duyet nhu VanGo (`VanGo/document/store-release/ota-eas-update.md`) thi phai them thu vien do (hoi truoc) va nop mot ban moi co no.
 - Ban phat hanh tren store dung BE production: doi contract BE lam vo app cu thi phai giu tuong thich cho toi khi nguoi dung cap nhat xong.
@@ -239,5 +253,23 @@ Ban 1.0.0 (2026-11-13): nguoi dung phat hanh thang **Production** (tai khoan to 
 | Play bao `APK hoac Android App Bundle can co ten goi com.wdp301.fem.dev`                     | Form tao app cua Play khong co o ten goi: Play khoa app vao ten goi cua tep tai len DAU TIEN. 2026-11-13 tep dau tien la ban `.dev` (khong phai tu EAS: AAB production cua EAS da kiem la `com.wdp301.fem`) | Khong sua duoc app do. Tao app moi, khai lai App content va trang store, chi tai AAB tu `npm run build:prod:android`. App cu chua phat hanh thi xoa duoc o Thiet lap -> Cai dat nang cao |
 | `eas submit` Android bao app chua co ban nao                                                 | Lan dau phai tai tay                                                                                                                                                                                        | Muc 4                                                                                                                                                                                    |
 | Nguoi duyet bao app khong tai duoc du lieu                                                   | BE VPS dang tat hoac loi, hoac tai khoan demo het du lieu                                                                                                                                                   | Muc 0.4, 1.6                                                                                                                                                                             |
+
+## 9. Lich su phien ban
+
+| Version | Commit    | iOS build | Android versionCode | Trang thai                                                                                                    |
+| ------- | --------- | --------- | ------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `1.0.0` | `e68d91a` | 6         | 3                   | App Store: Ready for Sale (kiem qua ASC API 2026-11-17). Google Play: chua kiem qua API                       |
+| `1.1.0` | `e8f68ad` | chua      | chua                | 2026-11-17: version va metadata da sua, `metadata:lint` qua. Chua build, chua `metadata:push`, chua gui duyet |
+
+"Co gi moi" cua `1.1.0` cho Google Play (cung noi dung voi `releaseNotes` trong `store.config.json`):
+
+```text
+<vi-VN>
+Có gì mới trong bản 1.1.0:
+• Xin nghỉ một buổi: mở chi tiết buổi học, bấm "Xin nghỉ buổi này", ghi lý do rồi theo dõi đơn đã được trung tâm duyệt hay chưa. Duyệt xong, trung tâm sẽ báo và xếp học bù nếu có buổi phù hợp.
+• Bill và biên lai rõ hơn: số buổi trong kỳ, khoản được giảm, khoản hoàn tiền và hình thức đóng (tiền mặt hoặc chuyển khoản).
+• Lộ trình đánh dấu các bài lớp đã học trước khi con vào lớp.
+</vi-VN>
+```
 
 Tai lieu Expo: [EAS Submit](https://docs.expo.dev/submit/introduction/), [iOS](https://docs.expo.dev/submit/ios/), [Android](https://docs.expo.dev/submit/android/), [EAS Metadata](https://docs.expo.dev/eas/metadata/).

@@ -35,7 +35,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   name: current.name,
   owner: 'nhanle6',
   slug: 'wdp301-fem-system',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'portrait',
   icon: './assets/images/icon.png',
   scheme: current.scheme,
