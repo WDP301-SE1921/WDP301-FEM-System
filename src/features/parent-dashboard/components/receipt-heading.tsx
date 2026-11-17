@@ -7,9 +7,10 @@ import { Images } from '@/constants/images';
 import { Radius, Spacing } from '@/constants/theme';
 import { formatDate, formatTime } from '@/utils/format';
 
-import { PAYMENT_METHOD_LABEL, RECEIPT_PAID_STATUS } from '../constants';
+import { RECEIPT_PAID_STATUS } from '../constants';
 import { useCenterContact } from '../hooks/use-parent-dashboard';
 import type { TuitionReceipt } from '../types';
+import { getPaymentMethodLabel } from '../utils';
 
 import { ToneBadge } from './tone-badge';
 import { TuitionDetailRow } from './tuition-detail-row';
@@ -46,7 +47,7 @@ export function ReceiptHeading({ payment }: ReceiptHeadingProps) {
           label="Thời gian thu"
           value={`${formatDate(payment.confirmedAt)} · ${formatTime(payment.confirmedAt)}`}
         />
-        <TuitionDetailRow label="Hình thức" value={PAYMENT_METHOD_LABEL} />
+        <TuitionDetailRow label="Hình thức" value={getPaymentMethodLabel(payment.method)} />
       </ThemedView>
     </View>
   );

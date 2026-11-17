@@ -266,7 +266,11 @@ export type EnrollmentLesson = Omit<SessionLesson, 'sequence'> & {
 };
 
 /** Vi tri cua bai tren lo trinh: da hoc, bai con dang hoc (buoi gan nhat chua xong) hay chua hoc. */
-export type LessonProgress = 'DONE' | 'CURRENT' | 'UPCOMING';
+/**
+ * Vi tri cua bai tren lo trinh cua con. `BEFORE_JOIN`: lop da hoc bai nay truoc khi con vao lop (con
+ * vao giua ky), khong phai bai con con no hay sap hoc.
+ */
+export type LessonProgress = 'DONE' | 'CURRENT' | 'UPCOMING' | 'BEFORE_JOIN';
 
 export type RoadmapLesson = EnrollmentLesson & { progress: LessonProgress };
 
@@ -461,6 +465,23 @@ export type LeaveRequest = {
   reason: string;
   status: RequestStatus;
 };
+
+/**
+ * Body POST /academic/leaves (`LeaveDto` cua BE) khi phu huynh xin cho con nghi mot buoi. Don cho
+ * nhan vien duyet tren web; nghi dai han (bao luu) van lam tai quay.
+ */
+export type SessionLeavePayload = {
+  enrollmentId: string;
+  kind: 'SINGLE_ABSENCE';
+  sessionId: string;
+  /** Ngay hoc `YYYY-MM-DD` theo gio Viet Nam; don mot buoi co hai ngay bang nhau. */
+  fromDate: string;
+  toDate: string;
+  reason: string;
+};
+
+/** Phu huynh xin cho con nghi mot buoi. */
+export type SessionLeaveInput = SessionRef & { reason: string };
 
 /** Lich hoc bu chua huy moi nhat cua mot buoi vang, trong lich su diem danh. */
 export type AttendanceMakeupBooking = {
@@ -915,6 +936,30 @@ export type PaidEnrollment = TuitionEnrollment & {
 /** Trang thai bill: chua thu tien, da xac nhan thu tien, hoac don da huy. */
 export type BillStatus = 'UNPAID' | 'PAID' | 'CANCELLED';
 
+/** Hinh thuc thu tien (BE tu 2026-11-15). null voi phieu thu truoc khi BE ghi hinh thuc. */
+export type PaymentMethod = 'CASH' | 'BANK_TRANSFER';
+
+/** Khoan hoan tien cua mot phieu thu; chi khoan `APPROVED` moi hien cho phu huynh. */
+export type TuitionRefund = {
+  id: string;
+  /** Chuoi thap phan, vd `"2400000.00"`. */
+  amount: string;
+  method: PaymentMethod;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  requestedAt: string;
+  decidedAt: string | null;
+};
+
+/** Giam 50% thang cua goi co mung 1 Tet; ngay dang `YYYY-MM-DD`, tinh ca hai dau. */
+export type TetDiscount = { amount: string; fromDate: string; toDate: string };
+
+/** Phan BE them vao bill va bien lai ngay 2026-11-15; thieu khi BE cu. */
+type TuitionPaymentExtras = {
+  method?: PaymentMethod | null;
+  refunds?: TuitionRefund[];
+};
+
 /**
  * Mot phan tu cua `items` trong response GET /me/bills: bill cua mot don dang ky (`billResponse`
  * cua BE). Thong tin con, lop va hoc phi la ban chup luc nhan vien lap don.
@@ -932,11 +977,23 @@ export type TuitionBill = {
     startDate: string | null;
     /** Ngay het han dang `YYYY-MM-DD`, khong thuoc ky hoc. */
     endDate: string | null;
+    /** So buoi lich tuan trong ky (chua tru ngay nghi); thieu khi BE cu. */
+    plannedSessions?: number | null;
   };
   /** So tien la chuoi thap phan, vd `"2400000.00"`. */
-  pricing: { monthlyFee: string; packageMonths: number; total: string; currency: string };
+  pricing: {
+    monthlyFee: string;
+    packageMonths: number;
+    total: string;
+    currency: string;
+    /** Hoc phi thang x so thang, truoc giam Tet. */
+    listTotal?: string;
+    tetDiscount?: TetDiscount | null;
+  };
   /** null khi trung tam chua xac nhan thu tien. */
-  payment: { receiptNumber: string; paidAmount: string; confirmedAt: string } | null;
+  payment:
+    | ({ receiptNumber: string; paidAmount: string; confirmedAt: string } & TuitionPaymentExtras)
+    | null;
 };
 
 /** Phu huynh tren bill, chup luc nhan vien lap don. */
@@ -948,7 +1005,7 @@ export type BillParent = {
 
 /**
  * Response GET /registrations/:id/bill: cung dang voi mot phan tu cua GET /me/bills, them ma bill va
- * phu huynh. Bill khong co QR va khong ghi hinh thuc thanh toan (BE chua luu).
+ * phu huynh. Bill khong co QR; hinh thuc thu tien nam o `payment.method` khi BE da ghi.
  */
 export type TuitionBillDetail = TuitionBill & {
   /** Hien bang id don dang ky. */
@@ -973,6 +1030,8 @@ export type TuitionReceipt = {
     startDate: string | null;
     /** Ngay het han dang `YYYY-MM-DD`, khong thuoc ky hoc. */
     endDate: string | null;
+    /** So buoi lich tuan trong ky (chua tru ngay nghi); thieu khi BE cu. */
+    plannedSessions?: number | null;
   };
   /** Khong null: route chi tra bien lai cua don da xac nhan thu tien. */
   payment: {
@@ -981,9 +1040,12 @@ export type TuitionReceipt = {
     amount: number;
     currency: string;
     confirmedAt: string;
-  };
-  /** Hoc phi bao luc lap don: hoc phi thang nhan voi so thang. */
+  } & TuitionPaymentExtras;
+  /** Hoc phi phai thu luc lap don (da tru giam Tet neu co). */
   quotedAmount: number;
+  /** Hoc phi thang x so thang truoc giam Tet, chuoi thap phan; thieu khi BE cu. */
+  listTotal?: string;
+  tetDiscount?: TetDiscount | null;
   currency: string;
 };
 
@@ -1163,6 +1225,10 @@ export type NotificationType =
   | 'MAKEUP_MISSED'
   | 'ENROLLMENT_TRANSFERRED'
   | 'ENROLLMENT_ENDED'
+  /** Trung tam gia han hoc mien phi (bao luu, buoi bi huy, gia han tay), tu BE 2026-11-15. */
+  | 'ENROLLMENT_EXTENDED'
+  /** Giao vien hoac quan ly sua diem danh da chot trong ngay hoc, tu BE 2026-11-15. */
+  | 'ATTENDANCE_CORRECTED'
   | 'BILL_CREATED'
   | 'BILL_CANCELLED'
   | 'PAYMENT_CONFIRMED'

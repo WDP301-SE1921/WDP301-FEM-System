@@ -6,7 +6,16 @@ import { Radius, Spacing } from '@/constants/theme';
 import { formatCurrency } from '@/utils/format';
 
 import type { TuitionReceipt } from '../types';
-import { formatApiDate, formatPackageLabel, formatWeeklySlots, getMonthlyFee } from '../utils';
+import {
+  formatAmount,
+  formatApiDate,
+  formatPackageLabel,
+  formatTetDiscountLabel,
+  formatWeeklySlots,
+  getApprovedRefunds,
+  getMonthlyFee,
+  getPaymentMethodLabel,
+} from '../utils';
 
 import { ToneBadge } from './tone-badge';
 import { TuitionDetailRow } from './tuition-detail-row';
@@ -46,7 +55,10 @@ export function ReceiptBreakdown({ receipt }: ReceiptBreakdownProps) {
 
       <View style={styles.rows}>
         <TuitionDetailRow label="Lớp học" value={classroom.name} />
-        <TuitionDetailRow label="Đóng học phí" value={formatPackageLabel(term.packageMonths)} />
+        <TuitionDetailRow
+          label="Đóng học phí"
+          value={formatPackageLabel(term.packageMonths, term.plannedSessions)}
+        />
         {slotLines.length > 0 ? (
           <TuitionDetailRow label="Lịch học" value={slotLines.join('\n')} />
         ) : null}
@@ -58,10 +70,29 @@ export function ReceiptBreakdown({ receipt }: ReceiptBreakdownProps) {
             value={formatCurrency(monthlyFee, currency)}
           />
         )}
+        {receipt.tetDiscount && receipt.listTotal ? (
+          <>
+            <TuitionDetailRow
+              label="Học phí theo số tháng"
+              value={formatAmount(receipt.listTotal, currency)}
+            />
+            <TuitionDetailRow
+              label={formatTetDiscountLabel(receipt.tetDiscount)}
+              value={`−${formatAmount(receipt.tetDiscount.amount, currency)}`}
+            />
+          </>
+        ) : null}
         <TuitionDetailRow
           label="Số tiền học phí"
           value={formatCurrency(receipt.quotedAmount, currency)}
         />
+        {getApprovedRefunds(receipt.payment.refunds).map((refund) => (
+          <TuitionDetailRow
+            key={refund.id}
+            label={`Đã hoàn (${getPaymentMethodLabel(refund.method)})`}
+            value={formatAmount(refund.amount, currency)}
+          />
+        ))}
       </View>
     </View>
   );

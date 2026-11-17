@@ -7,7 +7,13 @@ import { formatDate, formatTime } from '@/utils/format';
 
 import { BILL_STATUSES } from '../constants';
 import type { TuitionBillDetail } from '../types';
-import { formatAmount, formatAmountInWords, parseAmount } from '../utils';
+import {
+  formatAmount,
+  formatAmountInWords,
+  getApprovedRefunds,
+  getPaymentMethodLabel,
+  parseAmount,
+} from '../utils';
 
 import { TuitionDetailRow } from './tuition-detail-row';
 
@@ -53,6 +59,14 @@ export function BillTotal({ bill }: BillTotalProps) {
             label="Thời gian thu"
             value={`${formatDate(payment.confirmedAt)} · ${formatTime(payment.confirmedAt)}`}
           />
+          <TuitionDetailRow label="Hình thức" value={getPaymentMethodLabel(payment.method)} />
+          {getApprovedRefunds(payment.refunds).map((refund) => (
+            <TuitionDetailRow
+              key={refund.id}
+              label={`Đã hoàn (${getPaymentMethodLabel(refund.method)})`}
+              value={formatAmount(refund.amount, pricing.currency)}
+            />
+          ))}
         </ThemedView>
       ) : null}
 

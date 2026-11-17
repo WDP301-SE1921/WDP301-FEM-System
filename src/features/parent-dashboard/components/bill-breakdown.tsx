@@ -10,6 +10,7 @@ import {
   formatApiDate,
   formatBillParent,
   formatPackageLabel,
+  formatTetDiscountLabel,
   formatWeeklySlots,
 } from '../utils';
 
@@ -53,7 +54,10 @@ export function BillBreakdown({ bill }: BillBreakdownProps) {
 
       <View style={styles.rows}>
         <TuitionDetailRow label="Lớp học" value={classroom.name} />
-        <TuitionDetailRow label="Gói học" value={formatPackageLabel(term.packageMonths)} />
+        <TuitionDetailRow
+          label="Gói học"
+          value={formatPackageLabel(term.packageMonths, term.plannedSessions)}
+        />
         {slotLines.length > 0 ? (
           <TuitionDetailRow label="Lịch học" value={slotLines.join('\n')} />
         ) : null}
@@ -63,6 +67,18 @@ export function BillBreakdown({ bill }: BillBreakdownProps) {
           label="Học phí mỗi tháng"
           value={formatAmount(pricing.monthlyFee, pricing.currency)}
         />
+        {pricing.tetDiscount && pricing.listTotal ? (
+          <>
+            <TuitionDetailRow
+              label="Học phí theo số tháng"
+              value={formatAmount(pricing.listTotal, pricing.currency)}
+            />
+            <TuitionDetailRow
+              label={formatTetDiscountLabel(pricing.tetDiscount)}
+              value={`−${formatAmount(pricing.tetDiscount.amount, pricing.currency)}`}
+            />
+          </>
+        ) : null}
       </View>
     </View>
   );

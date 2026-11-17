@@ -17,6 +17,7 @@ import type {
   LessonProgress,
   NotificationTargetKind,
   NotificationType,
+  PaymentMethod,
   PaymentStatus,
   PdfPickProblem,
   ScheduleSessionType,
@@ -203,6 +204,8 @@ export const NOTIFICATION_TYPE_APPEARANCES: Partial<
   LEAVE_REJECTED: { icon: 'close-circle-outline', tone: 'danger' },
   PAYMENT_CONFIRMED: { icon: 'checkmark-circle-outline', tone: 'success' },
   BILL_CANCELLED: { icon: 'close-circle-outline', tone: 'neutral' },
+  ENROLLMENT_EXTENDED: { icon: 'calendar-outline', tone: 'success' },
+  ATTENDANCE_CORRECTED: { icon: 'create-outline', tone: 'accent' },
 };
 
 /** Nhan o diem trung binh o trang chu, dung chung cho luc dang tai, loi va da co diem. */
@@ -250,8 +253,18 @@ export const DEFAULT_SUBJECT_ICON: IconName = 'school-outline';
 export const LESSON_PROGRESSES: Record<LessonProgress, StatusAppearance> = {
   DONE: { label: 'Đã học', tone: 'primary', icon: 'checkmark-done' },
   CURRENT: { label: 'Đang học', tone: 'primary', icon: 'radio-button-on' },
-  UPCOMING: { label: 'Chưa học', tone: 'neutral' },
+  UPCOMING: { label: 'Sắp học', tone: 'neutral' },
+  BEFORE_JOIN: { label: 'Trước khi con vào lớp', tone: 'neutral' },
 };
+
+/**
+ * Bai chua hoc xong ma khong phai sap hoc: tach rieng de phu huynh khong doc nham thanh "con chua
+ * hoc" (gop y RV2 ve nhan "Chưa học" mo ho).
+ */
+export const PENDING_LESSON_STATES = {
+  CANCELLED: { label: 'Buổi đã hủy', tone: 'danger', icon: 'close-circle' },
+  AWAITING_ATTENDANCE: { label: 'Chờ điểm danh', tone: 'accent', icon: 'hourglass-outline' },
+} as const satisfies Record<string, StatusAppearance>;
 
 /** Nhan cua bai kiem tra dinh ky chua lam, hien thay `LESSON_PROGRESSES`. */
 export const ASSESSMENT_BADGE: StatusAppearance = {
@@ -405,8 +418,14 @@ export const CENTER_NAME = 'Trung tâm bồi dưỡng văn hóa EduGrade';
 /** Thong tin lien he cua trung tam it khi doi: tai lai sau moi gio. */
 export const CENTER_INFO_STALE_MS = 60 * 60 * 1000;
 
-/** BE chi ghi nhan hoc phi thu tai trung tam (khong co thanh toan online) nen hinh thuc la co dinh. */
+/** Phieu thu truoc khi BE ghi hinh thuc (2026-11-15): chi biet la dong tai trung tam. */
 export const PAYMENT_METHOD_LABEL = 'Đóng tại trung tâm';
+
+/** Hinh thuc thu tien nhan vien chon luc xac nhan, cung chu voi web. */
+export const PAYMENT_METHOD_LABELS: Record<PaymentMethod, string> = {
+  CASH: 'Tiền mặt',
+  BANK_TRANSFER: 'Chuyển khoản',
+};
 
 export const PAYMENT_STATUSES: Record<PaymentStatus, StatusAppearance> = {
   CONFIRMED: { label: 'Đã xác nhận', tone: 'success', icon: 'checkmark-circle' },
@@ -470,3 +489,40 @@ export const ROADMAP_UPCOMING_LESSONS_SHOWN = 3;
 /** Pham vi chon tuan cua lich hoc, tinh tu tuan hien tai. */
 export const WEEKS_BEFORE = 2;
 export const WEEKS_AFTER = 4;
+
+/** Khong tim duoc ghi danh cua con cho buoi xin nghi (con da chuyen lop hoac ky hoc da het). */
+export const SESSION_LEAVE_NO_ENROLLMENT =
+  'Không tìm thấy môn học của con cho buổi này. Vui lòng liên hệ trung tâm để xin nghỉ.';
+
+/** Loi BE khi gui don nghi mot buoi, theo `error.code` (thong bao chung cua app qua chung chung). */
+export const SESSION_LEAVE_ERRORS: Partial<Record<string, string>> = {
+  OUTSIDE_ENROLLMENT: 'Buổi này nằm ngoài kỳ học của con nên không xin nghỉ được.',
+  INVALID_SESSION:
+    'Buổi này không còn nhận đơn xin nghỉ: buổi đã diễn ra, đã hủy hoặc là buổi học bù.',
+  INVALID_LEAVE_DATE: 'Ngày xin nghỉ không khớp ngày học của buổi. Vui lòng tải lại rồi thử lại.',
+};
+
+/** Trang thai don xin nghi mot buoi, hien o chi tiet buoi hoc. */
+export const SESSION_LEAVE_STATUSES: Record<
+  'PENDING' | 'APPROVED' | 'REJECTED',
+  StatusAppearance & { note: string }
+> = {
+  PENDING: {
+    label: 'Đã gửi đơn xin nghỉ',
+    tone: 'accent',
+    icon: 'hourglass-outline',
+    note: 'Đang chờ trung tâm duyệt. Duyệt xong, trung tâm sẽ báo và xếp học bù nếu có buổi phù hợp.',
+  },
+  APPROVED: {
+    label: 'Trung tâm đã duyệt nghỉ',
+    tone: 'success',
+    icon: 'checkmark-circle',
+    note: 'Con được nghỉ buổi này. Trung tâm sẽ báo khi xếp được buổi học bù.',
+  },
+  REJECTED: {
+    label: 'Đơn xin nghỉ chưa được duyệt',
+    tone: 'danger',
+    icon: 'close-circle',
+    note: 'Liên hệ trung tâm để biết lý do, hoặc gửi lại đơn khác.',
+  },
+};

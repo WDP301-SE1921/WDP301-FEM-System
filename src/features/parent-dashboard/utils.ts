@@ -50,6 +50,9 @@ import {
   MAKEUP_NOTES,
   NOTIFICATION_TARGET_APPEARANCES,
   NOTIFICATION_TYPE_APPEARANCES,
+  PAYMENT_METHOD_LABEL,
+  PAYMENT_METHOD_LABELS,
+  PENDING_LESSON_STATES,
   ROADMAP_DONE_LESSONS_SHOWN,
   ROADMAP_UPCOMING_LESSONS_SHOWN,
   SCHEDULE_VIEW_ORDER,
@@ -101,6 +104,7 @@ import type {
   NotificationTargetKind,
   PaidEnrollment,
   ParentDestination,
+  PaymentMethod,
   QuestionKind,
   QuestionReview,
   QuestionScore,
@@ -125,9 +129,11 @@ import type {
   SubmittedFileView,
   TermSessionCount,
   TermStatus,
+  TetDiscount,
   TuitionBill,
   TuitionEnrollment,
   TuitionReceipt,
+  TuitionRefund,
   WeekDay,
   WeeklySlot,
 } from './types';
@@ -623,28 +629,50 @@ function getLessonProgress(
 /**
  * Sap theo thu tu bai va gan vi tri tren lo trinh. Bai dang hoc la bai dau tien chua hoc xong, va
  * chi khi lop da xep buoi cho bai do (dang bao luu hay buoi bi huy thi khong co bai dang hoc).
+ * Con vao lop giua ky thi cac bai dung truoc buoi dau tien cua con la bai lop da hoc truoc do
+ * (`BEFORE_JOIN`): khong tinh la sap hoc va khong chan viec tim bai dang hoc.
  */
 export function getRoadmapLessons(lessons: readonly EnrollmentLesson[]): RoadmapLesson[] {
   const sorted = [...lessons].sort((a, b) => a.sequence - b.sequence);
-  const firstPendingIndex = sorted.findIndex((lesson) => !isLessonDone(lesson));
+  const firstWithSession = Math.max(
+    0,
+    sorted.findIndex(({ session }) => session !== null),
+  );
+  const firstPendingIndex = sorted.findIndex(
+    (lesson, index) => index >= firstWithSession && !isLessonDone(lesson),
+  );
   return sorted.map((lesson, index) => ({
     ...lesson,
-    progress: getLessonProgress(lesson, index === firstPendingIndex),
+    progress:
+      index < firstWithSession && !lesson.session
+        ? 'BEFORE_JOIN'
+        : getLessonProgress(lesson, index === firstPendingIndex),
   }));
 }
 
+/** Bai con can hoc tren lo trinh: chua hoc xong va khong phai bai lop hoc truoc khi con vao. */
+function isPendingLesson({ progress }: Pick<RoadmapLesson, 'progress'>): boolean {
+  return progress === 'CURRENT' || progress === 'UPCOMING';
+}
+
 export function summarizeRoadmap(lessons: readonly RoadmapLesson[]): RoadmapSummary {
-  const counts: Record<LessonProgress, number> = { DONE: 0, CURRENT: 0, UPCOMING: 0 };
+  const counts: Record<LessonProgress, number> = {
+    DONE: 0,
+    CURRENT: 0,
+    UPCOMING: 0,
+    BEFORE_JOIN: 0,
+  };
   lessons.forEach(({ progress }) => {
     counts[progress] += 1;
   });
+  // Tien do cua con chi tinh tren cac bai tu luc con vao lop
+  const total = lessons.length - counts.BEFORE_JOIN;
   return {
     ...counts,
-    total: lessons.length,
-    percent:
-      getCourseProgress({ completedSessions: counts.DONE, totalSessions: lessons.length }) ?? 0,
+    total,
+    percent: getCourseProgress({ completedSessions: counts.DONE, totalSessions: total }) ?? 0,
     nextAssessment:
-      lessons.find(({ kind, progress }) => kind === 'ASSESSMENT' && progress !== 'DONE') ?? null,
+      lessons.find((lesson) => lesson.kind === 'ASSESSMENT' && isPendingLesson(lesson)) ?? null,
   };
 }
 
@@ -659,7 +687,7 @@ export function getAssessmentMarkers(
 
 /** Lo trinh thu gon: vai bai da hoc gan nhat, bai dang hoc (hoac chua hoc dau tien) va vai bai sau. */
 export function getRoadmapWindow(lessons: readonly RoadmapLesson[]): RoadmapLesson[] {
-  const firstPendingIndex = lessons.findIndex(({ progress }) => progress !== 'DONE');
+  const firstPendingIndex = lessons.findIndex(isPendingLesson);
   const anchor = firstPendingIndex === -1 ? lessons.length : firstPendingIndex;
   return lessons.slice(
     Math.max(0, anchor - ROADMAP_DONE_LESSONS_SHOWN),
@@ -667,13 +695,19 @@ export function getRoadmapWindow(lessons: readonly RoadmapLesson[]): RoadmapLess
   );
 }
 
-/** Nhan tren the bai: bai kiem tra chua lam thi bao la kiem tra dinh ky. */
-export function getLessonBadge({
-  kind,
-  progress,
-}: Pick<RoadmapLesson, 'kind' | 'progress'>): StatusAppearance {
-  if (kind === 'ASSESSMENT' && progress !== 'DONE') return ASSESSMENT_BADGE;
-  return LESSON_PROGRESSES[progress];
+/**
+ * Nhan tren the bai: bai kiem tra chua lam thi bao la kiem tra dinh ky. Bai chua toi luot tach theo
+ * buoi: buoi bi huy, buoi da qua gio nhung giao vien chua chot diem danh, con lai la sap hoc.
+ */
+export function getLessonBadge(
+  { kind, progress, session }: Pick<RoadmapLesson, 'kind' | 'progress' | 'session'>,
+  now: Date = new Date(),
+): StatusAppearance {
+  if (kind === 'ASSESSMENT' && isPendingLesson({ progress })) return ASSESSMENT_BADGE;
+  if (progress !== 'UPCOMING' || !session) return LESSON_PROGRESSES[progress];
+  if (session.status === 'CANCELLED') return PENDING_LESSON_STATES.CANCELLED;
+  if (new Date(session.startsAt) <= now) return PENDING_LESSON_STATES.AWAITING_ATTENDANCE;
+  return LESSON_PROGRESSES.UPCOMING;
 }
 
 /** Vd `02/10` voi bai da hoc, `Hôm nay, 18:00` voi bai sap hoc, `Chưa xếp lịch`. */
@@ -681,6 +715,7 @@ export function formatLessonSchedule(
   { session, progress }: Pick<RoadmapLesson, 'session' | 'progress'>,
   now: Date = new Date(),
 ): string {
+  if (progress === 'BEFORE_JOIN') return 'Lớp đã học';
   if (!session) return 'Chưa xếp lịch';
   if (progress === 'DONE') return formatDayMonth(session.startsAt);
   return formatNextSession(session.startsAt, now);
@@ -1411,9 +1446,13 @@ export function formatAmount(value: string | number, currency?: string): string 
   return amount === null ? '--' : formatCurrency(amount, currency);
 }
 
-/** Vd `Gói 3 tháng`. */
-export function formatPackageLabel(packageMonths: number): string {
-  return `Gói ${packageMonths} tháng`;
+/**
+ * Vd `Gói 3 tháng`, hoac `Gói 3 tháng · khoảng 26 buổi` khi biet so buoi: hoc phi thu theo thang
+ * con lop hoc theo buoi, nen phu huynh can thay goi tuong ung bao nhieu buoi (gop y RV3).
+ */
+export function formatPackageLabel(packageMonths: number, plannedSessions?: number | null): string {
+  const label = `Gói ${packageMonths} tháng`;
+  return plannedSessions ? `${label} · khoảng ${plannedSessions} buổi` : label;
 }
 
 /** Thang bat dau ky hoc, vd `Kỳ 10/2026`. */
@@ -1682,9 +1721,28 @@ export function countTermSessions(
 /** Hoc phi moi thang cua bien lai: BE bao gia bang hoc phi thang nhan voi so thang. */
 export function getMonthlyFee({
   quotedAmount,
+  listTotal,
   term,
-}: Pick<TuitionReceipt, 'quotedAmount' | 'term'>): number | null {
-  return term.packageMonths > 0 ? quotedAmount / term.packageMonths : null;
+}: Pick<TuitionReceipt, 'quotedAmount' | 'listTotal' | 'term'>): number | null {
+  if (term.packageMonths <= 0) return null;
+  // `quotedAmount` da tru giam Tet; hoc phi thang tinh tren tien truoc giam.
+  const listAmount = listTotal === undefined ? null : parseAmount(listTotal);
+  return (listAmount ?? quotedAmount) / term.packageMonths;
+}
+
+/** Vd `Giảm 50% tháng có Tết (06/02/2027 – 14/02/2027)`. */
+export function formatTetDiscountLabel({ fromDate, toDate }: TetDiscount): string {
+  return `Giảm 50% tháng có Tết (${formatApiDate(fromDate)} – ${formatApiDate(toDate)})`;
+}
+
+/** Hinh thuc thu tien; phieu thu cu chua ghi hinh thuc thi chi biet la dong tai trung tam. */
+export function getPaymentMethodLabel(method: PaymentMethod | null | undefined): string {
+  return method ? PAYMENT_METHOD_LABELS[method] : PAYMENT_METHOD_LABEL;
+}
+
+/** Khoan hoan da duoc quan ly duyet; khoan dang cho hay bi tu choi khong hien cho phu huynh. */
+export function getApprovedRefunds(refunds: readonly TuitionRefund[] | undefined): TuitionRefund[] {
+  return (refunds ?? []).filter(({ status }) => status === 'APPROVED');
 }
 
 function readOnes(ones: number, tens: number): string {

@@ -39,6 +39,9 @@ export const queryKeys = {
     studentGrades: (studentId: string) => ['parent', 'students', studentId, 'grades'] as const,
     studentSchedule: (studentId: string, range: { from: string; to: string }) =>
       ['parent', 'students', studentId, 'schedule', range] as const,
+    /** Don xin nghi mot buoi cua con, nam duoi key cua buoi de tai lai cung buoi. */
+    studentSessionLeave: (studentId: string, sessionId: string) =>
+      ['parent', 'students', studentId, 'sessions', sessionId, 'leave'] as const,
     studentSession: (studentId: string, sessionId: string) =>
       ['parent', 'students', studentId, 'sessions', sessionId] as const,
     studentEnrollments: (studentId: string) =>

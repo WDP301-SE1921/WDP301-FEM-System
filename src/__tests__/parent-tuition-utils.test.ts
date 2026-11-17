@@ -15,10 +15,13 @@ import {
   formatBillParent,
   formatPackageLabel,
   formatTermPeriod,
+  formatTetDiscountLabel,
   getActivePackages,
   getActiveSubjectNames,
+  getApprovedRefunds,
   getMonthlyFee,
   getPaymentHistory,
+  getPaymentMethodLabel,
   getTermStatus,
   getUnpaidBills,
   parseAmount,
@@ -113,6 +116,8 @@ describe('features/parent-dashboard/utils: hoc phi', () => {
 
     it('nhan goi hoc va ky hoc', () => {
       expect(formatPackageLabel(3)).toBe('Gói 3 tháng');
+      expect(formatPackageLabel(3, 26)).toBe('Gói 3 tháng · khoảng 26 buổi');
+      expect(formatPackageLabel(3, null)).toBe('Gói 3 tháng');
       expect(formatTermPeriod(dateColumn('2026-10-05'))).toBe('Kỳ 10/2026');
       expect(formatTermPeriod(null)).toBe('Kỳ --');
     });
@@ -355,6 +360,43 @@ describe('features/parent-dashboard/utils: hoc phi', () => {
     it('hoc phi moi thang bang hoc phi bao gia chia so thang', () => {
       expect(getMonthlyFee(RECEIPT)).toBe(1_200_000);
       expect(getMonthlyFee({ ...RECEIPT, term: { ...RECEIPT.term, packageMonths: 0 } })).toBeNull();
+    });
+
+    it('co giam Tet thi hoc phi thang tinh tren tien truoc giam', () => {
+      // 1.200.000d x 3 = 3.600.000d, giam nua thang Tet 600.000d, phai thu 3.000.000d
+      expect(getMonthlyFee({ ...RECEIPT, quotedAmount: 3_000_000, listTotal: '3600000.00' })).toBe(
+        1_200_000,
+      );
+      expect(
+        formatTetDiscountLabel({
+          amount: '600000.00',
+          fromDate: '2027-01-15',
+          toDate: '2027-02-14',
+        }),
+      ).toBe('Giảm 50% tháng có Tết (15/01/2027 – 14/02/2027)');
+    });
+
+    it('hinh thuc thu tien va khoan hoan da duyet', () => {
+      expect(getPaymentMethodLabel('BANK_TRANSFER')).toBe('Chuyển khoản');
+      expect(getPaymentMethodLabel('CASH')).toBe('Tiền mặt');
+      // Phieu thu truoc khi BE ghi hinh thuc
+      expect(getPaymentMethodLabel(null)).toBe('Đóng tại trung tâm');
+      const refund = {
+        id: 'refund-1',
+        amount: '1200000.00',
+        method: 'CASH' as const,
+        reason: 'Nghỉ hẳn',
+        requestedAt: '2026-11-15T03:00:00.000Z',
+        decidedAt: null,
+      };
+      expect(
+        getApprovedRefunds([
+          { ...refund, status: 'PENDING' },
+          { ...refund, id: 'refund-2', status: 'APPROVED' },
+          { ...refund, id: 'refund-3', status: 'REJECTED' },
+        ]).map(({ id }) => id),
+      ).toEqual(['refund-2']);
+      expect(getApprovedRefunds(undefined)).toEqual([]);
     });
 
     it('noi dung chia se gom ma bien lai, hoc sinh, lop, ky hoc, so tien va ngay thu', () => {

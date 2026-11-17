@@ -27,6 +27,7 @@ import type {
   ScheduleSessionType,
   ScoreSummary,
   SessionDetail,
+  SessionLeavePayload,
   StudentAssignment,
   StudentEnrollment,
   SubjectGradeAverage,
@@ -579,5 +580,33 @@ export function toScoreSummary(
     average,
     gradedCount: scored.length,
     changeFromLastMonth: previousAverage === null ? null : average - previousAverage,
+  };
+}
+
+/**
+ * Body don xin nghi mot buoi. Ghi danh lay tu cho cua con trong buoi; giao vien chua chuan bi danh
+ * sach thi tim ghi danh khop lop va ky hoc (BE tu them con vao buoi khi nhan don). null khi khong
+ * tim duoc ghi danh nao cua con cho buoi nay.
+ */
+export function toSessionLeavePayload(
+  session: Pick<ScheduledSessionDetail, 'id' | 'classId' | 'startsAt' | 'participation'>,
+  enrollments: readonly TuitionEnrollment[],
+  reason: string,
+): SessionLeavePayload | null {
+  const participations = session.participation ? [session.participation] : [];
+  const enrollmentId =
+    session.participation?.enrollmentId ??
+    enrollments.find((enrollment) =>
+      isEnrollmentSession({ ...session, participations }, enrollment),
+    )?.id;
+  if (!enrollmentId) return null;
+  const day = toDateKey(new Date(session.startsAt));
+  return {
+    enrollmentId,
+    kind: 'SINGLE_ABSENCE',
+    sessionId: session.id,
+    fromDate: day,
+    toDate: day,
+    reason: reason.trim(),
   };
 }

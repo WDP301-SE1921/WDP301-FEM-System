@@ -15,20 +15,21 @@ const DOT_SIZE = 8;
 const ICON_SIZE = 16;
 const LINE_WIDTH = 2;
 
-type NodeKind = 'DONE' | 'CURRENT' | 'UPCOMING' | 'ASSESSMENT';
+type NodeKind = 'DONE' | 'CURRENT' | 'UPCOMING' | 'BEFORE_JOIN' | 'ASSESSMENT';
 
 /** Nut khong co icon thi hien cham tron (bai dang hoc) hoac so thu tu bai (bai chua hoc). */
 const NODES: Record<NodeKind, { background: ThemeColor; icon: IconName | null }> = {
   DONE: { background: 'primary', icon: 'checkmark' },
   CURRENT: { background: 'primary', icon: null },
   UPCOMING: { background: 'backgroundSelected', icon: null },
+  BEFORE_JOIN: { background: 'backgroundSelected', icon: null },
   ASSESSMENT: { background: 'accent', icon: 'flag' },
 };
 
 type StepLesson = Pick<RoadmapLesson, 'kind' | 'progress' | 'sequence'>;
 
 function getNodeKind({ kind, progress }: StepLesson): NodeKind {
-  if (progress === 'DONE') return 'DONE';
+  if (progress === 'DONE' || progress === 'BEFORE_JOIN') return progress;
   return kind === 'ASSESSMENT' ? 'ASSESSMENT' : progress;
 }
 

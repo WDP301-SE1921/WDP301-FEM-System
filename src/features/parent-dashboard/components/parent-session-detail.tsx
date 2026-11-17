@@ -16,6 +16,7 @@ import { findRoadmapLessonNumber } from '../utils';
 import { DetailHeader } from './detail-header';
 import { SessionHero } from './session-hero';
 import { SessionInfoCard } from './session-info-card';
+import { SessionLeaveCard } from './session-leave-card';
 import { SessionNoticeCard } from './session-notice-card';
 import { SessionReviewCard } from './session-review-card';
 
@@ -60,6 +61,7 @@ export function ParentSessionDetail({ studentId, sessionId, onBack }: ParentSess
         <SessionHero session={session} student={student} />
         {session.note ? <SessionNoticeCard type={session.type} note={session.note} /> : null}
         <SessionInfoCard session={session} />
+        <SessionLeaveCard studentId={studentId} session={session} />
         {hasReview ? <SessionReviewCard session={session} /> : null}
       </>
     );

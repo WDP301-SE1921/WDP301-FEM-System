@@ -51,6 +51,8 @@ export const WIRED_ROUTES: readonly RoutePattern[] = [
   { method: 'get', url: Endpoints.academic.outcomeSet(OUTCOME_SET_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.makeups },
   { method: 'get', url: Endpoints.academic.leaves },
+  // Phu huynh xin nghi mot buoi (nguoi dung bao wire ngay 2026-11-17)
+  { method: 'post', url: Endpoints.academic.leaves },
   { method: 'get', url: Endpoints.academic.assignments },
   { method: 'get', url: Endpoints.academic.assignment(ASSIGNMENT_ID_PARAM) },
   { method: 'get', url: Endpoints.academic.assignmentSubmissions(ASSIGNMENT_ID_PARAM) },

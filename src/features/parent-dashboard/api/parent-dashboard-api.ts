@@ -12,7 +12,11 @@ import {
 } from '@/types/api';
 import { addDays, toDateKey } from '@/utils/date';
 
-import { RECENT_NOTIFICATION_COUNT } from '../constants';
+import {
+  RECENT_NOTIFICATION_COUNT,
+  SESSION_LEAVE_ERRORS,
+  SESSION_LEAVE_NO_ENROLLMENT,
+} from '../constants';
 import type {
   AppNotification,
   AssignmentDetail,
@@ -40,6 +44,7 @@ import type {
   ScheduleRange,
   ScheduleSession,
   SessionDetail,
+  SessionLeaveInput,
   SessionRef,
   SignedFileUrl,
   StudentAssignment,
@@ -66,6 +71,7 @@ import {
   toEnrollmentLessons,
   toScoreSummary,
   toSessionDetail,
+  toSessionLeavePayload,
   toStudentAssignment,
   toStudentEnrollments,
   toStudentSchedule,
@@ -192,6 +198,68 @@ export const parentDashboardApi = {
       );
       return data.data;
     });
+  },
+
+  /**
+   * Don xin nghi mot buoi cua con: don dang cho hoac da duyet truoc, khong co thi don bi tu choi gan
+   * nhat. null khi chua xin. `date` la ngay hoc `YYYY-MM-DD` cua buoi.
+   */
+  async getSessionLeave(
+    { studentId, sessionId }: SessionRef,
+    date: string,
+  ): Promise<LeaveRequest | null> {
+    const leaves = await readAllPages(async (page) => {
+      const params: LeaveQuery = {
+        studentId,
+        kind: 'SINGLE_ABSENCE',
+        fromDate: date,
+        toDate: date,
+        paginated: true,
+        ...page,
+      };
+      const { data } = await apiClient.get<ApiResponse<Page<LeaveRequest>>>(
+        Endpoints.academic.leaves,
+        { params },
+      );
+      return data.data;
+    });
+    const own = leaves.filter(
+      (leave) => leave.sessionId === sessionId && leave.status !== 'CANCELLED',
+    );
+    return own.find(({ status }) => status !== 'REJECTED') ?? own[0] ?? null;
+  },
+
+  /** Phu huynh xin cho con nghi mot buoi; don cho nhan vien duyet tren web. */
+  async requestSessionLeave({
+    studentId,
+    sessionId,
+    reason,
+  }: SessionLeaveInput): Promise<LeaveRequest> {
+    const [{ data }, enrollments] = await Promise.all([
+      apiClient.get<ApiResponse<ScheduledSessionDetail>>(
+        Endpoints.academic.scheduledSession(sessionId),
+        { params: { studentId } },
+      ),
+      parentDashboardApi.getTuitionEnrollments(studentId),
+    ]);
+    const payload = toSessionLeavePayload(data.data, enrollments, reason);
+    if (!payload) {
+      throw new AppError(SESSION_LEAVE_NO_ENROLLMENT, undefined, 'SESSION_LEAVE_NO_ENROLLMENT');
+    }
+    try {
+      const response = await apiClient.post<ApiResponse<LeaveRequest>>(
+        Endpoints.academic.leaves,
+        payload,
+      );
+      return response.data.data;
+    } catch (error) {
+      const message =
+        error instanceof AppError && error.code ? SESSION_LEAVE_ERRORS[error.code] : undefined;
+      if (error instanceof AppError && message) {
+        throw new AppError(message, error.status, error.code);
+      }
+      throw error;
+    }
   },
 
   /** Moi phong hoc cua trung tam. */

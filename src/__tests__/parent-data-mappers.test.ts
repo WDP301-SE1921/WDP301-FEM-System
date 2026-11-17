@@ -9,6 +9,7 @@ import {
   toEnrollmentLessons,
   toScoreSummary,
   toSessionDetail,
+  toSessionLeavePayload,
   toStudentAssignment,
   toStudentEnrollments,
   toStudentSchedule,
@@ -132,6 +133,44 @@ const ROOMS: Room[] = [
 ];
 
 describe('features/parent-dashboard/api/parent-data-mappers', () => {
+  describe('toSessionLeavePayload', () => {
+    const leaveSession = (participation: SessionParticipation | null = null) => ({
+      id: 'session-leave',
+      classId: MATH_CLASS.id,
+      startsAt: at(11, 20),
+      participation,
+    });
+
+    it('lay ghi danh tu cho cua con trong buoi va ngay hoc lam ca hai ngay cua don', () => {
+      expect(
+        toSessionLeavePayload(
+          leaveSession(participation({ enrollmentId: 'enrollment-from-seat' })),
+          [enrollment()],
+          '  Con bị ốm  ',
+        ),
+      ).toEqual({
+        enrollmentId: 'enrollment-from-seat',
+        kind: 'SINGLE_ABSENCE',
+        sessionId: 'session-leave',
+        fromDate: '2026-11-20',
+        toDate: '2026-11-20',
+        reason: 'Con bị ốm',
+      });
+    });
+
+    it('giao vien chua chuan bi danh sach thi tim ghi danh khop lop va ky hoc', () => {
+      expect(toSessionLeavePayload(leaveSession(), [enrollment()], 'Về quê')?.enrollmentId).toBe(
+        'enrollment-math',
+      );
+    });
+
+    it('khong co ghi danh nao cho buoi thi tra null', () => {
+      expect(
+        toSessionLeavePayload(leaveSession(), [enrollment({ status: 'ENDED' })], 'Về quê'),
+      ).toBeNull();
+    });
+  });
+
   describe('isEnrollmentSession', () => {
     it.each([
       ['ngay bat dau ky hoc', at(10, 5), true],

@@ -25,6 +25,9 @@ export const ApiErrorMessages: Partial<Record<string, string>> = {
   AUTH_UNAUTHORIZED: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   AUTH_EMAIL_EXISTS: 'Email này đã được đăng ký.',
   AUTH_INVALID_CREDENTIALS: 'Email hoặc mật khẩu không đúng.',
+  /** BE chi bao ma nay khi da dung mat khau, nen nguoi khac khong do duoc tai khoan bi khoa. */
+  AUTH_ACCOUNT_DISABLED:
+    'Tài khoản đã bị trung tâm khóa. Vui lòng liên hệ trung tâm để được mở lại.',
   AUTH_PASSWORD_TOO_LONG: 'Mật khẩu quá dài.',
   AUTH_INVALID_REFRESH_TOKEN: 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.',
   /** Ma xac minh email sai, da dung, qua 15 phut, hoac da co ma moi hon. */

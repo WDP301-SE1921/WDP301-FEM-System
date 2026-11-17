@@ -552,6 +552,37 @@ describe('features/parent-dashboard/utils', () => {
       ]);
     });
 
+    it('con vao lop giua ky: bai lop hoc truoc do la BEFORE_JOIN va van tim duoc bai dang hoc', () => {
+      // Lop da hoc bai 1-2 truoc khi con vao; con hoc tu bai 3
+      const lateJoiner = [
+        lesson(1),
+        lesson(2, { kind: 'ASSESSMENT' }),
+        lesson(3, { session: session('COMPLETED', 9) }),
+        lesson(4, { session: session('SCHEDULED', 20) }),
+        lesson(5),
+      ];
+      expect(progresses(lateJoiner)).toEqual([
+        [1, 'BEFORE_JOIN'],
+        [2, 'BEFORE_JOIN'],
+        [3, 'DONE'],
+        [4, 'CURRENT'],
+        [5, 'UPCOMING'],
+      ]);
+      const roadmap = getRoadmapLessons(lateJoiner);
+      // Tien do chi tinh 3 bai tu luc con vao lop; bai kiem tra lop da lam truoc do khong nhac
+      expect(summarizeRoadmap(roadmap)).toMatchObject({
+        DONE: 1,
+        CURRENT: 1,
+        UPCOMING: 1,
+        BEFORE_JOIN: 2,
+        total: 3,
+        nextAssessment: null,
+      });
+      const [first] = roadmap;
+      expect(first && getLessonBadge(first).label).toBe('Trước khi con vào lớp');
+      expect(first && formatLessonSchedule(first)).toBe('Lớp đã học');
+    });
+
     it('summarizeRoadmap dem bai theo vi tri, tim bai kiem tra gan nhat chua lam', () => {
       const summary = summarizeRoadmap(getRoadmapLessons(LESSONS));
 
@@ -582,11 +613,25 @@ describe('features/parent-dashboard/utils', () => {
     });
 
     it('getLessonBadge: bai kiem tra chua lam hien nhan kiem tra dinh ky', () => {
-      expect(getLessonBadge({ kind: 'ASSESSMENT', progress: 'UPCOMING' }).label).toBe(
-        'Kiểm tra định kỳ',
+      expect(
+        getLessonBadge({ kind: 'ASSESSMENT', progress: 'UPCOMING', session: null }).label,
+      ).toBe('Kiểm tra định kỳ');
+      expect(getLessonBadge({ kind: 'ASSESSMENT', progress: 'DONE', session: null }).label).toBe(
+        'Đã học',
       );
-      expect(getLessonBadge({ kind: 'ASSESSMENT', progress: 'DONE' }).label).toBe('Đã học');
-      expect(getLessonBadge({ kind: 'LESSON', progress: 'CURRENT' }).label).toBe('Đang học');
+      expect(getLessonBadge({ kind: 'LESSON', progress: 'CURRENT', session: null }).label).toBe(
+        'Đang học',
+      );
+    });
+
+    it('getLessonBadge: bai chua toi luot tach theo buoi, khong con nhan "Chưa học"', () => {
+      const badge = (lessonSession: LessonSession | null) =>
+        getLessonBadge({ kind: 'LESSON', progress: 'UPCOMING', session: lessonSession }, NOW).label;
+      expect(badge(null)).toBe('Sắp học');
+      expect(badge(session('SCHEDULED', 20))).toBe('Sắp học');
+      expect(badge(session('CANCELLED', 20))).toBe('Buổi đã hủy');
+      // Buoi ngay 14 da qua gio ma giao vien chua chot diem danh.
+      expect(badge(session('SCHEDULED', 14))).toBe('Chờ điểm danh');
     });
 
     it('formatLessonSchedule: ngay da hoc, lich buoi sap toi hoac chua xep lich', () => {
