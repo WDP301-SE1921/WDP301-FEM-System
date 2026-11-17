@@ -37,7 +37,8 @@ export type ParentNotificationsProps = {
 
 /**
  * Hop thu thong bao cua phu huynh, chung moi con. Thong bao moi den qua realtime nen danh sach tu cap
- * nhat; bam mot thong bao thi danh dau da doc va mo man hinh lien quan.
+ * nhat; bam mot thong bao thi danh dau da doc va mo man hinh lien quan, khong co man lien quan thi mo
+ * sheet chi tiet cua thong bao.
  */
 export function ParentNotifications({ onBack, onOpenNotification }: ParentNotificationsProps) {
   const inbox = useNotificationInbox();
@@ -82,7 +83,8 @@ export function ParentNotifications({ onBack, onOpenNotification }: ParentNotifi
             key={notification.id}
             notification={notification}
             studentLabel={getNotificationStudentLabel(notification, labelStudents)}
-            canOpen={getNotificationDestination(notification) !== null}
+            // Thong bao khong co man lien quan (thong bao lop) mo sheet chi tiet de doc du tieu de
+            opens={getNotificationDestination(notification) ? 'screen' : 'detail'}
             onPress={() => handlePressNotification(notification)}
           />
         ))}

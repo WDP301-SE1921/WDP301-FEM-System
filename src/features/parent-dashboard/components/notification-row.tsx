@@ -16,15 +16,23 @@ import { ToneIcon } from './tone-icon';
 const UNREAD_DOT_SIZE = 8;
 const CHEVRON_SIZE = 16;
 
+/**
+ * Bam vao dong thi mo gi: `screen` la man hinh lien quan (bai tap, buoi hoc, bill), `detail` la sheet
+ * chi tiet cua chinh thong bao, null la khong mo gi (bam chi danh dau da doc).
+ */
+export type NotificationRowOpens = 'screen' | 'detail' | null;
+
+const OPEN_HINTS: Record<NonNullable<NotificationRowOpens>, string> = {
+  screen: 'Mở nội dung liên quan',
+  detail: 'Xem chi tiết thông báo',
+};
+
 export type NotificationRowProps = {
   notification: AppNotification;
   /** Ten cac con lien quan, chi truyen khi phu huynh co nhieu con. */
   studentLabel?: string | null;
-  /**
-   * true khi bam se mo man hinh lien quan (hien mui ten). false voi thong bao chi de doc (thong bao lop):
-   * bam chi danh dau da doc.
-   */
-  canOpen: boolean;
+  /** Co mo gi thi hien mui ten va goi y cho trinh doc man hinh. */
+  opens: NotificationRowOpens;
   onPress: () => void;
 };
 
@@ -32,7 +40,7 @@ export type NotificationRowProps = {
 export function NotificationRow({
   notification,
   studentLabel,
-  canOpen,
+  opens,
   onPress,
 }: NotificationRowProps) {
   const theme = useTheme();
@@ -43,7 +51,7 @@ export function NotificationRow({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`${isUnread ? 'Chưa đọc. ' : ''}${notification.title}. ${notification.body}`}
-      accessibilityHint={canOpen ? 'Mở nội dung liên quan' : undefined}
+      accessibilityHint={opens ? OPEN_HINTS[opens] : undefined}
       onPress={onPress}
       style={({ pressed }) => [pressed && styles.pressed]}
     >
@@ -72,7 +80,7 @@ export function NotificationRow({
             </View>
           ) : null}
         </View>
-        {canOpen ? (
+        {opens ? (
           <Icon
             name="chevron-forward"
             size={CHEVRON_SIZE}

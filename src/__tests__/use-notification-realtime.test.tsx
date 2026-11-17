@@ -177,6 +177,8 @@ describe('features/parent-dashboard/useNotificationRealtime', () => {
         content: expect.objectContaining({
           title: 'Thông báo mới',
           body: 'Nội dung thông báo',
+          // Bam thong bao OS chi mo hop thu nen data khong chep lai tieu de, noi dung
+          data: { notificationId: 'notif-1', targetKind: 'CLASS', targetId: 'class-1' },
         }),
       }),
     );

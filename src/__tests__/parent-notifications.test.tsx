@@ -108,10 +108,11 @@ describe('features/parent-dashboard/ParentNotifications', () => {
     });
   });
 
-  it('co nut quay lai; thong bao chi de doc thi khong bao la mo duoc man khac', async () => {
+  it('co nut quay lai; thong bao khong co man lien quan thi mo sheet chi tiet', async () => {
     const announcement = notification('lop', {
       type: 'ANNOUNCEMENT',
       title: 'Thông báo lớp',
+      body: 'Lớp Toán 8 nghỉ buổi thứ Bảy để thi giữa kỳ.',
       target: { kind: 'CLASS', id: 'class-math' },
     });
     api.getNotifications.mockResolvedValue({
@@ -121,24 +122,31 @@ describe('features/parent-dashboard/ParentNotifications', () => {
       total: 2,
     });
     const { onBack, onOpenNotification, user } = await renderNotifications();
-    await screen.findByText('Nội dung lop', {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
+    await screen.findByText(announcement.body, {}, { timeout: FIRST_RENDER_TIMEOUT_MS });
 
     await user.press(screen.getByRole('button', { name: 'Quay lại' }));
     expect(onBack).toHaveBeenCalledTimes(1);
 
-    // Don nghi mo lich su diem danh cua con; thong bao lop chi doc trong hop thu
-    await user.press(screen.getByRole('button', { name: /^Thông báo nghi/ }));
+    // Don nghi mo lich su diem danh cua con
+    const leaveRow = screen.getByRole('button', { name: /^Thông báo nghi/ });
+    expect(leaveRow).toHaveProp('accessibilityHint', 'Mở nội dung liên quan');
+    await user.press(leaveRow);
     expect(onOpenNotification).toHaveBeenLastCalledWith({
       kind: 'SCHEDULE',
       view: 'ATTENDANCE',
       studentId: 'student-1',
     });
-    expect(screen.getByRole('button', { name: /^Thông báo lớp/ })).not.toHaveProp(
-      'accessibilityHint',
-      'Mở nội dung liên quan',
-    );
-    await user.press(screen.getByRole('button', { name: /^Thông báo lớp/ }));
+
+    // Thong bao lop khong co man nao de mo: bao truoc la xem chi tiet, bam thi mo sheet ngay trong hop thu
+    const announcementRow = screen.getByRole('button', { name: /^Thông báo lớp/ });
+    expect(announcementRow).toHaveProp('accessibilityHint', 'Xem chi tiết thông báo');
+    await user.press(announcementRow);
     expect(onOpenNotification).toHaveBeenCalledTimes(1);
+    expect(await screen.findByRole('header', { name: 'Thông báo lớp' })).toBeOnTheScreen();
+    expect(screen.getAllByText(announcement.body)).toHaveLength(2);
+
+    await user.press(screen.getByRole('button', { name: 'Đóng' }));
+    expect(screen.queryByRole('header', { name: 'Thông báo lớp' })).not.toBeOnTheScreen();
   });
 
   it('tai them trang sau khi BE con thong bao', async () => {

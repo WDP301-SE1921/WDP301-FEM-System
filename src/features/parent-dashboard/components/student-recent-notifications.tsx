@@ -51,7 +51,7 @@ export function StudentRecentNotifications({
           <NotificationRow
             key={notification.id}
             notification={notification}
-            canOpen={getNotificationDestination(notification) !== null}
+            opens={getNotificationDestination(notification) ? 'screen' : null}
             onPress={() => openNotification(notification)}
           />
         ))}

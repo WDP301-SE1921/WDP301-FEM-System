@@ -84,12 +84,7 @@ export async function presentLocalPushNotification(payload: LocalPushPayload): P
       content: {
         title: payload.title,
         body: payload.body,
-        data: {
-          notificationId: payload.id,
-          title: payload.title,
-          body: payload.body,
-          ...payload.data,
-        },
+        data: { notificationId: payload.id, ...payload.data },
         sound: 'default',
         priority: AndroidNotificationPriority.MAX,
         vibrate: [0, 250, 250, 250],
