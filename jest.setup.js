@@ -10,6 +10,7 @@ jest.mock('react-native-reanimated', () => require('react-native-reanimated/mock
 // Mock expo-notifications trong moi truong Jest
 jest.mock('expo-notifications', () => ({
   AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3 },
+  AndroidNotificationPriority: { MAX: 'max', HIGH: 'high', DEFAULT: 'default' },
   setNotificationHandler: jest.fn(),
   setNotificationChannelAsync: jest.fn().mockResolvedValue(null),
   getPermissionsAsync: jest.fn().mockResolvedValue({ granted: true }),

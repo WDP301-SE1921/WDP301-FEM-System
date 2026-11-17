@@ -1,6 +1,6 @@
 import * as Notifications from 'expo-notifications';
 // Import ten rieng: luat import/namespace khong doc ra enum nay trong ban build expo-notifications 58
-import { AndroidImportance } from 'expo-notifications';
+import { AndroidImportance, AndroidNotificationPriority } from 'expo-notifications';
 import { Platform } from 'react-native';
 
 import { logger } from './logger';
@@ -70,7 +70,7 @@ export async function ensureNotificationPermissions(): Promise<boolean> {
   }
 }
 
-/** Phat thong bao tren thanh trang thai he dieu hanh (hoat dong ca khi thoat ra ngoai man hinh chinh). */
+/** Phat thong bao kem noi dung message tren thanh trang thai he dieu hanh (hoat dong ca khi thoat app). */
 export async function presentLocalPushNotification(payload: LocalPushPayload): Promise<void> {
   if (Platform.OS === 'web') return;
 
@@ -82,9 +82,17 @@ export async function presentLocalPushNotification(payload: LocalPushPayload): P
       identifier: `edugrade-${payload.id}`,
       content: {
         title: payload.title,
+        subtitle: 'EduGrade',
         body: payload.body,
-        data: { notificationId: payload.id, ...payload.data },
+        data: {
+          notificationId: payload.id,
+          title: payload.title,
+          body: payload.body,
+          ...payload.data,
+        },
         sound: 'default',
+        priority: AndroidNotificationPriority.MAX,
+        vibrate: [0, 250, 250, 250],
       },
       trigger: Platform.OS === 'android' && hasChannel ? { channelId: ANDROID_CHANNEL_ID } : null,
     });

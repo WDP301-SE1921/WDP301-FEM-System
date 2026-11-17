@@ -60,10 +60,10 @@ async function setup(user: User | null) {
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
-  await renderHook(() => useNotificationRealtime(), { wrapper });
+  const { result } = await renderHook(() => useNotificationRealtime(), { wrapper });
   const handlers = connect.mock.calls[0]?.[0];
   const invalidatedKeys = () => invalidate.mock.calls.map(([filters]) => filters?.queryKey);
-  return { handlers, invalidatedKeys };
+  return { handlers, invalidatedKeys, result };
 }
 
 /** Chay `trigger` (su kien realtime, doi trang thai app) roi doi het thoi gian gom su kien. */
@@ -165,7 +165,7 @@ describe('features/parent-dashboard/useNotificationRealtime', () => {
       limit: 10,
       total: 1,
     });
-    const { handlers } = await setup(PARENT);
+    const { handlers, result } = await setup(PARENT);
 
     await fire(() => {
       handlers?.onNotificationCreated();
@@ -180,5 +180,17 @@ describe('features/parent-dashboard/useNotificationRealtime', () => {
         }),
       }),
     );
+    expect(result.current.activePopup).toEqual(
+      expect.objectContaining({
+        id: 'notif-1',
+        title: 'Thông báo mới',
+        body: 'Nội dung thông báo',
+      }),
+    );
+
+    await act(async () => {
+      result.current.dismissPopup();
+    });
+    expect(result.current.activePopup).toBeNull();
   });
 });

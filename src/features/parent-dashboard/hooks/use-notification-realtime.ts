@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 
 import { queryKeys } from '@/api/query-client';
@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/auth-store';
 
 import { connectNotificationRealtime } from '../api/notification-realtime';
 import { parentDashboardApi } from '../api/parent-dashboard-api';
+import type { AppNotification } from '../types';
 
 import { PARENT_DATA_QUERY_KEYS } from './use-refresh-parent-data';
 
@@ -26,6 +27,7 @@ import { PARENT_DATA_QUERY_KEYS } from './use-refresh-parent-data';
 const REFRESH_DEBOUNCE_MS = 300;
 const PUSH_SYNC_PAGE_SIZE = 10;
 const MAX_STORED_NOTIFIED_IDS = 100;
+const POPUP_DURATION_MS = 5_000;
 
 async function readNotifiedIds(): Promise<Set<string>> {
   const stored = await storage.getJson<string[]>(StorageKeys.notifiedIds);
@@ -37,14 +39,28 @@ async function saveNotifiedIds(ids: Set<string>): Promise<void> {
   await storage.setJson(StorageKeys.notifiedIds, list);
 }
 
+export type NotificationRealtimeResult = {
+  /** Thong bao moi vua den de hien popup message noi tren man hinh. */
+  activePopup: AppNotification | null;
+  /** Dong popup message noi. */
+  dismissPopup: () => void;
+};
+
 /**
  * Giu ket noi realtime toi hop thu thong bao khi phu huynh dang dang nhap. Co thong bao moi thi tai
- * lai thong bao, du lieu hoc tap dang hien va phat OS Push Notification ngay ca khi app dang chay
- * ngam ngoai man hinh chinh.
+ * lai thong bao, du lieu hoc tap dang hien, hien popup message noi trong app va phat OS Push
+ * Notification ngay ca khi app dang chay ngam ngoai man hinh chinh.
  */
-export function useNotificationRealtime() {
+export function useNotificationRealtime(): NotificationRealtimeResult {
   const queryClient = useQueryClient();
   const isParentSignedIn = useAuthStore((s) => s.isAuthenticated && s.user?.role === 'PARENT');
+  const [activePopup, setActivePopup] = useState<AppNotification | null>(null);
+  const popupTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  const dismissPopup = () => {
+    clearTimeout(popupTimerRef.current);
+    setActivePopup(null);
+  };
 
   useEffect(() => {
     if (!isParentSignedIn) return undefined;
@@ -56,6 +72,15 @@ export function useNotificationRealtime() {
     let syncChain: Promise<void> = Promise.resolve();
 
     void ensureNotificationPermissions();
+
+    const showPopupBanner = (notification: AppNotification) => {
+      if (stopped) return;
+      clearTimeout(popupTimerRef.current);
+      setActivePopup(notification);
+      popupTimerRef.current = setTimeout(() => {
+        if (!stopped) setActivePopup(null);
+      }, POPUP_DURATION_MS);
+    };
 
     const syncPushNotifications = async (isCreatedEvent: boolean) => {
       if (stopped) return;
@@ -78,11 +103,13 @@ export function useNotificationRealtime() {
 
         initializedIds = true;
         let hasNew = false;
+        let latestNewItem: AppNotification | null = null;
 
         for (const item of page.items) {
           if (!item.readAt && !notifiedIds.has(item.id)) {
             notifiedIds.add(item.id);
             hasNew = true;
+            if (!latestNewItem) latestNewItem = item;
             await presentLocalPushNotification({
               id: item.id,
               title: item.title,
@@ -94,6 +121,10 @@ export function useNotificationRealtime() {
               },
             });
           }
+        }
+
+        if (latestNewItem) {
+          showPopupBanner(latestNewItem);
         }
 
         if (hasNew) {
@@ -149,9 +180,12 @@ export function useNotificationRealtime() {
     return () => {
       stopped = true;
       clearTimeout(refreshTimer);
+      clearTimeout(popupTimerRef.current);
       subscription.remove();
       unsubscribeTap();
       channel.close();
     };
   }, [isParentSignedIn, queryClient]);
+
+  return { activePopup: isParentSignedIn ? activePopup : null, dismissPopup };
 }
