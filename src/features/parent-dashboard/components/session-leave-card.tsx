@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
+import { FormError } from '@/components/common/form-error';
 import { Button } from '@/components/ui/button';
 import { ThemedText } from '@/components/ui/themed-text';
 import { ThemedView } from '@/components/ui/themed-view';
@@ -33,6 +34,24 @@ export function SessionLeaveCard({ studentId, session }: SessionLeaveCardProps) 
   const current = leave.data ?? null;
   const status = current && current.status !== 'CANCELLED' ? current.status : null;
   const canRequest = isUpcoming && (status === null || status === 'REJECTED');
+  if (leave.isError) {
+    return (
+      <View style={styles.container}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Chưa kiểm tra được đơn nghỉ của buổi này. Tải lại trước khi gửi đơn mới.
+        </ThemedText>
+        <FormError error={leave.error} />
+        <Button
+          title="Thử tải lại đơn nghỉ"
+          icon="refresh-outline"
+          variant="secondary"
+          loading={leave.isFetching}
+          onPress={() => void leave.refetch()}
+          style={styles.pill}
+        />
+      </View>
+    );
+  }
   if (leave.isPending || (!status && !canRequest)) return null;
 
   const appearance = status ? SESSION_LEAVE_STATUSES[status] : null;
