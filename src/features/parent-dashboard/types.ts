@@ -647,6 +647,18 @@ export type AssignmentDetail = {
    * `outcomeId` (xem `getMeasuredTargets`). Rong voi bai cu.
    */
   learningTargets: LearningTarget[];
+  /**
+   * CLO gan o cap bai (L1), theo `code`; `[]` khi chua gan. Thieu voi BE cu: khi do dung CLO cua cau hoi.
+   */
+  outcomes?: AssignmentOutcome[];
+};
+
+/** CLO gan vao ca bai (assignment_outcomes). */
+export type AssignmentOutcome = {
+  id: string;
+  code: string;
+  title: string;
+  required: boolean;
 };
 
 /** Mot cau tra loi (AnswerDto): gui khi nop va BE tra lai nguyen trong lan nop. */
