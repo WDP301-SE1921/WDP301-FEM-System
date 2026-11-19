@@ -895,10 +895,21 @@ export function findStudentRecipient(
 /**
  * Muc tieu that cua bai: cac CLO co cau hoi gan `outcomeId`, giu thu tu trong bo nhu web. BE tra
  * `learningTargets` la ca bo CLO giao vien chon, hien het thi ghi qua muc tieu cua bai.
+ * BE moi tra `outcomes` (CLO gan o cap bai, theo `code`): co thi dung luon, `[]` hoac thieu thi
+ * quay ve cach cu theo cau hoi.
  */
 export function getMeasuredTargets(
-  detail: Pick<AssignmentDetail, 'learningTargets' | 'questions'>,
+  detail: Pick<AssignmentDetail, 'learningTargets' | 'questions' | 'outcomes'>,
 ): LearningTarget[] {
+  if (detail.outcomes?.length) {
+    // statement lay tu bo CLO neu co, app khong hien nen de rong khi bo khong co
+    return detail.outcomes.map(({ id, code, title }) => ({
+      id,
+      code,
+      title,
+      statement: detail.learningTargets.find((target) => target.id === id)?.statement ?? '',
+    }));
+  }
   const measuredIds = new Set(detail.questions.map(({ outcomeId }) => outcomeId));
   return detail.learningTargets.filter(({ id }) => measuredIds.has(id));
 }

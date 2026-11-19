@@ -140,6 +140,26 @@ describe('features/parent-dashboard/utils: chi tiet bai tap', () => {
       expect(getMeasuredTargets({ learningTargets: [], questions: QUESTIONS })).toEqual([]);
     });
 
+    it('co outcomes cua bai thi dung outcomes, khong xet cau hoi', () => {
+      const detail = {
+        learningTargets: TARGETS,
+        questions: [{ ...CHOICE, outcomeId: 'clo-1' }],
+        outcomes: [{ id: 'clo-2', code: 'MATH-8-02', title: 'Hằng đẳng thức', required: true }],
+      };
+
+      expect(getMeasuredTargets(detail).map(({ id }) => id)).toEqual(['clo-2']);
+    });
+
+    it('outcomes rong thi quay ve CLO cua cau hoi', () => {
+      const detail = {
+        learningTargets: TARGETS,
+        questions: [{ ...CHOICE, outcomeId: 'clo-1' }],
+        outcomes: [],
+      };
+
+      expect(getMeasuredTargets(detail).map(({ id }) => id)).toEqual(['clo-1']);
+    });
+
     it('getOptionalOutcomeIds chi lay CLO mo rong (required: false)', () => {
       const outcomes = TARGETS.map((target) => ({ ...target, required: target.id !== 'clo-2' }));
 

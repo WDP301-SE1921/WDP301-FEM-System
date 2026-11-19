@@ -40,7 +40,7 @@ Ghi chú: danh sách vai trò gốc ghi "Giáo viên — Web", trong khi mục n
 - Khóa học (Program): môn + khối, ví dụ Toán 7; lớp thuộc về một khóa học
 - Giáo trình (CurriculumUnit): các bài học của khóa học, chia theo kỳ (kỳ là một khoảng ngày: từ ngày – đến ngày). Mỗi giáo trình có "bản N" (mỗi lần sửa sau khi đã duyệt là một bản mới) và các trạng thái: bản nháp, chờ duyệt, đã duyệt, lưu trữ. Khi chờ duyệt, người dùng thấy giáo trình đang "chờ giáo viên duyệt nội dung" hay "chờ Quản lý duyệt áp dụng"
 - Mục tiêu khóa học (OutcomeSet/LearningOutcome; trước đây gọi là "CLO"): những điều học sinh cần đạt, viết bằng tên phụ huynh đọc được, kèm mô tả và loại Bắt buộc hoặc Mở rộng; nguồn (sách, chương trình) là tùy chọn
-- Ngày nghỉ của trung tâm (CenterClosure): khoảng ngày trung tâm không có buổi học (nghỉ lễ, nghỉ Tết...) kèm lý do
+- Ngày nghỉ của trung tâm (CenterClosure): đã bỏ ngày 2026-11-19; kỳ nghỉ Tết được bỏ qua khi tính lịch
 - Tạo lịch học: thao tác của Quản lý trung tâm để tạo các buổi học của lớp từ lịch cố định, có xem trước
 
 ## 2. Mô tả tổng quan
@@ -70,8 +70,7 @@ Ban đầu hệ thống chỉ có 3 vai trò: Quản lý, Giáo viên, Phụ huy
 - Tạo lớp: chọn khóa học (môn + khối), phòng, lịch cố định, giáo viên. Tạo lớp chưa tạo buổi học
 - Duyệt áp dụng giáo trình và mục tiêu khóa học (cấp duyệt thứ hai, sau khi giáo viên duyệt nội dung)
 - Tạo lịch học cho lớp: bấm tay, có xem trước, không tự tạo
-- Hủy buổi học (có dời bài) và hủy nhiều buổi một lần
-- Quản lý ngày nghỉ của trung tâm (khoảng ngày + lý do)
+- (Đã bỏ 2026-11-19) Hủy buổi học, hủy nhiều buổi, quản lý ngày nghỉ của trung tâm
 - Dashboard: tổng doanh thu học phí, số học sinh, số giáo viên, số nhân viên
 - Dashboard: thẻ "Lớp cần tạo lịch học" (lớp chưa có buổi học nào, hoặc buổi cuối cách hôm nay dưới 14 ngày) kèm nút Tạo lịch học
 
@@ -205,11 +204,10 @@ Mở rộng theo số lượng học sinh, giáo viên, nhân viên, môn học;
 - Mỗi lớp thuộc một khóa học, có một lịch cố định.
 - Hai lớp hỗ trợ học bù cho nhau phải cùng khóa học.
 - Buổi học không tự sinh. Quản lý trung tâm bấm "Tạo lịch học" cho lớp: xem trước các buổi rồi mới tạo. Chỉ tạo lịch học được khi giáo trình đã được duyệt áp dụng.
-- Gắn bài học theo ngày, theo thứ tự giáo trình: lần tạo lịch đầu của lớp gán bài theo vị trí buổi tính từ đầu kỳ, bỏ qua ngày nghỉ của trung tâm. Lần tạo lịch tiếp theo nối từ bài sau bài của buổi cuối chưa hủy. Hết buổi mà còn bài thì bài đó chưa xếp buổi, và vào buổi đầu của lần tạo lịch sau.
-- Ngày nghỉ của trung tâm (khoảng ngày + lý do) do Quản lý trung tâm quản lý, mọi nhân sự xem được. Thêm ngày nghỉ không tự hủy buổi đã có: Quản lý hủy các buổi đó bằng hủy nhiều buổi.
-- Hủy một buổi có ba cách, theo thứ tự khuyên dùng: (1) "Đổi sang ngày khác" — giữ bài; (2) "Hủy và dời bài sang buổi sau"; (3) "Hủy, bỏ bài".
-- Hủy và dời bài sang buổi sau: bài của buổi cuối bị đẩy ra khỏi các buổi đã tạo và vào buổi đầu của lần tạo lịch sau. Hủy, bỏ bài: bài của buổi bị hủy không được xếp lại; riêng khi buổi bị hủy là buổi cuối cùng đã tạo thì bài đó quay lại ở lần tạo lịch sau (vì lịch mới nối từ bài sau bài của buổi cuối chưa hủy).
-- Hủy nhiều buổi một lần: chỉ Quản lý trung tâm, tối đa 200 buổi, được cả hoặc không được buổi nào. Phụ huynh của lớp nhận thông báo hủy buổi kèm lý do (không có thông báo riêng khi tạo ngày nghỉ).
+- Gắn bài học theo thứ tự giáo trình (cập nhật 2026-11-19): mỗi buổi một bài, từ bài 1 đến bài cuối. Ngày kết thúc lớp tính theo số bài, bỏ qua kỳ nghỉ Tết (23 tháng Chạp đến mùng 7). Không còn bài "chưa xếp buổi".
+- Chuỗi liên kết (cập nhật 2026-11-19): Mục tiêu khóa học có trước, rồi mới soạn Giáo trình; mỗi bài học gắn ít nhất 1 mục tiêu; mỗi bài tập và bài kiểm tra gắn mục tiêu ở cấp cả bài, không gắn theo từng câu hỏi. Phụ huynh xem mục tiêu của bài ở chi tiết bài tập.
+- Lớp kết thúc khi dạy hết giáo trình (cập nhật 2026-11-19): mỗi buổi dạy một bài, từ bài 1 đến bài cuối theo thứ tự; lớp mới luôn bắt đầu từ bài 1. Bài tập về nhà giữ như hiện tại. Không có điểm chặn để lên bài, không có kỳ thi học kỳ, không tự mở lớp khối sau hay tự đăng ký lại.
+- Đã bỏ ngày 2026-11-19: ngày nghỉ của trung tâm, hủy một buổi (ba cách hủy, dời bài, bỏ bài) và hủy nhiều buổi. Buổi cần đổi thì dời sang ngày khác hoặc có giáo viên dạy thay.
 - Chỉ Quản lý trung tâm được xếp/đổi giáo viên phụ trách và xếp giáo viên dạy thay.
 
 ### 5.5 Điểm danh
@@ -294,9 +292,9 @@ Không còn link/mã kích hoạt trong bất kỳ trường hợp nào — tài
 
 Quản lý trung tâm tạo khóa học (môn + khối) và lớp (chọn lịch cố định, giáo viên, phòng; lớp chưa có buổi học) → Thiết kế giáo trình soạn Giáo trình và Mục tiêu khóa học → gửi duyệt một lần → giáo viên Duyệt nội dung → Quản lý Duyệt áp dụng → Quản lý bấm Tạo lịch học (xem trước rồi tạo) → hệ thống tạo ClassSession và gắn bài học theo thứ tự giáo trình.
 
-Hủy buổi: Quản lý chọn buổi → chọn một trong ba cách ("Đổi sang ngày khác", "Hủy và dời bài sang buổi sau", "Hủy, bỏ bài") → buổi thành đã hủy kèm lý do → phụ huynh của lớp nhận thông báo. Hủy nhiều buổi (tối đa 200) làm cùng cách trong một lần, được cả hoặc không được buổi nào.
+Hủy buổi và hủy nhiều buổi: đã bỏ ngày 2026-11-19 (buổi được dời sang ngày khác hoặc có giáo viên dạy thay).
 
-Ngày nghỉ của trung tâm: Quản lý thêm khoảng ngày + lý do → lần Tạo lịch học sau bỏ qua các ngày đó → buổi đã có trong khoảng ngày không tự hủy, Quản lý hủy bằng hủy nhiều buổi.
+Ngày nghỉ của trung tâm: đã bỏ ngày 2026-11-19; lịch chỉ bỏ qua kỳ nghỉ Tết (23 tháng Chạp đến mùng 7).
 
 ### 6.3 Điểm danh bình thường
 
@@ -349,7 +347,7 @@ Không còn thực thể ActivationLink trong mô hình — tài khoản và h�
 | CurriculumUnit     | id, programId, title, fromDate, toDate, version, status (DRAFT, PENDING_REVIEW, APPROVED, ARCHIVED), lessons (có thứ tự) | Giáo trình theo kỳ (khoảng ngày) do Thiết kế giáo trình soạn, theo sách giáo khoa; duyệt hai cấp |
 | OutcomeSet         | id, programId, level, version, status                                                                                    | Bộ Mục tiêu khóa học của một khóa học                                                            |
 | LearningOutcome    | id, outcomeSetId, code, title, statement, required, nguồn (tùy chọn)                                                     | Một mục tiêu khóa học; gắn cho câu hỏi là tùy chọn                                               |
-| CenterClosure      | id, fromDate, toDate, reason, createdById                                                                                | Ngày nghỉ của trung tâm; do Quản lý tạo                                                          |
+| CenterClosure      | id, fromDate, toDate, reason, createdById                                                                                | Ngày nghỉ của trung tâm (đã bỏ khỏi chức năng ngày 2026-11-19)                                   |
 
 ## 8. Ma trận phân quyền
 
@@ -364,8 +362,8 @@ Không còn thực thể ActivationLink trong mô hình — tài khoản và h�
 | Duyệt nội dung giáo trình và mục tiêu         |         —         |          —          |     —     |     ✓     |     —     |
 | Duyệt áp dụng giáo trình và mục tiêu          |         ✓         |          —          |     —     |     —     |     —     |
 | Tạo lịch học cho lớp                          |         ✓         |          —          |     —     |     —     |     —     |
-| Hủy buổi, hủy nhiều buổi                      |         ✓         |          —          |     —     |     —     |     —     |
-| Ngày nghỉ của trung tâm (ghi / xem)           |   ✓ (ghi, xem)    |       ✓ (xem)       |  ✓ (xem)  |  ✓ (xem)  |     —     |
+| Hủy buổi, hủy nhiều buổi (đã bỏ 2026-11-19)   |         —         |          —          |     —     |     —     |     —     |
+| Ngày nghỉ của trung tâm (đã bỏ 2026-11-19)    |         —         |          —          |     —     |     —     |     —     |
 | Đăng ký học sinh / tra cứu qua email          |         —         |          —          |     ✓     |     —     |     —     |
 | Xác nhận thanh toán                           |         —         |          —          |     ✓     |     —     |     —     |
 | Đổi lịch / học bù / nghỉ                      |         —         |          —          |     ✓     |     —     |     —     |
@@ -385,10 +383,10 @@ Nhân viên và Quản lý trung tâm không dùng chung quyền truy cập dù 
 - "Admin": dòng "admin: có tất cả, quản lí các nhân viên" được hiểu là mô tả quyền hạn của Quản lý trung tâm, không phải một vai trò thứ 6 riêng biệt.
 - Luồng A3 (mới cập nhật): đã bỏ bước link/mã — Nhân viên nhập email phụ huynh, hệ thống hiện sẵn danh sách con, Nhân viên chọn trực tiếp. Đã xác nhận: không cần thêm bước xác thực, vì đây là quy trình trực tiếp tại quầy — phụ huynh có mặt khi Nhân viên thao tác. Ô nhập email có gợi ý tự động (debounce, 1–2 ký tự). Nếu phụ huynh chưa có tài khoản (trường hợp A1), Nhân viên hướng dẫn tải app để phụ huynh tự tạo tài khoản + hồ sơ con ngay tại chỗ.
 - Mô hình Khóa học – Giáo trình – Mục tiêu khóa học. Đã chốt ngày 2026-11-09/10:
-  - Bài gắn theo ngày; hủy buổi có ba cách (đổi sang ngày khác, hủy và dời bài, hủy bỏ bài) (5.4).
+  - Bài gắn theo thứ tự, mỗi buổi một bài; hủy buổi đã bỏ ngày 2026-11-19 (5.4).
   - Mục tiêu khóa học bản nhẹ; gắn cho câu hỏi là tùy chọn; mỗi mục tiêu cần ít nhất 1 bài trước khi duyệt (3.2).
   - Duyệt hai cấp, một lần gửi: giáo viên duyệt nội dung, Quản lý duyệt áp dụng (3.1, 3.4).
   - Tạo lịch học bấm tay, không tự tạo; dashboard nhắc "Lớp cần tạo lịch học".
   - "1 tháng 1 bài kiểm tra" là khuyến nghị, hệ thống chỉ nhắc giáo viên, không chặn (3.2, 3.4).
   - Mọi Thiết kế giáo trình sửa được bản nháp giáo trình và mục tiêu.
-  - Ngày nghỉ của trung tâm do Quản lý quản lý, thêm ngày nghỉ không tự hủy buổi đã có; hủy nhiều buổi chỉ Quản lý, tối đa 200 buổi (5.4).
+  - Ngày nghỉ của trung tâm và hủy nhiều buổi: đã bỏ ngày 2026-11-19 (5.4).
