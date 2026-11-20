@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { BottomSheet } from '@/components/common/bottom-sheet';
 import { FormError } from '@/components/common/form-error';
@@ -43,7 +43,13 @@ export function SessionLeaveSheet({
       subtitle={sessionLabel}
       onClose={onClose}
     >
-      <View style={styles.body}>
+      {/* Ban phim mo thi phan man hinh con lai co the thap hon form (may nho): cho cuon de toi nut gui */}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.body}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
         <ThemedText type="small" themeColor="textSecondary">
           Đơn được gửi tới trung tâm. Nhân viên duyệt rồi xếp buổi học bù nếu có buổi phù hợp.
         </ThemedText>
@@ -72,7 +78,7 @@ export function SessionLeaveSheet({
           onPress={onClose}
           style={styles.pill}
         />
-      </View>
+      </ScrollView>
     </BottomSheet>
   );
 }
@@ -80,6 +86,7 @@ export function SessionLeaveSheet({
 const REASON_MIN_HEIGHT = 96;
 
 const styles = StyleSheet.create({
+  scroll: { flexGrow: 0 },
   body: { gap: Spacing.three, paddingTop: Spacing.three },
   reason: { minHeight: REASON_MIN_HEIGHT },
   pill: { borderRadius: Radius.full },

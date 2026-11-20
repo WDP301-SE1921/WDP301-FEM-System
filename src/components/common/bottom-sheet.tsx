@@ -1,6 +1,14 @@
-import type { PropsWithChildren } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState, type PropsWithChildren } from 'react';
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 
 import { Icon } from '@/components/ui/icon';
 import { ThemedText } from '@/components/ui/themed-text';
@@ -15,6 +23,25 @@ const HANDLE_WIDTH = 48;
 const HANDLE_HEIGHT = 6;
 /** Chua lai mot khoang phia tren de nguoi dung thay day la sheet, bam ra ngoai de dong. */
 const SHEET_MAX_HEIGHT = '85%';
+const BOTTOM_EDGE: readonly Edge[] = ['bottom'];
+const NO_EDGE: readonly Edge[] = [];
+/** iOS bao truoc khi ban phim chay len, de sheet nang cung luc; Android chi bao sau khi ban phim da hien. */
+const KEYBOARD_SHOW_EVENT = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+const KEYBOARD_HIDE_EVENT = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+
+function useIsKeyboardVisible() {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const subscriptions = [
+      Keyboard.addListener(KEYBOARD_SHOW_EVENT, () => setIsVisible(true)),
+      Keyboard.addListener(KEYBOARD_HIDE_EVENT, () => setIsVisible(false)),
+    ];
+    return () => subscriptions.forEach((subscription) => subscription.remove());
+  }, []);
+
+  return isVisible;
+}
 
 export type BottomSheetProps = PropsWithChildren<{
   isVisible: boolean;
@@ -23,9 +50,16 @@ export type BottomSheetProps = PropsWithChildren<{
   onClose: () => void;
 }>;
 
-/** Sheet truot tu duoi len: tieu de, nut dong, noi dung ben duoi. Bam lop phu cung dong sheet. */
+/**
+ * Sheet truot tu duoi len: tieu de, nut dong, noi dung ben duoi. Bam lop phu cung dong sheet. Tu nang
+ * len tren ban phim khi go vao o nhap trong sheet. Noi dung co o nhap thi noi dung sheet tu boc trong
+ * `ScrollView` (`keyboardShouldPersistTaps="handled"` de bam nut ngay lan dau khi ban phim dang mo),
+ * vi phan man hinh con lai tren ban phim co the thap hon noi dung.
+ */
 export function BottomSheet({ isVisible, title, subtitle, onClose, children }: BottomSheetProps) {
   const theme = useTheme();
+  // Ban phim da che thanh dieu huong: giu safe area duoi thi sheet ho mot khoang trong tren ban phim
+  const isKeyboardVisible = useIsKeyboardVisible();
 
   return (
     <Modal
@@ -38,7 +72,11 @@ export function BottomSheet({ isVisible, title, subtitle, onClose, children }: B
       navigationBarTranslucent
       onRequestClose={onClose}
     >
-      <View style={styles.root}>
+      {/*
+        Modal ve tran vien nen cua so cua no khong tu co lai khi ban phim mo (iOS va Android): tu
+        day sheet len. Modal phu ca man hinh tu mep tren nen phep tinh cua KeyboardAvoidingView dung.
+      */}
+      <KeyboardAvoidingView behavior="padding" style={styles.root}>
         {/* Nguoi dung trinh doc man hinh dong bang nut "Đóng" nen lop phu khong can focus */}
         <Pressable
           accessible={false}
@@ -47,7 +85,7 @@ export function BottomSheet({ isVisible, title, subtitle, onClose, children }: B
         />
 
         <ThemedView accessibilityViewIsModal style={styles.sheet}>
-          <SafeAreaView edges={['bottom']} style={styles.safeArea}>
+          <SafeAreaView edges={isKeyboardVisible ? NO_EDGE : BOTTOM_EDGE} style={styles.safeArea}>
             <View style={[styles.handle, { backgroundColor: theme.backgroundSelected }]} />
 
             <View style={[styles.header, { borderBottomColor: theme.border }]}>
@@ -78,7 +116,7 @@ export function BottomSheet({ isVisible, title, subtitle, onClose, children }: B
             {children}
           </SafeAreaView>
         </ThemedView>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -119,7 +119,7 @@ Tim o day truoc khi viet moi. Them thanh phan dung chung moi khi co it nhat hai 
 | O mat khau noi voi react-hook-form                       | `FormPasswordInput` (kem san nut con mat hien / an mat khau)                                  | `components/common`   |
 | Loi chung cua form (loi tu server)                       | `FormError`                                                                                   | `components/common`   |
 | Nut hien / an mat khau (dat o `trailing`)                | `PasswordVisibilityToggle`                                                                    | `components/common`   |
-| Sheet truot tu duoi len (chon con, chon tuan)            | `BottomSheet`                                                                                 | `components/common`   |
+| Sheet truot tu duoi len (chon con, chon tuan, xin nghi)  | `BottomSheet` (tu nang len tren ban phim; sheet co o nhap tu boc noi dung trong `ScrollView`) | `components/common`   |
 | Hoi lai truoc thao tac kho lam lai (nop bai, dang xuat)  | `ConfirmSheet` (sheet, khong dung `Alert` de chay ca tren web)                                | `components/common`   |
 | Cac buoc co trang thai (dang ky hoc, lam bai)            | `StepList` (`layout`: `vertical` kem giai thich, `horizontal` mot hang)                       | `components/common`   |
 | Thanh tab duoi man hinh (`tabBar` cua `Tabs`)            | `TabBar` (nhan danh sach tab va `onPress`, layout `(tabs)` noi voi navigation)                | `components/common`   |
